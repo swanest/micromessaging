@@ -1,5 +1,5 @@
 {
-  "name": "rabbit",
+  "name": "micromessaging",
   "version": "1.0.0",
   "description": "Easy-to-use interface for Rabbit MQ",
   "main": "index.js",
@@ -23,6 +23,8 @@
     "amqplib": "^0.4.1",
     "lodash": "^4.13.1",
     "logger": "github:swanest/logger",
-    "node-uuid": "^1.4.7"
+    "node-uuid": "^1.4.7",
+    "q": "^1.4.1",
+    "rabbot": "github:swanest/rabbot"
   }
 }
