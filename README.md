@@ -94,7 +94,7 @@ Client
 	micromessaging.emit("xyz", "health.memory", {status: "good"}, null,true).catch(console.error); //abc will catch it
 
 	//Emit on all microservices
-	micromessaging.emit("*", "health.memory", {status: "Hello folks"}, null,true).catch(console.error); //abc will catch it
+	micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo:1}).catch(console.error); //abc will catch it
 
 
 	micromessaging.request("abc", "time-serie", {test: "ok"}).progress(function (msg) {
