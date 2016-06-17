@@ -1,61 +1,69 @@
-#!/usr/bin/env node
-var logLib = require("logger"),
-    micromessaging = require("../lib"),
+let logLib = require("logger"),
+    Service = require("../lib"),
     serviceName = process.argv[2],
     tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-server-" + serviceName);
 
-tracer.log("Welcome on %s process", serviceName); //launch at the same time ‘analysis‘ and ‘quotes' modules
+tracer.log("Welcome on %s process", serviceName); //launch at the same time ‘abc‘ and ‘zxy' modules
 
-micromessaging.service(serviceName);
+let micromessaging = new Service(serviceName);
+
 micromessaging.connect();
 
 micromessaging.on("unreachable", ()=> {
-    tracer.warn("We should close this worker");
+    tracer.warn(micromessaging.name + " failed to reach rabbit server");
+});
+micromessaging.on("unroutableMessage", (message)=> {
+    tracer.warn(micromessaging.name + " encountered an unroutable message", message);
+});
+micromessaging.on("unhandledHandled", (message)=> {
+    tracer.warn(micromessaging.name + " encountered an unhandled message", message);
+});
+micromessaging.on("closed", () => {
+    tracer.warn(micromessaging.name + " closed its connection");
+    process.exit(0);
+});
+micromessaging.on("failed", () => {
+    tracer.warn(micromessaging.name + " failed to connect. going to reconnect");
 });
 
-micromessaging.on("ready", ()=> {
+micromessaging.on("connected", ()=> {
 
-    tracer.log("Connected");
+    //We are connected
+    tracer.log(micromessaging.name + " is connected");
 
-    //LISTEN to public & private messages regarding the service ‘serviceName‘
-    micromessaging.listen("stock.aapl.volatility", function (message) {
-        tracer.log("message received for *.stock.aapl.volatility", message.body, message.fields.routingKey);
+    //Listening to private and public messages regarding service ‘abc‘ related to splits
+    micromessaging.listen("stock.aapl.split", function (message) {
+        tracer.log("stock.aapl.split", message.fields.routingKey, message.body);
     });
 
+    //Listening to private and public messages regarding service ‘abc‘ related to all corporate actions of Microsoft
     micromessaging.listen("stock.msft.*", function (message) {
-        tracer.log("message received for *.stock.msft.*", message.body, message.fields.routingKey);
+        tracer.log("stock.msft.*", message.fields.routingKey, message.body);
     });
 
+    //Listening to private and public messages regarding service ‘abc‘ related to all corporate actions, whatever the stock
     micromessaging.listen("stock.#", function (message) {
-        tracer.log("message received for *.stock.#", message.body, message.fields.routingKey);
+        tracer.log("stock.#", message.fields.routingKey, message.body);
     });
 
-    micromessaging.listen("other", function (message) {
-        tracer.log("message received for *.other", message.body, message.fields.routingKey);
-    });
+    //Listening to public messages regarding service ‘xyz‘ module
+    micromessaging.listen("health.memory", function (message) {
+        tracer.log("health.memory /xyz", message.fields.routingKey, message.body);
+    }, "xyz");
 
-    //LISTEN to public messages regarding ‘quotes‘ module
-    micromessaging.listen("report", function (message) {
-        tracer.log("GLOBAL message received for report, originated for module quotes", message.body, message.fields.routingKey);
-    }, "quotes"); //replace ‘quotes‘ by ‘*‘ to get all public messages from all modules
-
-
-    micromessaging.listen("report", function (message) {
-        tracer.log("GLOBAL message received for report", message.body, message.fields.routingKey);
+    //Listening to global public messages
+    micromessaging.listen("health.memory", function (message) {
+        tracer.log("health.memory /*", message.fields.routingKey, message.body);
     }, "*");
 
-    micromessaging.handle("test", function (message) {
-        tracer.log("test/handle..." + message.body.i);
+    //Handling a request
+    micromessaging.handle("time-serie", function (message) {
+        tracer.log("time-serie request", message.body);
         for (var i = 0; i < 10000; i++) {
-            message.reply({i: i}, {more: i != 9999});
+            message.reply({i: i}, {more: i != 9999}); //stream mode
         }
     });
 
-    micromessaging.handle("test2", function (message) {
-        tracer.log("test2/handle..." + message.body.i);
-        for (var i = 0; i < 10000; i++) {
-            message.reply({i: i}, {more: i != 9999});
-        }
-    });
-
+    //As this service has consumers, it needs to subscribe to be able to start receiving messages !
+    micromessaging.subscribe();
 });

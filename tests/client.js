@@ -1,72 +1,73 @@
-#!/usr/bin/env node
-var logLib = require("logger"),
+let logLib = require("logger"),
     tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-client"),
-    micromessaging = require("../lib"),
-    Q = require("q"),
-    moment = require("moment");
+    Service = require("../lib");
 
 
+
+
+let micromessaging = new Service("client"); //name your service
+
+//Connect, by default to localhost. You may specify a string URI or ‘RABBITMQ_URI‘ env variable
 micromessaging.connect();
 
 micromessaging.on("unreachable", ()=> {
-    tracer.warn("We should close this worker");
+    tracer.warn(micromessaging.name + " failed to reach rabbit server");
+});
+micromessaging.on("unroutableMessage", (message)=> {
+    tracer.warn(micromessaging.name + " encountered an unroutable message", message);
+});
+micromessaging.on("unhandledMessage", (message)=> {
+    tracer.warn(micromessaging.name + " encountered an unhandled message", message);
+});
+micromessaging.on("closed", () => {
+    tracer.warn(micromessaging.name + " closed its connection");
+    process.exit(0);
+});
+micromessaging.on("failed", () => {
+    tracer.warn(micromessaging.name + " failed to connect. going to reconnect");
 });
 
-micromessaging.on("ready", ()=> {
+micromessaging.on("connected", ()=> {
 
-    tracer.log("Connected");
+    tracer.log(micromessaging.name + " is connected");
 
-    //EMIT MESSAGES on ‘analysis‘ module
-    micromessaging.emit("analysis", "stock.aapl.volatility", {analysisSymbol: "aapl"}).catch(console.error);
-    micromessaging.emit("analysis", "stock.msft.volatility", {analysisSymbol: "msft"}).catch(console.error);
+    //Emit message on ‘abc‘ service
+    micromessaging.emit("abc", "stock.aapl.split", {ratio: "7:1"}, {headerAppInfo: "test"}).then(()=> {
+        console.log("ok");
+    }).catch(console.error);
+    micromessaging.emit("abc", "stock.aapl.cashDiv", {amount: 0.52}).then(()=> {
+        console.log("ok");
+    }).catch(console.error);
+    micromessaging.emit("abc", "stock.msft.split", {ratio: "3:1"}).then(()=> {
+        console.log("ok");
+    }).catch(console.error);
+    micromessaging.emit("abc", "stock.msft.cashDiv", {amount: 0.72}).then(()=> {
+        console.log("ok");
+    }).catch(console.error);
 
+    //Emit on xyz
+    micromessaging.emit("xyz", "health.memory", {status: "bad"}, {
+        additionalInfoA: 1,
+        additionalInfoB: 3
+    }).catch(console.error); //abc won't catch it
 
-    //EMIT MESSAGES on ‘quotes‘ module in a private and public mode
-    //setInterval(function () {
-        micromessaging.emit("quotes", "other", {priv: "bar"}).catch(console.error);
-        micromessaging.emit("quotes", "report", {public: "hi"}, null, true).catch(console.error);
-    //}, 2000);
+    //Emit on xyz in public mode
+    micromessaging.emit("xyz", "health.memory", {status: "good"}, null, true).catch(console.error); //abc will catch it
 
+    //Emit on all microservices
+    micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo: 1}).catch(console.error); //abc will catch it
 
-    //EMIT MESSAGES on all modules in a public mode
-    micromessaging.emit("*", "report", {allPublic: "hi"}).catch(console.error);
+    //Send a request
+    micromessaging.request("abc", "time-serie", {test: "ok"})
+        .progress(function (msg) {
+            console.log("progress", msg.body);
+        })
+        .then(function (msg) {
+            console.log("finished", msg.body);
+        })
+        .catch(console.error);
 
-
-    var start = moment.utc();
-    var proms = [];
-    for (let i = 0; i < 5; i++) {
-        let sp = 0;
-        proms.push(micromessaging.request("analysis", "test", {i: i}).progress(function (msg) {
-            if (msg.body.i < sp)
-                throw "not ordered";
-            sp = msg.body.i;
-            //tracer.log("progress" + msg.body.i);
-        }).then(function (msg) {
-            tracer.log("finished" + i, msg.body);
-        }).catch(console.error));
-    }
-
-
-    Q.all(proms).then(function () {
-        tracer.warn("Time needed", moment.utc().diff(start, "second"));
-
-        //
-        //for (let i = 0; i < 1000; i++) {
-        //    let sp = 0;
-        //    proms.push(micromessaging.request("analysis", "test2", {i: i}).progress(function (msg) {
-        //        if (msg.body.i < sp)
-        //            throw "not ordered";
-        //        sp = msg.body.i;
-        //        //tracer.log("progress" + msg.body.i);
-        //    }).then(function (msg) {
-        //        tracer.log("finished" + i, msg.body);
-        //    }).catch(console.error));
-        //}
-
-    });
-
-
-    //var prom2 = micromessaging.request("analysis", "test", {i: 1});
-    //console.log(prom2.progress);
 
 });
+
+

@@ -2,23 +2,13 @@
   "name": "micromessaging",
   "version": "1.0.0",
   "description": "Easy-to-use interface for Rabbit MQ",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha --reporter spec"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/swanest/rabbit.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/swanest/rabbit/issues"
-  },
-  "homepage": "https://github.com/swanest/rabbit#readme",
+  "repository": "https://github.com/swanest/micromessaging",
+  "author": "Cyri-l",
+  "license": "MIT",
+  "homepage": "https://github.com/swanest/micromessaging#readme",
   "dependencies": {
     "amqplib": "^0.4.1",
     "lodash": "^4.13.1",
@@ -26,5 +16,9 @@
     "node-uuid": "^1.4.7",
     "q": "^1.4.1",
     "rabbot": "github:swanest/rabbot"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.5.3"
   }
 }
