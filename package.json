@@ -2,7 +2,7 @@
   "name": "micromessaging",
   "version": "1.0.0",
   "description": "Easy-to-use interface for Rabbit MQ",
-  "main": "./lib",
+  "main": "lib/index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
