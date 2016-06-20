@@ -3,8 +3,6 @@ let logLib = require("logger"),
     Service = require("../lib");
 
 
-
-
 let micromessaging = new Service("client"); //name your service
 
 //Connect, by default to localhost. You may specify a string URI or ‘RABBITMQ_URI‘ env variable
@@ -57,15 +55,25 @@ micromessaging.on("connected", ()=> {
     //Emit on all microservices
     micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo: 1}).catch(console.error); //abc will catch it
 
+
+    //Get the amount of pending requests for a specific service
+    micromessaging.getRequestsReport("abc").then(function (report) {
+        tracer.log(report);
+    }).catch(function (err) {
+        //Unable to get the report
+        tracer.error(err);
+    });
+
     //Send a request
-    micromessaging.request("abc", "time-serie", {test: "ok"})
-        .progress(function (msg) {
-            console.log("progress", msg.body);
-        })
-        .then(function (msg) {
-            console.log("finished", msg.body);
-        })
-        .catch(console.error);
+    for (let i = 0; i < 1000; i++)
+        micromessaging.request("abc", "time-serie", {test: i})
+            .progress(function (msg) {
+                console.log("progress", msg.body);
+            })
+            .then(function (msg) {
+                console.log("finished", msg.body);
+            })
+            .catch(console.error);
 
 
 });

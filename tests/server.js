@@ -7,6 +7,15 @@ tracer.log("Welcome on %s process", serviceName); //launch at the same time ‘a
 
 let micromessaging = new Service(serviceName);
 
+function toBuffer(ab) {
+    var buffer = new Buffer(ab.byteLength);
+    var view = new Uint8Array(ab);
+    for (var i = 0; i < buffer.length; ++i) {
+        buffer[i] = view[i];
+    }
+    return buffer;
+}
+
 micromessaging.connect();
 
 micromessaging.on("unreachable", ()=> {
@@ -58,12 +67,38 @@ micromessaging.on("connected", ()=> {
 
     //Handling a request
     micromessaging.handle("time-serie", function (message) {
-        tracer.log("time-serie request", message.body);
-        for (var i = 0; i < 10000; i++) {
-            message.reply({i: i}, {more: i != 9999}); //stream mode
-        }
+
+
+        if (message.body instanceof Buffer)
+            tracer.log("time-serie request buffer", toBuffer(message.body).toString());
+        else
+            tracer.log("time-serie request", message.body);
+
+
+        //return setTimeout(function () {
+        //    message.reply({i: message.body});
+        //}, 1000)
+
+        message.ack();
+
+        //return
+        //for (var i = 0; i < 10000; i++) {
+        //    message.reply({i: i}, {more: i != 9999}); //stream mode
+        //}
     });
 
-    //As this service has consumers, it needs to subscribe to be able to start receiving messages !
-    micromessaging.subscribe();
+    let t = 5;
+    micromessaging.prefetch(t);
+    micromessaging.subscribe(); //not necessary as prefetch() calls subscribe()
+
+    //setInterval(function () {
+    //    if (t == 1)
+    //        t = 5;
+    //    else
+    //        t = 1;
+    //    micromessaging.prefetch(t); //dynamically adjust prefetch limit
+    //    console.log("=========================================================prefetch", t);
+    //}, 30000);
+
+
 });
