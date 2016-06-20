@@ -79,7 +79,9 @@ micromessaging.on("connected", ()=> {
         //    message.reply({i: message.body});
         //}, 1000)
 
-        message.ack();
+        //message.reply({ok:3});
+
+        message.reply({ok:1});
 
         //return
         //for (var i = 0; i < 10000; i++) {
@@ -87,8 +89,8 @@ micromessaging.on("connected", ()=> {
         //}
     });
 
-    let t = 5;
-    micromessaging.prefetch(t);
+    //let t = 5;
+    //micromessaging.prefetch(t);
     micromessaging.subscribe(); //not necessary as prefetch() calls subscribe()
 
     //setInterval(function () {

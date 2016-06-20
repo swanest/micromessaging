@@ -2,7 +2,6 @@ let logLib = require("logger"),
     tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-client"),
     Service = require("../lib");
 
-
 let micromessaging = new Service("client"); //name your service
 
 //Connect, by default to localhost. You may specify a string URI or ‘RABBITMQ_URI‘ env variable
@@ -66,14 +65,16 @@ micromessaging.on("connected", ()=> {
 
     //Send a request
     for (let i = 0; i < 1000; i++)
-        micromessaging.request("abc", "time-serie", {test: i})
+        micromessaging.task("abc", "time-serie", {test: i})
             .progress(function (msg) {
-                console.log("progress", msg.body);
+                tracer.log("progress", msg);
             })
             .then(function (msg) {
-                console.log("finished", msg.body);
+                tracer.log("finished", msg);
             })
-            .catch(console.error);
+            .catch(function (err) {
+                tracer.error("error", err);
+            });
 
 
 });
