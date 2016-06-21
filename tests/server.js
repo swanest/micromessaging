@@ -65,9 +65,13 @@ micromessaging.on("connected", ()=> {
         tracer.log("health.memory /*", message.fields.routingKey, message.body);
     }, "*");
 
-    //Handling a request
-    micromessaging.handle("time-serie", function (message) {
+    //Listening to global public messages
+    micromessaging.listen("no-listener", function (message) {
+        tracer.log("no-listener /*", message.fields.routingKey, message.body);
+    });
 
+    //Handling a request
+    micromessaging.handle("#", function (message) {
 
         if (message.body instanceof Buffer)
             tracer.log("time-serie request buffer", toBuffer(message.body).toString());

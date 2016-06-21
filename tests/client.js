@@ -42,6 +42,10 @@ micromessaging.on("connected", ()=> {
         console.log("ok");
     }).catch(console.error);
 
+    micromessaging.emit("abc", "no-listener", {noListener: "that's it"}).then(()=> {
+        console.log("ok");
+    }).catch(console.error);
+
     //Emit on xyz
     micromessaging.emit("xyz", "health.memory", {status: "bad"}, {
         additionalInfoA: 1,
@@ -64,17 +68,19 @@ micromessaging.on("connected", ()=> {
     });
 
     //Send a request
-    for (let i = 0; i < 1000; i++)
-        micromessaging.task("abc", "time-serie", {test: i})
-            .progress(function (msg) {
-                tracer.log("progress", msg);
-            })
-            .then(function (msg) {
-                tracer.log("finished", msg);
-            })
-            .catch(function (err) {
-                tracer.error("error", err);
-            });
+    //for (let i = 0; i < 1000; i++)
+    //    micromessaging.task("abc", "time-serie", {test: i})
+    //        .progress(function (msg) {
+    //            tracer.log("progress", msg);
+    //        })
+    //        .then(function (msg) {
+    //            tracer.log("finished", msg);
+    //        })
+    //        .catch(function (err) {
+    //            tracer.error("error", err);
+    //        });
+
+    micromessaging.task("abc", "test", {test: "ok"});
 
 
 });
