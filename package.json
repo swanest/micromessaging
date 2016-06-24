@@ -15,8 +15,8 @@
     "lodash": "^4.13.1",
     "logger": "github:swanest/logger",
     "node-uuid": "^1.4.7",
-    "q": "^1.4.1",
-    "rabbot": "github:swanest/rabbot"
+    "rabbot": "github:swanest/rabbot",
+    "when": "^3.7.7"
   },
   "devDependencies": {
     "chai": "^3.5.0",
