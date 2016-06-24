@@ -2,27 +2,32 @@ var expect = require("chai").expect;
 var Service = require("../lib");
 var when = require("when");
 var _ = require("lodash");
+var CustomError = require("logger").CustomError;
 
 describe("When emitting", function () {
 
 
-    function checkMessage(message) {
-        return _.isPlainObject(message.headers) &&
-            _.isString(message.headers.headerAppInfo) &&
-            _.isPlainObject(message.body) &&
-            _.isUndefined(message.properties.reply) &&
-            _.isBoolean(message.properties.isRedelivered) &&
+    function checkReceivedMessage(message, body, headers) {
+        return message.type == "message" &&
+            _.isEqual(message.body, body) &&
+            message.properties.isRedelivered == false &&
             _.isString(message.properties.exchange) &&
+            _.isString(message.properties.queue) &&
             _.isString(message.properties.routingKey) &&
             _.isString(message.properties.path) &&
+            _.isUndefined(message.properties.id) &&
             _.isString(message.properties.contentType) &&
             _.isString(message.properties.contentEncoding) &&
-            _.isFinite(message.properties.expiresAfter) && message.properties.expiresAfter > 0 &&
+            _.isFinite(message.properties.expiresAfter) &&
             _.isFinite(message.properties.timestamp) &&
-            _.isUndefined(message.reply) &&
+            _.isUndefined(message.properties.replyTo) &&
             _.isUndefined(message.ack) &&
             _.isUndefined(message.nack) &&
-            _.isUndefined(message.reject);
+            _.isUndefined(message.reject) &&
+            _.isUndefined(message.write) &&
+            _.isUndefined(message.end) &&
+            _.isUndefined(message.reply) &&
+            _.isEqual(message.headers, headers);
     };
 
 
@@ -48,7 +53,7 @@ describe("When emitting", function () {
             var abc_1_responses = {}, abc_2_responses = {}, xyz_1_responses = {};
             //Listening to private and public messages regarding service ‘abc‘ related to splits
             abc_1.listen("stock.aapl.split", function (message) {
-                expect(message).to.satisfy(checkMessage);
+                expect(checkReceivedMessage(message, {ratio: "7:1"}, {headerAppInfo: "test"})).to.be.true;
                 abc_1_responses["stock.aapl.split-" + message.properties.routingKey] = message.body;
             });
             //Listening to private and public messages regarding service ‘abc‘ related to all corporate actions of Microsoft
@@ -110,7 +115,7 @@ describe("When emitting", function () {
             xyz_1.subscribe();
             setTimeout(function () {
                 //Emit on xyz in public mode
-                client.emit("xyz", "health.memory", {status: "good"}, null, {isPublic:true}).then(function (r) {
+                client.emit("xyz", "health.memory", {status: "good"}, null, {isPublic: true}).then(function (r) {
                     expect(r).to.equal(undefined);
                 }).catch(done); //abc will catch it
                 //Emit on all microservices
@@ -124,6 +129,7 @@ describe("When emitting", function () {
                 abc_2_responses["abc_2(xyz) #-" + message.properties.routingKey] = message.body;
             }, "xyz");
             xyz_1.listen("#", function (message) {
+                expect(checkReceivedMessage(message, message.body, message.headers)).to.be.true;
                 xyz_1_responses["xyz #-" + message.properties.routingKey] = message.body;
             });
             setTimeout(function () {
@@ -140,41 +146,21 @@ describe("When emitting", function () {
         }).catch(done);
     });
 
-    //it("should be unhandled", function (done) {
-    //    this.timeout(5000);
-    //    var client = new Service("client");
-    //    var aaa_1 = new Service("aaa");
-    //    when.all([client.connect(), aaa_1.connect()]).then(function () {
-    //        client.subscribe();
-    //        aaa_1.subscribe();
-    //        setTimeout(function () {
-    //            client.task("aaa", "unhandled", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).catch(done);
-    //        }, 300);
-    //        var gottenMessage;
-    //        aaa_1.on("unhandledMessage", function (message) {
-    //            gottenMessage = message;
-    //            message.reject();
-    //        });
-    //        setTimeout(function () {
-    //            when.all([client.close(), aaa_1.close()]).then(function () {
-    //                expect(gottenMessage).to.satisfy(checkMessage);
-    //                done();
-    //            }, done);
-    //
-    //        }, 1000);
-    //
-    //    }).catch(done);
-    //});
-
 
     it("should throw", function (done) {
         this.timeout(5000);
         var client = new Service("client");
         client.connect().then(function () {
-            expect(client.emit("bbb", "unRoutable", {needsToBeRedelivered: true}, {response_forbidden: true}, {expiresAfter: 4000})).to.throw();
-            //client.task("bbb", "unRoutable", {needsToBeRedelivered: true}, {testH: true}, {unAllowedOption: true});
-
-
+            try {
+                client.emit("bbb", "unRoutable", {needsToBeRedelivered: true}, {_mms_no_reply: true}, {expiresAfter: 4000});
+            } catch (e) {
+                expect(e.codeString).to.equal("unAllowedHeader");
+            }
+            try {
+                client.emit("bbb", "unRoutable", {needsToBeRedelivered: true}, {testH: true}, {unAllowedOption: 4000});
+            } catch (e) {
+                expect(e.codeString).to.equal("unAllowedOption");
+            }
             setTimeout(function () {
                 client.close().then(function () {
                     done();
@@ -184,62 +170,60 @@ describe("When emitting", function () {
         }).catch(done);
     });
 
-    //it("should be unhandled", function (done) {
-    //    this.timeout(5000);
-    //    var client = new Service("client");
-    //    var aaa_1 = new Service("aaa");
-    //    when.all([client.connect(), aaa_1.connect()]).then(function () {
-    //        client.subscribe();
-    //        aaa_1.subscribe();
-    //        setTimeout(function () {
-    //
-    //            client.emit("aaa2", "unhandled", {needsToBeRedelivered: true}, {response_forbidden: true}, {expiresAfter: 4000}).catch(done);
-    //
-    //
-    //        }, 300);
-    //        var gottenMessage;
-    //        aaa_1.on("unhandledMessage", function (message) {
-    //            gottenMessage = message;
-    //            message.reject();
-    //        });
-    //        setTimeout(function () {
-    //            when.all([client.close(), aaa_1.close()]).then(function () {
-    //                expect(gottenMessage).to.satisfy(checkMessage);
-    //                done();
-    //            }, done);
-    //
-    //        }, 1000);
-    //
-    //    }).catch(done);
-    //});
-    //
-    //
-    //it("should be unroutable", function (done) {
-    //    this.timeout(5000);
-    //    var client = new Service("client");
-    //    var aaa_1 = new Service("aaa");
-    //    when.all([client.connect(), aaa_1.connect()]).then(function () {
-    //        client.subscribe();
-    //        aaa_1.subscribe();
-    //        setTimeout(function () {
-    //            client.task("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).then(function (r) {
-    //                expect(r).to.equal(undefined);
-    //            }).catch(done);
-    //        }, 300);
-    //        var gottenMessage;
-    //        client.on("unroutableMessage", function (message) {
-    //            gottenMessage = message;
-    //        });
-    //        setTimeout(function () {
-    //            when.all([client.close(), aaa_1.close()]).then(function () {
-    //                expect(gottenMessage).to.satisfy(checkMessageUnroutable);
-    //                done();
-    //            }, done);
-    //
-    //        }, 1000);
-    //
-    //    }).catch(done);
-    //});
+    it("should be unhandled", function (done) {
+        this.timeout(5000);
+        var client = new Service("client");
+        var aaa_1 = new Service("aaa");
+        when.all([client.connect(), aaa_1.connect()]).then(function () {
+            client.subscribe();
+            aaa_1.subscribe();
+            setTimeout(function () {
+                client.emit("aaa", "unHandled", ["a", "b", "c"], {messageId: "test"}, {expiresAfter: 4000}).catch(done);
+            }, 300);
+            var gottenMessage;
+            aaa_1.on("unhandledMessage", function (message) {
+                gottenMessage = message;
+                message.reject();
+            });
+            setTimeout(function () {
+                when.all([client.close(), aaa_1.close()]).then(function () {
+                    expect(checkReceivedMessage(gottenMessage, ["a", "b", "c"], {messageId: "test"})).to.be.true;
+                    done();
+                }, done);
+
+            }, 1000);
+
+        }).catch(done);
+    });
+
+
+    it("should be unroutable", function (done) {
+        this.timeout(5000);
+        var client = new Service("client");
+        var aaa_1 = new Service("aaa");
+        when.all([client.connect(), aaa_1.connect()]).then(function () {
+            client.subscribe();
+            aaa_1.subscribe();
+            setTimeout(function () {
+                client.emit("bbb", "unRoutable", "helloooo", {myH: true}, {expiresAfter: 4000}).then(function (r) {
+                    expect(r).to.equal(undefined);
+                }).catch(done);
+            }, 300);
+            var gottenMessage;
+            client.on("unroutableMessage", function (message) {
+                gottenMessage = message;
+            });
+            setTimeout(function () {
+                when.all([client.close(), aaa_1.close()]).then(function () {
+                    gottenMessage.properties.queue = "";
+                    expect(checkReceivedMessage(gottenMessage, "helloooo", {myH: true})).to.be.true;
+                    done();
+                }, done);
+
+            }, 1000);
+
+        }).catch(done);
+    });
 
 
 });
