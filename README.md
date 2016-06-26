@@ -43,12 +43,14 @@ micromessaging.on("failed", () => {
     tracer.warn(micromessaging.name + " failed to connect. going to reconnect");
 });
 
+//We could have called micromessaging.connect().then(...).catch(...)
+
 micromessaging.on("connected", ()=> {
 
     tracer.log(micromessaging.name + " is connected");
 
     //Emit message on ‘abc‘ service
-    micromessaging.emit("abc", "stock.aapl.split", {ratio: "7:1"}, {headerAppInfo: "test"}).then(()=> {
+    micromessaging.emit("abc", "stock.aapl.split", {ratio: "7:1"}, {headerAppInfo: "test"}, {timeout:300, expiresAfter:4000}).then(()=> {
         console.log("ok");
     }).catch(console.error);
     micromessaging.emit("abc", "stock.aapl.cashDiv", {amount: 0.52}).then(()=> {
@@ -65,16 +67,16 @@ micromessaging.on("connected", ()=> {
     micromessaging.emit("xyz", "health.memory", {status: "bad"}, {
         additionalInfoA: 1,
         additionalInfoB: 3
-    }).catch(console.error); //abc won't catch it
+    }).catch(console.error); //abc won't receive it
 
     //Emit on xyz in public mode
-    micromessaging.emit("xyz", "health.memory", {status: "good"}, null, true).catch(console.error); //abc will catch it
+    micromessaging.emit("xyz", "health.memory", {status: "good"}, null, {isPublic:true}).catch(console.error); //abc will receive it
 
     //Emit on all microservices
-    micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo: 1}).catch(console.error); //abc will catch it
+    micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo: 1}).catch(console.error); //abc will receive it
 
     //Send a request
-    micromessaging.request("abc", "time-serie", {test: "ok"})
+    micromessaging.request("abc", "time-serie", {test: "ok"}, {replyTimeout:5000})
         .progress(function (msg) {
             console.log("progress", msg.body);
         })
@@ -120,6 +122,7 @@ micromessaging.on("failed", () => {
     tracer.warn(micromessaging.name + " failed to connect. going to reconnect");
 });
 
+//We could have called micromessaging.connect().then(...).catch(...)
 micromessaging.on("connected", ()=> {
 
     //We are connected
@@ -148,19 +151,34 @@ micromessaging.on("connected", ()=> {
     //Listening to global public messages
     micromessaging.listen("health.memory", function (message) {
         tracer.log("health.memory /*", message.fields.routingKey, message.body);
-    }, "*");
+    }, "*").onError((error, message)=>console.log);
 
     //Handling a request
-    micromessaging.handle("time-serie", function (message) {
+    var handler = micromessaging.handle("time-serie", function (message) {
         tracer.log("time-serie request", message.body);
-        for (var i = 0; i < 10000; i++) {
-            message.reply({i: i}, {more: i != 9999}); //stream mode
-        }
+        message.write({m:1},{h:"foo"});
+        message.reply({m:1},{h:"foo"});
+    }).onError(function(error,message){
+        console.log(error);
+        message.nack();
     });
+
+    //we could remove the subscription by doing handler.remove();
+
 
     //As this service has consumers, it needs to subscribe to be able to start receiving messages !
     micromessaging.subscribe();
 });
 ```
 
+Roadmap
+-------------
 
+* Integrate dead-letter exchange
+* redeliver counter
+
+
+Tests
+-------------
+
+    npm test

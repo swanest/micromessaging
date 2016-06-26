@@ -183,7 +183,6 @@ describe("When emitting", function () {
             var gottenMessage;
             aaa_1.on("unhandledMessage", function (message) {
                 gottenMessage = message;
-                message.reject();
             });
             setTimeout(function () {
                 when.all([client.close(), aaa_1.close()]).then(function () {
