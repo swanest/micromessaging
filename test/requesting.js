@@ -11,8 +11,8 @@ describe("When requesting something", function () {
             _.isBoolean(message.properties.isRedelivered) &&
             _.isString(message.properties.exchange) &&
             _.isString(message.properties.queue) &&
-            _.isString(message.properties.routingKey) &&
-            _.isString(message.properties.path) &&
+            _.isString(message.properties.routingKey) && message.properties.routingKey == "task" &&
+            _.isString(message.properties.path) && message.properties.path != "task" &&
             _.isString(message.properties.id) &&
             _.isString(message.properties.contentType) &&
             _.isString(message.properties.contentEncoding) &&
@@ -138,7 +138,7 @@ describe("When requesting something", function () {
             }).onError(function (err, message) {
                 expect(err.message).to.equal("not feelin it today");
                 message.nack();
-            }).subscription).to.have.property("remove");
+            })).to.have.property("remove");
 
 
             expect(aaa_2.handle("redelivering", function (message) {
@@ -152,7 +152,7 @@ describe("When requesting something", function () {
             }).onError(function (err, message) {
                 expect(err.message).to.equal("not feelin it today");
                 message.nack();
-            }).subscription).to.have.property("remove");
+            })).to.have.property("remove");
 
             setTimeout(function () {
                 expect(handled).to.be.equal(1);
