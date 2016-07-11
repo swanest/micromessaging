@@ -150,18 +150,18 @@ describe("When emitting", function () {
 
 
             setTimeout(function () {
-                client.emit("*", "initial.route", 1, null, {expiresAfter: 3000});
+                client.privately.emit("*", "initial.route", 1, null, {expiresAfter: 3000});
                 client.publicly.emit("xyz", "initial.route", 2);
-                client.emit("xyz", "initial.route", 3); //private.xyz.initial.route
+                client.privately.emit("xyz", "initial.route", 3); //private.xyz.initial.route
 
-                client.emit("*", "second.route", 4);
-                client.publicly.emit("abc", "second.route", 5);
-                client.emit("abc", "second.route", 6);
+                client.privately.emit("*", "second.route", 4);
+                client.emit("abc", "second.route", 5);
+                client.privately.emit("abc", "second.route", 6);
 
-                client.emit("abc", "third.route", 7); //unroutable
+                client.privately.emit("abc", "third.route", 7); //unroutable
 
-                client.emit("opq", "fourth.route", 8);
-                client.emit("opq", "fifth.route", 9);
+                client.privately.emit("opq", "fourth.route", 8);
+                client.privately.emit("opq", "fifth.route", 9);
 
 
             }, 100);
