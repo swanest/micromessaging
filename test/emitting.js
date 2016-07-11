@@ -37,14 +37,18 @@ describe("When emitting", function () {
         var abc_1 = new Service("abc");
         var abc_2 = new Service("abc");
         var xyz_1 = new Service("xyz");
+        var opq_1 = new Service("opq");
+        var opq_2 = new Service("opq");
 
 
-        when.all([client.connect(), abc_1.connect(), abc_2.connect(), xyz_1.connect()]).then(function () {
+        when.all([client.connect(), abc_1.connect(), abc_2.connect(), xyz_1.connect(), opq_1.connect(), opq_2.connect()]).then(function () {
 
             client.subscribe();
             abc_1.subscribe();
             abc_2.subscribe();
             xyz_1.subscribe();
+            opq_1.subscribe();
+            opq_2.subscribe();
 
 
             var handled = [];
@@ -106,26 +110,66 @@ describe("When emitting", function () {
                 });
             }).remove();
 
+
+            opq_1.listen("fourth.route", function (message) {
+                handled.push({
+                    listener: "opq_1:'fourth.route'",
+                    routingKey: message.properties.routingKey,
+                    c: message.body
+                });
+            });
+
+
+            opq_2.listen("fourth.route", function (message) {
+                handled.push({
+                    listener: "opq_2:'fourth.route'",
+                    routingKey: message.properties.routingKey,
+                    c: message.body
+                });
+            });
+
+            opq_1.exclusively.listen("fifth.route", function (message) {
+                handled.push({
+                    listener: "opq_1.exl:'fifth.route'",
+                    routingKey: message.properties.routingKey,
+                    c: message.body
+                });
+            });
+
+            opq_2.exclusively.listen("fifth.route", function (message) {
+                handled.push({
+                    listener: "opq_2.exl:'fifth.route'",
+                    routingKey: message.properties.routingKey,
+                    c: message.body
+                });
+            });
+
             client.on("unroutableMessage", function (message) {
                 handled.push({listener: "UNROUTABLE", unroutable: message.properties.routingKey, c: message.body});
             });
 
 
             setTimeout(function () {
-                client.emit("*", "initial.route", 1, null, {expiresAfter:3000});
-                client.emit("xyz", "initial.route", 2, null, {isPublic: true});
+                client.emit("*", "initial.route", 1, null, {expiresAfter: 3000});
+                client.publicly.emit("xyz", "initial.route", 2);
                 client.emit("xyz", "initial.route", 3); //private.xyz.initial.route
 
                 client.emit("*", "second.route", 4);
-                client.emit("abc", "second.route", 5, null, {isPublic: true});
+                client.publicly.emit("abc", "second.route", 5);
                 client.emit("abc", "second.route", 6);
 
                 client.emit("abc", "third.route", 7); //unroutable
+
+                client.emit("opq", "fourth.route", 8);
+                client.emit("opq", "fifth.route", 9);
+
+
             }, 100);
 
             setTimeout(function () {
 
                 var res = _.groupBy(handled, "listener");
+
 
                 var h = res["abc_1(xyz):'initial.route'"];
                 expect(h).to.have.lengthOf(2);
@@ -162,15 +206,25 @@ describe("When emitting", function () {
                 expect(_.findIndex(h, {unroutable: "private.abc.third.route", c: 7})).to.not.equal(-1);
 
 
-                expect(_.keys(res)).to.have.lengthOf(6);
+                h = res["opq_1:'fourth.route'"];
+                expect(h).to.have.lengthOf(1);
+                expect(_.findIndex(h, {routingKey: "private.opq.fourth.route", c: 8})).to.not.equal(-1);
 
-                when.all([client.close(), abc_1.close(), abc_2.close(), xyz_1.close()]).then(function(){
-                    console.log("closed");
+                h = res["opq_2:'fourth.route'"];
+                expect(h).to.have.lengthOf(1);
+                expect(_.findIndex(h, {routingKey: "private.opq.fourth.route", c: 8})).to.not.equal(-1);
+
+                h = res["opq_1.exl:'fifth.route'"] || res["opq_2.exl:'fifth.route'"];
+                expect(h).to.have.lengthOf(1);
+                expect(_.findIndex(h, {routingKey: "private.opq.fifth.route", c: 9})).to.not.equal(-1);
+
+                expect(_.keys(res)).to.have.lengthOf(9);
+
+                when.all([client.close(), abc_1.close(), abc_2.close(), xyz_1.close()]).then(function () {
                     done();
-                }).catch(function(err){
+                }).catch(function (err) {
                     console.log(err);
                 });
-
 
 
             }, 300);

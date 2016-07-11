@@ -98,7 +98,7 @@ describe("When requesting something", function () {
                 expect(client.request.bind(client, "aaap", "redelivering", {needsToBeRedelivered: true}, {myH: true}, {
                     expiresAfter: 4000,
                     replyTimeout: -1
-                })).to.throw("Error: replyTimeout with value -1 is not a valid");
+                })).to.throw(/replyTimeout/);
 
                 expect(client.request.bind(client, "aaap", "redelivering", {needsToBeRedelivered: true}, {_mms_no_ack: true}, {
                     expiresAfter: 4000
@@ -124,7 +124,7 @@ describe("When requesting something", function () {
                 message.write({starting: "1"}, {moreee: "maybe?"});
                 message.write({starting: "2"}, {moreee: "maybe?"});
                 message.end({finished: "1"}, {more: true});
-                expect(message.reply.bind(message, {noOp: "1"}, {noOp: "no!"})).to.throw(/already/);
+                expect(message.reply.bind(message, {noOp: "1"}, {noOp: "no!"})).to.throw(/already/); //end() already called!
             };
 
             expect(aaa_1.handle("redelivering", function (message) {
