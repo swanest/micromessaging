@@ -128,9 +128,9 @@ describe("When tasking something", function () {
             client.subscribe();
             aaa_1.subscribe();
             setTimeout(function () {
-                client.task("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).then(function (r) {
-                    expect(r).to.equal(undefined);
-                }).catch(done);
+                client.task("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).catch(function(e){
+                    expect(e.codeString).to.equal("unroutableMessage");
+                });
             }, 300);
             var gottenMessage;
             client.on("unroutableMessage", function (message) {

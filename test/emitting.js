@@ -4,6 +4,7 @@ var when = require("when");
 var _ = require("lodash");
 var CustomError = require("logger").CustomError;
 
+
 describe("When emitting", function () {
 
 
@@ -29,6 +30,56 @@ describe("When emitting", function () {
             _.isUndefined(message.reply) &&
             _.isEqual(message.headers, headers);
     };
+
+    //it.only("test", function (done) {
+    //
+    //    this.timeout(5000);
+    //
+    //    var client = new Service("client");
+    //
+    //    function c() {
+    //        var abc = new Service("abc");
+    //        abc.connect().then(function () {
+    //            console.log("Connected");
+    //            abc.subscribe().then(function(){
+    //                abc.handle("hello", function (message) {
+    //                    console.log("Received");
+    //                    message.ack();
+    //                    abc.close().then(function(){
+    //                        console.log("Closed");
+    //                        c();
+    //                    });
+    //                });
+    //                client.task("abc", "hello");
+    //            });
+    //
+    //        });
+    //    };
+    //
+    //    client.connect().then(function () {
+    //        c();
+    //    });
+    //
+    //});
+
+    it("should be unroutable", function (done) {
+        var client = new Service("client2");
+
+        client.on("unroutableMessage", function(m){
+            expect(m.headers).to.be.empty;
+        });
+        client.connect().then(function(){
+            //return client.subscribe();
+        }).then(function () {
+            return client.privately.emit("unexisting", "hello");
+        }).catch(function (err) {
+            expect(err.codeString).to.equal("unroutableMessage");
+            return client.close().then(function(){
+                done();
+            })
+        });
+    });
+
 
     it("emits correctly", function (done) {
 
@@ -158,7 +209,7 @@ describe("When emitting", function () {
                 client.emit("abc", "second.route", 5);
                 client.privately.emit("abc", "second.route", 6);
 
-                client.privately.emit("abc", "third.route", 7); //unroutable
+                client.privately.emit("abc", "third.route", 7).catch(_.noop); //unroutable
 
                 client.privately.emit("opq", "fourth.route", 8);
                 client.privately.emit("opq", "fifth.route", 9);
@@ -220,11 +271,16 @@ describe("When emitting", function () {
 
                 expect(_.keys(res)).to.have.lengthOf(9);
 
-                when.all([client.close(), abc_1.close(), abc_2.close(), xyz_1.close()]).then(function () {
+                when.all([
+                    client.close(),
+                    abc_1.close(),
+                    abc_2.close(),
+                    xyz_1.close(),
+                    opq_1.close(),
+                    opq_2.close(),
+                ]).then(function () {
                     done();
-                }).catch(function (err) {
-                    console.log(err);
-                });
+                }).catch(done);
 
 
             }, 300);

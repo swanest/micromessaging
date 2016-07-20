@@ -3,6 +3,10 @@ var Service = require("../lib");
 var when = require("when");
 var _ = require("lodash");
 
+process.on("unhandledRejection", function(e){
+    console.log(e.stack, e.options,e.channel);
+});
+
 describe("When requesting something", function () {
 
     function checkReceivedMessage(message, body, headers) {
@@ -205,9 +209,9 @@ describe("When requesting something", function () {
             client.subscribe();
             aaa_1.subscribe();
             setTimeout(function () {
-                client.request("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).then(function (r) {
-                    expect(r).to.equal(undefined);
-                }).catch(done);
+                client.request("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).catch(function(e){
+                    expect(e.codeString).to.equal("unroutableMessage");
+                });
             }, 300);
             var gottenMessage;
             client.on("unroutableMessage", function (message) {

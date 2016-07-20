@@ -5,6 +5,10 @@ var moment = require("moment");
 var _ = require("lodash");
 var CustomError = require("logger").CustomError;
 
+process.on("unhandledRejection", function(e){
+    console.log(e.stack, e.options,e.channel);
+});
+
 describe("When prefetching", function () {
 
 
@@ -30,7 +34,7 @@ describe("When prefetching", function () {
                 var reqs = 0, n = moment.utc().unix(), t = 0;
 
                 function req() {
-                    return client.request("abc", "test", reqs, null, {expiresAfter:3000}).then(function () {
+                    return client.request("abc", "test", reqs, null, {expiresAfter: 3000}).then(function () {
                         reqs++;
                         t = moment.utc().unix() - n;
                         if (t < 2)
@@ -64,12 +68,14 @@ describe("When prefetching", function () {
 
                 for (var i = 0; i < results.length; i++) {
                     if (i % 2 == 0)
-                        expect(results[i]).to.be.above(300);
+                        expect(results[i]).to.be.above(150);
                     else
                         expect(results[i]).to.be.below(10);
                 }
 
-                done();
+                when.all([client.close(), abc_1.close()]).then(function () {
+                    done();
+                }, done);
 
             });
 
