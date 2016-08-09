@@ -14,7 +14,7 @@ describe("When prefetching", function () {
 
     it("prefetchs correctly", function (done) {
 
-        this.timeout(500000);
+        this.timeout(20000);
         var client = new Service("client");
         var abc_1 = new Service("abc");
 
