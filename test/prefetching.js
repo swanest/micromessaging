@@ -12,15 +12,21 @@ process.on("unhandledRejection", function (e) {
 describe("When prefetching", function () {
 
 
-    it.skip("prefetchs correctly", function (done) {
+    it("prefetches correctly", function (done) {
 
-        this.timeout(20000);
+        this.timeout(40000);
         var client = new Service("client");
         var abc_1 = new Service("abc");
 
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return abc_1.subscribe();
         }).then(function () {
+
+            try {
+                abc_1.subscribe();
+            } catch (e) {
+                expect(e).to.match(/already/);
+            }
 
             abc_1.handle("test", function (message) {
                 message.reply();
@@ -31,22 +37,26 @@ describe("When prefetching", function () {
             function stats(p, isPaused) {
                 var reqs = 0, n, t = 0, i = 0;
 
+
                 function req() {
                     return when().then(function () {
-                        return client.request("abc", "test", reqs, null, {expiresAfter: 3000, replyTimeout:1000}).then(function () {
+                        return client.request("abc", "test", reqs, null, {
+                            expiresAfter: 5000,
+                            replyTimeout: 1000
+                        }).then(function () {
                             reqs++;
                             t = moment.utc().unix() - n;
-                            if (t < 2)
+                            if (t < 1)
                                 return req();
                         });
                     }).catch(function (err) {
-                        console.log(++i);
-                        if (!isPaused)
+                        if (!isPaused) {
                             throw err;
+                        }
                     });
                 };
 
-                return abc_1.prefetch(p).then(function () {
+                return abc_1.prefetch(p).delay(1000).then(function () {
                 }).then(function () {
                     n = moment.utc().unix();
                     return req().then(function () {
@@ -67,12 +77,6 @@ describe("When prefetching", function () {
             }).then(function () {
                 return stats(1);
             }).then(function () {
-                return stats(null);
-            }).then(function () {
-                return stats(1);
-            }).then(function () {
-
-                console.log(results);
                 for (var i = 0; i < results.length; i++) {
                     if (i == 1)
                         expect(results[i]).to.equal(0);
@@ -81,18 +85,12 @@ describe("When prefetching", function () {
                     else
                         expect(results[i]).to.be.below(10);
                 }
-
                 when.all([client.close(), abc_1.close()]).then(function () {
                     done();
                 }, done);
 
             });
-
-
         }).catch(done);
-
-
     });
-
 
 });
