@@ -16,16 +16,19 @@ describe("When requesting a report", function () {
 
         this.timeout(40000);
         var client = new Service("client");
-        var abc_1 = new Service("abc");
+        var abc_1 = new Service("server");
 
         when.all([client.connect(), abc_1.connect()]).then(function () {
             //return abc_1.subscribe();
         }).then(function () {
             for (var i = 0; i < 300; i++)
-                client.request("abc", "foo", null, null, {expiresAfter: 5000, replyTimeout: 5000}).then(_.noop, _.noop);
+                client.request("server", "foo", null, null, {
+                    expiresAfter: 5000,
+                    replyTimeout: 10000
+                }).then(_.noop, done);
 
             setTimeout(function () {
-                client.getRequestsReport("abc").then(function (r) {
+                client.getRequestsReport("server").then(function (r) {
                     expect(r.queueSize).to.equal(300);
                     done();
                 })
