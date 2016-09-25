@@ -107,8 +107,8 @@ describe("When prefetching", function () {
     it("prefetches correctly with one consumer", function (done) {
 
         this.timeout(40000);
-        var client = new Service("client");
-        var abc_1 = new Service("abc");
+        var client = new Service("client-prefetch");
+        var abc_1 = new Service("server-prefetch");
 
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return abc_1.subscribe();
@@ -132,19 +132,23 @@ describe("When prefetching", function () {
 
                 function req() {
                     return when().then(function () {
-                        return client.request("abc", "test", reqs, null, {
+                        return client.request("server-prefetch", "test", reqs, null, {
                             expiresAfter: 5000,
                             replyTimeout: 1000
                         }).then(function () {
+                            if (isPaused)
+                                throw new CustomError("notSupposedToReceiveResponse", 500, "fatal");
                             reqs++;
                             t = moment.utc().unix() - n;
                             if (t < 1)
                                 return req();
+                        }, function (err) {
+                            if (!isPaused) {
+                                throw err;
+                            }
                         });
                     }).catch(function (err) {
-                        if (!isPaused) {
-                            throw err;
-                        }
+                        console.log(err, p, isPaused);
                     });
                 };
 
