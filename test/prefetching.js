@@ -17,7 +17,7 @@ describe("When prefetching", function () {
         var www_1 = new Service("www", {memoryPressureHandled: false}),
             www_2 = new Service("www", {
                 memoryPressureHandled: {
-                    thresholdRss: 100 * 1000000,
+                    memoryThreshold: 100 * 1000000,
                     interval: 500,
                     manualReleaseRequired: 20,
                     consecutiveGrowths: 5
