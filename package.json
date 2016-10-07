@@ -17,7 +17,7 @@
     "moment": "^2.14.1",
     "node-uuid": "^1.4.7",
     "rabbot": "github:swanest/rabbot",
-    "memory-pressure": "github:swanest/memory-pressure",
+    "memory-pressure": "^1.0.0",
     "when": "^3.7.7"
   },
   "devDependencies": {
