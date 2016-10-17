@@ -19,7 +19,7 @@ describe("When prefetching", function () {
                 memoryPressureHandled: {
                     memoryThreshold: 100 * 1000000,
                     interval: 500,
-                    manualReleaseRequired: 20,
+                    stillUnderPressure: 20,
                     consecutiveGrowths: 5
                 }
             }),
