@@ -1,6 +1,6 @@
 {
   "name": "micromessaging",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Easy-to-use interface for Rabbit MQ",
   "main": "lib/index.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "moment": "^2.14.1",
     "node-uuid": "^1.4.7",
     "rabbot": "github:swanest/rabbot",
-    "memory-pressure": "^1.0.0",
+    "memory-pressure": "^1.0.1",
     "when": "^3.7.7"
   },
   "devDependencies": {
