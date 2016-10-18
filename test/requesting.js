@@ -3,8 +3,8 @@ var Service = require("../lib");
 var when = require("when");
 var _ = require("lodash");
 
-process.on("unhandledRejection", function(e){
-    console.log(e.stack, e.options,e.channel);
+process.on("unhandledRejection", function (e) {
+    console.log(e.stack, e.options, e.channel);
 });
 
 describe("When requesting something", function () {
@@ -209,7 +209,7 @@ describe("When requesting something", function () {
             client.subscribe();
             aaa_1.subscribe();
             setTimeout(function () {
-                client.request("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).catch(function(e){
+                client.request("bbb", "unRoutable", {needsToBeRedelivered: true}, {myH: true}, {expiresAfter: 4000}).catch(function (e) {
                     expect(e.codeString).to.equal("unroutableMessage");
                 });
             }, 300);
@@ -227,6 +227,8 @@ describe("When requesting something", function () {
 
         }).catch(done);
     });
+
+
 
 
 });

@@ -148,4 +148,46 @@ describe("When tasking something", function () {
     });
 
 
+    it("should handle double nacking", function (done) {
+        this.timeout(5000);
+        var client = new Service("client");
+        var alone = new Service("hey", {
+            config: {
+                Q_REQUESTS: {
+                    noBatch: true
+                }
+            }
+        });
+        when.all([client.connect(), alone.connect()]).then(function () {
+            client.subscribe();
+            alone.subscribe();
+            let receivedMsg;
+            alone.handle("again", function (msg) {
+                receivedMsg = msg;
+                msg.ack();
+            });
+            alone.handle("hello", function (msg) {
+                msg.ack();
+                msg.status = "PENDING";
+                return alone.prefetch(0).then(function () {
+                    return alone.prefetch(null);
+                }).then(function () {
+                    msg.ack();
+                    setTimeout(function () {
+                        client.task(alone.name, "again", {double: true}, {myH: true}, {expiresAfter: 1000})
+                    }, 10000);
+                });
+            }).promise.then(function () {
+                    client.task(alone.name, "hello", {double: true}, {myH: true}, {expiresAfter: 50});
+                });
+            setTimeout(function () {
+                when.all([client.close(), alone.close()]).then(function () {
+                    expect(receivedMsg).to.be.defined;
+                    done();
+                }, done);
+            }, 1300);
+        }).catch(done);
+    });
+
+
 });
