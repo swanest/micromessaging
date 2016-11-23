@@ -14,10 +14,10 @@
     "amqplib": "^0.4.1",
     "lodash": "^4.13.1",
     "logger": "github:swanest/logger",
-    "moment": "^2.14.1",
-    "node-uuid": "^1.4.7",
-    "rabbot": "github:swanest/rabbot",
     "memory-pressure": "^1.0.1",
+    "moment": "^2.14.1",
+    "rabbot": "github:swanest/rabbot",
+    "uuid": "^3.0.0",
     "when": "^3.7.7"
   },
   "devDependencies": {
