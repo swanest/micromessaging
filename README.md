@@ -85,6 +85,15 @@ micromessaging.on("connected", ()=> {
         })
         .catch(console.error);
 
+    //Send a task (meaning a request without expected answer, and without any `expiresAfter` constraint)
+    micromessaging.task("abc", "time-serie", {test: "ok"}).then(console.log, console.error);
+
+    //Notify() is a synonyme for task()
+    micromessaging.notify("abc", "time-serie", {test: "ok"}).then(console.log, console.error)
+
+
+
+
 
 });
 ```
