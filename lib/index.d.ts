@@ -1,5 +1,3 @@
-/// <reference path='../node_modules/@types/when/index.d.ts' />
-
 declare module "micromessaging" {
 
     interface TwoPromises {
@@ -87,13 +85,13 @@ declare module "micromessaging" {
         Q_DEAD_REQUESTS?: QDeadRequestsConfig;
     }
 
-    export interface SetupOpts {
+    interface SetupOpts {
         discoverable?: boolean,
         memoryPressureHandled?: boolean,
         config?: SetupOptsConfig;
     }
 
-    export class Service {
+    export default class Service {
         name: string;
         uniqueID: string;
         replications: Array<any>;
