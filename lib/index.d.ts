@@ -93,7 +93,7 @@ declare module "micromessaging" {
         Q_DEAD_REQUESTS?: QDeadRequestsConfig;
     }
 
-    class MessageProperties {
+    interface MessageProperties {
         isRedelivered: boolean;
         exchange: string;
         queue: string;
@@ -101,7 +101,7 @@ declare module "micromessaging" {
         path: string;
     }
 
-    export class Message {
+    interface Message {
         body: any;
         properties: MessageProperties;
         status: string;
@@ -120,13 +120,13 @@ declare module "micromessaging" {
         nack(): void;
     }
 
-    export interface SetupOpts {
+    interface SetupOpts {
         discoverable?: boolean,
         memoryPressureHandled?: boolean,
         config?: SetupOptsConfig;
     }
 
-    export class Service {
+    export default class Service {
         name: string;
         uniqueID: string;
         replications: Array<any>;
