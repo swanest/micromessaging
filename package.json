@@ -2,8 +2,8 @@
   "name": "micromessaging",
   "version": "1.0.3",
   "description": "Easy-to-use interface for Rabbit MQ",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "./lib/index.js",
+  "types": "./micromessaging.d.ts",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
@@ -12,8 +12,6 @@
   "license": "MIT",
   "homepage": "https://github.com/swanest/micromessaging#readme",
   "dependencies": {
-    "@types/node": "0.0.2",
-    "@types/when": "^2.4.28",
     "amqplib": "^0.4.1",
     "lodash": "^4.13.1",
     "logger": "github:swanest/logger",
@@ -24,6 +22,8 @@
     "when": "^3.7.7"
   },
   "devDependencies": {
+    "@types/node": "0.0.2",
+    "@types/when": "^2.4.28",
     "chai": "^3.5.0",
     "mocha": "^2.5.3"
   }

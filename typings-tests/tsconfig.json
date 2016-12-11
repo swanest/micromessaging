@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "target": "es6"
+  },
+  "files": [
+    "../micromessaging.d.ts",
+    "micromessaging-tests.ts"
+  ]
+}

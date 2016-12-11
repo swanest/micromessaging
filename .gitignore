@@ -32,3 +32,6 @@ node_modules
 .idea
 out
 gen
+
+typings-tests/*.js
+typings-tests/*.js.map

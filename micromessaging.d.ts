@@ -1,4 +1,4 @@
-declare module "micromessaging" {
+declare module 'micromessaging' {
 
     interface TwoPromises {
         removeSubscription: <T>() => When.Promise<T>;
@@ -93,7 +93,7 @@ declare module "micromessaging" {
         Q_DEAD_REQUESTS?: QDeadRequestsConfig;
     }
 
-    interface MessageProperties {
+    type MessageProperties = {
         isRedelivered: boolean;
         exchange: string;
         queue: string;
@@ -101,26 +101,26 @@ declare module "micromessaging" {
         path: string;
     }
 
-    interface Message {
+    class Message {
         body: any;
         properties: MessageProperties;
         status: string;
         type: string;
 
-        write(message: any): When.Promise;
+        write(message: any): When.Promise<any>;
 
-        reply(message: any): When.Promise;
+        reply(message: any): When.Promise<any>;
 
-        reject(message: any): When.Promise;
+        reject(message: any): When.Promise<any>;
 
-        end(message: any): When.Promise;
+        end(message: any): When.Promise<any>;
 
         ack(): void;
 
         nack(): void;
     }
 
-    interface SetupOpts {
+    type SetupOpts = {
         discoverable?: boolean,
         memoryPressureHandled?: boolean,
         config?: SetupOptsConfig;
@@ -140,11 +140,12 @@ declare module "micromessaging" {
 
         constructor(name: string, setupOpts?: SetupOpts);
 
-        on(event: string | symbol, listener: Function): this;
+        on(event: string | symbol, cb?: (message: any) => void): this;
 
-        once(event: string | symbol, listener: Function): this;
+        once(event: string | symbol, cb?: (message: any) => void): this;
 
-        __emit(event: string | symbol, ...args: any[]): boolean;
+        // Don't think this oen shall be exposed
+        //__emit(event: string | symbol, ...args: any[]): boolean;
 
         close<T>(): When.Promise<T>;
 
@@ -161,9 +162,9 @@ declare module "micromessaging" {
 
         notify<T>(serviceName: string, taskName: string, data: any, headers?: any, opts?: any): When.Promise<T>;
 
-        listen(route: string, handler: Function, serviceName?: string): ListenHandleResult;
+        listen(route: string, cb: (mesage: Message) => void, serviceName?: string): ListenHandleResult;
 
-        handle(taskName: string, handler: (mesage: Message) => void): ListenHandleResult;
+        handle(taskName: string, cb: (mesage: Message) => void): ListenHandleResult;
 
         prefetch(count: number): any;
 
