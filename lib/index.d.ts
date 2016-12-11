@@ -53,26 +53,34 @@ declare module "micromessaging" {
         noBatch: boolean;
     }
 
-    interface ExchangeMessagesConfig extends BaseConfig, TypeConfig, PersistentConfig {}
+    interface ExchangeMessagesConfig extends BaseConfig, TypeConfig, PersistentConfig {
+    }
 
-    interface ExchangeRequestsConfig extends BaseConfig, TypeConfig, PersistentConfig {}
+    interface ExchangeRequestsConfig extends BaseConfig, TypeConfig, PersistentConfig {
+    }
 
-    interface ExchangeDeadRequestsConfig extends BaseConfig, TypeConfig, PersistentConfig {}
+    interface ExchangeDeadRequestsConfig extends BaseConfig, TypeConfig, PersistentConfig {
+    }
 
     interface QMessagesConfig extends BaseConfig, QueueLimitConfig, ExclusiveConfig, AutoDeleteConfig, NoAckConfig,
-        SubscribeConfig, ExpiresConfig {}
+        SubscribeConfig, ExpiresConfig {
+    }
 
     interface QSharedMessagesConfig extends BaseConfig, QueueLimitConfig, ExclusiveConfig, AutoDeleteConfig, NoAckConfig,
-        SubscribeConfig, ExpiresConfig {}
+        SubscribeConfig, ExpiresConfig {
+    }
 
     interface QResponsesConfig extends BaseConfig, QueueLimitConfig, NoAckConfig, SubscribeConfig, ExclusiveConfig,
-        AutoDeleteConfig, ExpiresConfig {}
+        AutoDeleteConfig, ExpiresConfig {
+    }
 
     interface QRequestsConfig extends BaseConfig, QueueLimitConfig, ExclusiveConfig, NoAckConfig, SubscribeConfig,
-        NoBatchConfig, ExpiresConfig {}
+        NoBatchConfig, ExpiresConfig {
+    }
 
     interface QDeadRequestsConfig extends BaseConfig, QueueLimitConfig, ExclusiveConfig, AutoDeleteConfig, NoAckConfig,
-        SubscribeConfig, ExpiresConfig {}
+        SubscribeConfig, ExpiresConfig {
+    }
 
     interface SetupOptsConfig {
         EXCHANGE_MESSAGES?: ExchangeMessagesConfig;
@@ -83,6 +91,33 @@ declare module "micromessaging" {
         Q_RESPONSES?: QResponsesConfig;
         Q_REQUESTS?: QRequestsConfig;
         Q_DEAD_REQUESTS?: QDeadRequestsConfig;
+    }
+
+    interface MessageProperties {
+        isRedelivered: boolean;
+        exchange: string;
+        queue: string;
+        routingKey: string;
+        path: string;
+    }
+
+    interface Message {
+        body: any;
+        properties: MessageProperties;
+        status: string;
+        type: string;
+
+        write(message: any): When.Promise;
+
+        reply(message: any): When.Promise;
+
+        reject(message: any): When.Promise;
+
+        end(message: any): When.Promise;
+
+        ack(): void;
+
+        nack(): void;
     }
 
     interface SetupOpts {
@@ -128,7 +163,7 @@ declare module "micromessaging" {
 
         listen(route: string, handler: Function, serviceName?: string): ListenHandleResult;
 
-        handle(taskName: string, handler: Function): ListenHandleResult;
+        handle(taskName: string, handler: (mesage: Message) => void): ListenHandleResult;
 
         prefetch(count: number): any;
 
