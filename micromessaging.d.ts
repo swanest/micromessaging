@@ -1,4 +1,3 @@
-import When = require('when');
 declare namespace micromessaging {
     interface TwoPromises {
         removeSubscription: <T>() => When.Promise<T>;
@@ -93,7 +92,7 @@ declare namespace micromessaging {
         Q_DEAD_REQUESTS?: QDeadRequestsConfig;
     }
 
-    export interface RMessageProperties {
+    export interface MessageProperties {
         isRedelivered: boolean;
         exchange: string;
         queue: string;
@@ -101,9 +100,9 @@ declare namespace micromessaging {
         path: string;
     }
 
-    export interface RMessage {
+    export interface Message {
         body: any;
-        properties: RMessageProperties;
+        properties: MessageProperties;
         status: string;
         type: string;
 
@@ -162,9 +161,9 @@ declare namespace micromessaging {
 
         notify<T>(serviceName: string, taskName: string, data: any, headers?: any, opts?: any): When.Promise<T>;
 
-        listen(route: string, cb: (mesage: RMessage) => void, serviceName?: string): ListenHandleResult;
+        listen(route: string, cb: (mesage: Message) => void, serviceName?: string): ListenHandleResult;
 
-        handle(taskName: string, cb: (mesage: RMessage) => void): ListenHandleResult;
+        handle(taskName: string, cb: (mesage: Message) => void): ListenHandleResult;
 
         prefetch(count: number): any;
 
@@ -173,6 +172,5 @@ declare namespace micromessaging {
     }
 }
 
-// var micromessaging: micromessaging.Service;
-var micromessaging: micromessaging.Service;
+declare var micromessaging: micromessaging.Service;
 export = micromessaging;
