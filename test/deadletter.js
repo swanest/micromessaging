@@ -6,9 +6,6 @@ var _ = require("lodash");
 var CustomError = require("logger").CustomError;
 var tracer = new (require("logger").Logger)();
 
-process.on("unhandledRejection", function (e) {
-    console.log(e.stack, e.options, e.channel);
-});
 
 describe("When dead-lettering", function () {
 
@@ -16,7 +13,11 @@ describe("When dead-lettering", function () {
     it("dead-letters", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var abc_1 = new Service("server-dl");
+        var abc_1 = new Service("server-dl", {config:{
+            Q_REQUESTS:{
+                autoDelete:false
+            }
+        }});
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return when.all([abc_1.subscribe(), client.subscribe()]);
         }).then(function () {
@@ -26,10 +27,10 @@ describe("When dead-lettering", function () {
             client.death.listen("foo", function (message) {
                 mess = message
             }, "server-dl").promise.then(function () {
-                    client.task("server-dl", "foo", {test: 1}, {blabla: 2}, {
-                        expiresAfter: 500
-                    }).catch(done);
-                });
+                client.task("server-dl", "foo", {test: 1}, {blabla: 2}, {
+                    expiresAfter: 500
+                }).catch(done);
+            });
             setTimeout(function () {
                 expect(mess).to.have.deep.property("headers.x-death");
                 done();
@@ -38,29 +39,41 @@ describe("When dead-lettering", function () {
     });
 
 
-    //it.only("dead-letters bis", function (done) {
-    //    this.timeout(40000);
-    //    var client = new Service("client");
-    //    var abc_1 = new Service("server-dl2",{config:{Q_REQUESTS:{expires:1000}}});
-    //    when.all([client.connect(), abc_1.connect()]).then(function () {
-    //        return when.all([abc_1.subscribe(), client.subscribe()]);
-    //    }).then(function () {
-    //        let mess;
-    //        client.death.listen("foo", function (message) {
-    //            mess = message
-    //        }, "server-dl2").promise.then(function () {
-    //                client.task("server-dl2", "foo", {test: 1}, {blabla: 2}, {
-    //                    expiresAfter: 5000
-    //                }).then(function(){
-    //                    return abc_1.prefetch(0);
-    //                }).catch(done);
-    //            });
-    //        setTimeout(function () {
-    //            expect(mess).to.have.deep.property("headers.x-death");
-    //            done();
-    //        }, 3000);
-    //    }).catch(done);
-    //});
+
+
+    // it("channel errors", function (done) { //to make it buggy, rabbot/src/amqp/queue.js put if (noAck = false) line 108
+    //     this.timeout(6000000);
+    //     var client = new Service("client");
+    //     var abc_1 = new Service("test6", {
+    //         config: {
+    //             Q_REQUESTS: {
+    //                 noBatch: true,
+    //                 noAck: true,
+    //                 autoDelete:true
+    //             }
+    //         }
+    //     });
+    //     when.all([client.connect(), abc_1.connect()]).then(function () {
+    //         return when.all([abc_1.subscribe(), client.subscribe()]);
+    //     }).then(function () {
+    //
+    //         setInterval(function () {
+    //             client.task(abc_1.name, "ok", "test");
+    //         }, 5000);
+    //
+    //         abc_1.handle("ok", function (msg) {
+    //             console.log("Got message...");
+    //             return abc_1.prefetch(0).then(function () {
+    //                 return abc_1.prefetch(1);
+    //             }).then(function () {
+    //                 //msg.nack(); //todo: should use the latest current channel !!!
+    //                 msg.ack();
+    //             })
+    //         });
+    //
+    //
+    //     }).catch(done);
+    // });
 
 
 });

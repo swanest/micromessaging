@@ -6,9 +6,6 @@ var _ = require("lodash");
 var CustomError = require("logger").CustomError;
 var fs = require("fs");
 
-process.on("unhandledRejection", function (e) {
-    console.log(e.stack, e.options, e.channel);
-});
 
 describe("When prefetching", function () {
 
@@ -188,5 +185,75 @@ describe("When prefetching", function () {
             });
         }).catch(done);
     });
+
+    it("should handle channel disruption due to prefetching", function (done) {
+        this.timeout(6000000);
+        var client = new Service("client");
+        var abc_1 = new Service("autoDelete", {
+            config: {
+                Q_REQUESTS: {
+                    noBatch: true, //ack,nack,reject do not take place immediately
+                    noAck: true, //acks are required
+                    autoDelete: true
+                }
+            }
+        });
+        when.all([client.connect(), abc_1.connect()]).then(function () {
+            return when.all([abc_1.subscribe(), client.subscribe()]);
+        }).then(function () {
+            let receivedMessages = [];
+            when().then(function () {
+                return abc_1.handle("ok", function (msg) {
+                    receivedMessages.push(msg);
+                    msg.ack(); //First call will raise an error because it's not the proprietary channel due to prefetch
+                }).promise;
+            }).then(function () {
+                return abc_1.prefetch(0).then(function () {
+                    return abc_1.prefetch(1)
+                })
+            }).then(function () {
+                return client.task("autoDelete", "ok", "test");
+            }).delay(1000).then(function () {
+                return client.task("autoDelete", "ok", "test");
+            }).then(function(){
+                expect(receivedMessages).to.have.lengthOf(2);
+                when.all([client.close(), abc_1.close()]).then(function () {
+                    done();
+                }, done);
+            });
+        }).catch(done);
+    });
+
+    it("should update prefetches sequentially", function (done) {
+        this.timeout(6000000);
+        var client = new Service("client");
+        var abc_1 = new Service("test4", {
+            config: {
+                Q_REQUESTS: {
+                    noBatch: true, //ack,nack,reject do not take place immediately
+                    noAck: true,
+                    autoDelete:true
+                }
+            }
+        });
+        when.all([client.connect(), abc_1.connect()]).then(function () {
+            return when.all([abc_1.subscribe(), client.subscribe()]);
+        }).delay(3000).then(function () {
+            return abc_1.prefetch(0).then(function () {
+                return abc_1.prefetch(1)
+            }).then(function () {
+                return abc_1.prefetch(0)
+            }).then(function () {
+                return abc_1.prefetch(1)
+            }).then(function () {
+                return abc_1.prefetch(0);
+            }).then(function () {
+                return when.all([client.close(), abc_1.close()]).then(function () {
+                    done();
+                });
+            }).catch(done);
+        });
+    });
+
 
 });

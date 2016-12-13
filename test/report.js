@@ -5,9 +5,7 @@ var moment = require("moment");
 var _ = require("lodash");
 var CustomError = require("logger").CustomError;
 
-process.on("unhandledRejection", function (e) {
-    console.log(e.stack, e.options, e.channel);
-});
+
 
 describe("When requesting a report", function () {
 

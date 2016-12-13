@@ -3,9 +3,7 @@ var Service = require("../lib");
 var when = require("when");
 var _ = require("lodash");
 
-process.on("unhandledRejection", function (e) {
-    console.log(e.stack, e.options, e.channel);
-});
+
 
 describe("When requesting something", function () {
 
