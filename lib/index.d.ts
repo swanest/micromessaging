@@ -1,9 +1,10 @@
+
 /*
  Data-structures
  */
 
 declare namespace Types {
-    type event = "unroutableMessage" | "unhandledMessage" | "closed" | "failed" | "unreachable";
+    type event = "unroutableMessage" | "unhandledMessage" | "closed" | "failed" | "unreachable" | "connected" | "elected";
     type exchange = "direct" | "fanout" | "topic";
     type queue = "direct" | "fanout" | "topic";
 }
