@@ -1,5 +1,5 @@
 var expect = require("chai").expect;
-var Service = require("../lib");
+var Service = require("../lib").Service;
 var when = require("when");
 var _ = require("lodash");
 var CustomError = require("logger").CustomError;
