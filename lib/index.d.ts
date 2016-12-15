@@ -1,4 +1,3 @@
-
 /*
  Data-structures
  */
@@ -14,39 +13,25 @@ declare namespace Types {
 declare namespace Config {
 
     interface Exchange {
-        name?: string;
-        type?: Types.exchange;
-        autoDelete?: boolean;
-        durable?: boolean;
-        persistent?: boolean;
+        autoDelete: boolean;
+        durable: boolean;
+        persistent: boolean;
         alternate?: string;
-        publishTimeout?: number;
-        replyTimeout?: number;
         limit?: number;
     }
 
     interface Queue {
-        name?: string;
-        autoDelete?: boolean;
-        durable?: boolean;
-        exclusive?: boolean;
-        subscribe?: boolean;
-        limit?: number;
-        noAck?: number;
-        noBatch?: number;
+        autoDelete: boolean;
         queueLimit?: number;
-        messageTtl?: number;
         expires?: number;
-        deadLetter?: string;
         maxPriority?: number;
-        unique?: "hash" | "id" | "consistent";
     }
 
     interface MemoryPressure {
-        memoryThreshold?: number;
-        interval?: number;
-        stillUnderPressure?: number;
-        consecutiveGrowths?: number;
+        memoryThreshold: number;
+        interval: number;
+        stillUnderPressure: number;
+        consecutiveGrowths: number;
     }
 
     interface Setup {
@@ -63,27 +48,27 @@ declare namespace Config {
             Q_DEAD_REQUESTS?: Queue;
         }
     }
-
+    
     interface Emit {
         timeout?: number;
-        expiresAfter?: number;
+        expiresAfter: number;
         isPublic?: boolean;
     }
 
     interface ScopeEmit {
         timeout?: number;
-        expiresAfter?: number;
+        expiresAfter: number;
     }
 
     interface Request {
         timeout?: number;
         expiresAfter?: number;
-        replyTimeout?: number;
+        replyTimeout: number;
     }
 
     interface Task {
         timeout?: number;
-        expiresAfter?: number;
+        expiresAfter: number;
     }
 
 }
