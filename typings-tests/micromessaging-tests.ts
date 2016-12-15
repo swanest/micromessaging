@@ -1,5 +1,5 @@
 ///<reference path="../node_modules/@types/node/index.d.ts"/>
-import {Service, Message} from "../lib";
+import {Service, Message, SimpleMessage} from "../lib";
 import * as When from 'when';
 
 const tx = new Service('sender'),
@@ -38,10 +38,10 @@ async function test() {
 tx.on('unreachable', () => {
     console.warn(tx.name + ' failed to reach rabbit server');
 });
-tx.on('unroutableMessage', (message: Message) => {
+tx.on('unroutableMessage', (message: SimpleMessage) => {
     console.warn(tx.name + ' encountered an unroutable message', message);
 });
-tx.on('unhandledMessage', (message: Message) => {
+tx.on('unhandledMessage', (message: SimpleMessage) => {
     console.warn(tx.name + ' encountered an unhandled message', message);
 });
 tx.on('closed', () => {

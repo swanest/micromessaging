@@ -3,6 +3,8 @@
  Data-structures
  */
 
+import * as When from 'when';
+
 declare namespace Types {
     type event = "unroutableMessage" | "unhandledMessage" | "closed" | "failed" | "unreachable" | "connected" | "elected";
     type exchange = "direct" | "fanout" | "topic";
@@ -99,7 +101,7 @@ interface ListenHandleResult {
     promise: When.Promise<any>;
 }
 
-interface Message {
+interface SimpleMessage {
     type: string;
     body: any;
     properties: {
@@ -122,6 +124,9 @@ interface Message {
         }
     };
     status: "PENDING" | "ACKED" | "NACKED" | "REJECTED";
+}
+
+interface Message extends SimpleMessage {
     //Requests
     write(body: any, headers?: any): void;
     end(body: any, headers?: any): void;
@@ -152,8 +157,13 @@ export declare class Service {
 
     constructor(name: string, setupOpts?: Config.Setup);
 
-
-    on(event: Types.event, cb?: (message: Message | Error) => void): void;
+    on(event: 'unroutableMessage', cb: (message: SimpleMessage) => void): void;
+    on(event: 'unhandledMessage', cb: (message: SimpleMessage) => void): void;
+    on(event: 'failed', cb: (error: Error) => void): void;
+    on(event: 'closed', cb: () => void): void;
+    on(event: 'unreachable', cb: () => void): void;
+    on(event: 'connected', cb: () => void): void;
+    on(event: 'elected', cb: () => void): void;
 
     once(event: Types.event, cb?: (message: Message | Error) => void): void;
 
