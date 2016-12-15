@@ -158,7 +158,7 @@ export declare class Service {
     constructor(name: string, setupOpts?: Config.Setup);
 
     on(event: 'unroutableMessage', cb: (message: SimpleMessage) => void): void;
-    on(event: 'unhandledMessage', cb: (message: SimpleMessage) => void): void;
+    on(event: 'unhandledMessage', cb: (message: Message) => void): void;
     on(event: 'failed', cb: (error: Error) => void): void;
     on(event: 'closed', cb: () => void): void;
     on(event: 'unreachable', cb: () => void): void;
@@ -184,12 +184,12 @@ export declare class Service {
 
     notify(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Task): When.Promise<void>;
 
-    listen(route: string, cb: (mesage: Message) => void, serviceName?: string): ListenHandleResult;
+    listen(route: string, cb: (message: Message) => void, serviceName?: string): ListenHandleResult;
 
     exclusively: ScopeListen;
     death: ScopeListen;
 
-    handle(taskName: string, cb: (mesage: Message) => void): ListenHandleResult;
+    handle(taskName: string, cb: (message: Message) => void): ListenHandleResult;
 
     prefetch(count: number): When.Promise<void>;
 
