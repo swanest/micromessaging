@@ -2,7 +2,7 @@ var expect = require("chai").expect;
 var Service = require("../lib").Service;
 var when = require("when");
 var _ = require("lodash");
-var CustomError = require("logger").CustomError;
+var CustomError = require("sw-logger").CustomError;
 
 
 describe("When emitting", function () {

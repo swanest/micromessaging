@@ -17,7 +17,7 @@ Client
 -------------
 
 ```js
-let logLib = require("logger"),
+let logLib = require("sw-logger"),
     tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-client"),
     Service = require("../lib").Service;
 
@@ -103,7 +103,7 @@ Server
 -------------
 
 ```js
-let logLib = require("logger"),
+let logLib = require("sw-logger"),
     Service = require("../lib").Service,
     serviceName = process.argv[2],
     tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-server-" + serviceName);

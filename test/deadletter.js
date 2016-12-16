@@ -3,8 +3,8 @@ var Service = require("../lib").Service;
 var when = require("when");
 var moment = require("moment");
 var _ = require("lodash");
-var CustomError = require("logger").CustomError;
-var tracer = new (require("logger").Logger)();
+var CustomError = require("sw-logger").CustomError;
+var tracer = new (require("sw-logger").Logger)();
 
 
 describe("When dead-lettering", function () {
