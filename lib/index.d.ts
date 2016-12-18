@@ -30,7 +30,6 @@ declare namespace Config {
     interface MemoryPressure {
         memoryThreshold: number;
         interval: number;
-        stillUnderPressure: number;
         consecutiveGrowths: number;
     }
 
@@ -48,7 +47,7 @@ declare namespace Config {
             Q_DEAD_REQUESTS?: Queue;
         }
     }
-    
+
     interface Emit {
         timeout?: number;
         expiresAfter: number;
@@ -77,8 +76,17 @@ declare namespace Config {
  Interfaces
  */
 
-interface ListenHandleResult {
-    onError: (cb: Function) => {
+interface ListenResult {
+    onError: (cb: (err: Error, message: SimpleMessage)=>void) => {
+        remove: () => When.Promise<any>,
+        promise: When.Promise<any>
+    };
+    remove: () => When.Promise<any>;
+    promise: When.Promise<any>;
+}
+
+interface HandleResult {
+    onError: (cb: (err: Error, message: Message)=>void) => {
         remove: () => When.Promise<any>,
         promise: When.Promise<any>
     };
@@ -113,20 +121,24 @@ interface SimpleMessage {
 
 interface Message extends SimpleMessage {
     //Requests
-    write(body: any, headers?: any): void;
-    end(body: any, headers?: any): void;
-    reply(body: any, headers?: any): void;
+    write(body?: any, headers?: any): void;
+    end(body?: any, headers?: any): void;
+    reply(body?: any, headers?: any): void;
     reject(): void; //if it is a request, then client won't receive any response
     ack(): void; //only for tasks
     nack(): void;
 }
 
-interface ScopeEmit{
+interface ScopeEmit {
     emit(serviceName: string, route: string, body: any, headers?: any, opts?: Config.ScopeEmit): When.Promise<void>;
 }
 
-interface ScopeListen{
-    listen(route: string, cb: (mesage: Message) => void, serviceName?: string): ListenHandleResult;
+interface ScopeListen {
+    listen(route: string, cb: (mesage: Message) => void, serviceName?: string): ListenResult;
+}
+
+declare interface ProgressivePromise<T> extends When.Promise<T> {
+    progress(onProgress?: (progress: T) => void): When.Promise<T>;
 }
 
 export declare class Service {
@@ -163,18 +175,18 @@ export declare class Service {
     publicly: ScopeEmit;
     privately: ScopeEmit;
 
-    request(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Request): When.Promise<Message>;
+    request(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Request): ProgressivePromise<SimpleMessage>;
 
     task(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Task): When.Promise<void>;
 
     notify(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Task): When.Promise<void>;
 
-    listen(route: string, cb: (message: Message) => void, serviceName?: string): ListenHandleResult;
+    listen(route: string, cb: (message: Message) => void, serviceName?: string): ListenResult;
 
     exclusively: ScopeListen;
     death: ScopeListen;
 
-    handle(taskName: string, cb: (message: Message) => void): ListenHandleResult;
+    handle(taskName: string, cb: (message: Message) => void): HandleResult;
 
     prefetch(count: number): When.Promise<void>;
 

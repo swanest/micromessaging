@@ -9,18 +9,28 @@ var fs = require("fs");
 
 describe("When prefetching", function () {
 
+    function readFile(path) {
+        let d = when.defer();
+        fs.readFile(path, function (err, contents) {
+            if (err != void 0)
+                d.reject(err);
+            else
+                d.resolve(JSON.parse(contents));
+        });
+        return d.promise;
+    };
+
     it("pauses due to memory pressure", function (done) {
         this.timeout(120000);
-        var www_1 = new Service("www", {memoryPressureHandled: false}),
-            www_2 = new Service("www", {
+        var www_1 = new Service("memory", {memoryPressureHandled: false}),
+            www_2 = new Service("memory", {
                 memoryPressureHandled: {
                     memoryThreshold: 100 * 1000000,
-                    interval: 500,
-                    stillUnderPressure: 20,
-                    consecutiveGrowths: 5
+                    interval: 1000,
+                    consecutiveGrowths: 3
                 }
             }),
-            client = new Service("client", {memoryPressureHandled: false});
+            client = new Service("clientMem", {memoryPressureHandled: false});
         when.all([www_1.connect(), www_2.connect(), client.connect()]).then(function () {
             return when.all([www_1.subscribe(), www_2.subscribe()]);
         }).then(function () {
@@ -31,15 +41,18 @@ describe("When prefetching", function () {
             });
             www_2.handle("test", function (msg) {
                 www_2_i++;
-                for (let i = 0; i < 10; i++)
-                    buff.push(JSON.parse(fs.readFileSync(__dirname + "/data.json")));
+                for (let i = 0; i < 10; i++) {
+                    readFile(__dirname + "/data.json").then(function (doc) {
+                        buff.push(doc);
+                    });
+                }
                 msg.reply();
             });
             var i = 0;
 
             function req() {
                 return when().then(function () {
-                    return client.request("www", "test");
+                    return client.request(www_1.name, "test");
                 }).then(function () {
                     i++;
                     if (i < 1000)
@@ -212,10 +225,10 @@ describe("When prefetching", function () {
                     return abc_1.prefetch(1)
                 })
             }).then(function () {
-                return client.task("autoDelete", "ok", "test");
+                return client.task("autoDelete", "ok", "test", {expiresAfter: 5000});
             }).delay(1000).then(function () {
-                return client.task("autoDelete", "ok", "test");
-            }).then(function(){
+                return client.task("autoDelete", "ok", "test", {expiresAfter: 5000});
+            }).then(function () {
                 expect(receivedMessages).to.have.lengthOf(2);
                 when.all([client.close(), abc_1.close()]).then(function () {
                     done();
@@ -232,7 +245,7 @@ describe("When prefetching", function () {
                 Q_REQUESTS: {
                     noBatch: true, //ack,nack,reject do not take place immediately
                     noAck: true,
-                    autoDelete:true
+                    autoDelete: true
                 }
             }
         });
@@ -240,7 +253,11 @@ describe("When prefetching", function () {
             return when.all([abc_1.subscribe(), client.subscribe()]);
         }).delay(3000).then(function () {
             return abc_1.prefetch(0).then(function () {
-                return abc_1.prefetch(1)
+                return abc_1.prefetch(0);
+            }).then(function () {
+                return abc_1.prefetch(1);
+            }).then(function () {
+                return abc_1.prefetch(1);
             }).then(function () {
                 return abc_1.prefetch(0)
             }).then(function () {

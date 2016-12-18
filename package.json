@@ -1,11 +1,11 @@
 {
   "name": "micromessaging",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Easy-to-use interface for Rabbit MQ",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter spec"
+    "test": "./node_modules/.bin/mocha --bail --reporter spec"
   },
   "repository": "https://github.com/swanest/micromessaging",
   "author": "Cyri-l",
@@ -15,7 +15,7 @@
     "amqplib": "^0.4.1",
     "lodash": "^4.13.1",
     "sw-logger": "^1.0.0",
-    "memory-pressure": "^1.0.2",
+    "memory-pressure": "^2.0.0",
     "moment": "^2.14.1",
     "rabbot": "github:swanest/rabbot",
     "uuid": "^3.0.0",
