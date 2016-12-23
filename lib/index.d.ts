@@ -5,7 +5,7 @@
 import * as When from 'when';
 
 declare namespace Types {
-    type event = "unroutableMessage" | "unhandledMessage" | "closed" | "failed" | "unreachable" | "connected" | "elected" | "subscribing" | "ready" | "unready";
+    type event = "unroutableMessage" | "unhandledMessage" | "closed" | "failed" | "unreachable" | "connected" | "elected" | "electedAndSubscribing" | "electedAndReady" | "subscribing" | "ready" | "unready";
     type exchange = "direct" | "fanout" | "topic";
     type queue = "direct" | "fanout" | "topic";
 }
