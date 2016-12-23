@@ -18,6 +18,13 @@ describe("When dead-lettering", function () {
                 autoDelete:false
             }
         }});
+        let eventSubscribing = false, eventReady = false;
+        abc_1.on("subscribing", function(){
+            eventSubscribing = true;
+        });
+        abc_1.on("ready", function(){
+            eventReady = true;
+        });
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return when.all([abc_1.subscribe(), client.subscribe()]);
         }).then(function () {
@@ -32,6 +39,8 @@ describe("When dead-lettering", function () {
                 }).catch(done);
             });
             setTimeout(function () {
+                expect(eventReady).to.be.true;
+                expect(eventSubscribing).to.be.true;
                 expect(mess).to.have.deep.property("headers.x-death");
                 done();
             }, 1000);
