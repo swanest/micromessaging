@@ -22,8 +22,6 @@ describe("When electing", function () {
                 electedCalls++;
             });
             return s.connect().then(function () {
-                return s.subscribe();
-            }).then(function () {
                 return s;
             });
         }

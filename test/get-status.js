@@ -13,8 +13,6 @@ describe("When asking status", function () {
         this.timeout(40000);
         var client = new Service("client");
         when.all([client.connect()]).then(function () {
-            return client.subscribe();
-        }).then(function () {
             return client.getStatus("blabla").then(function (status) {
                 expect(status.isReady).to.be.false;
                 done();
@@ -29,7 +27,7 @@ describe("When asking status", function () {
         var client = new Service("client");
         var server = new Service("server", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
-            return when.all([server.subscribe(false), client.subscribe()]);
+            return when.all([server.subscribe(false)]);
         }).then(function () {
             return client.getStatus(server.name).then(function (status) {
                 expect(status.isReady).to.be.false;
@@ -45,7 +43,7 @@ describe("When asking status", function () {
         var client = new Service("client");
         var server = new Service("server", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
-            return when.all([server.subscribe(), client.subscribe()]);
+            return when.all([server.subscribe()]);
         }).then(function () {
             return client.getStatus(server.name).then(function (status) {
                 expect(status.isReady).to.be.true;
@@ -61,7 +59,7 @@ describe("When asking status", function () {
         var client = new Service("client");
         var server = new Service("server", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
-            return when.all([server.subscribe(), client.subscribe()]);
+            return when.all([server.subscribe()]);
         }).delay(1000).then(function () {
             return client.getStatus(server.name, {isElected: false}).then(function (status) {
                 expect(status.isReady).to.be.false;
@@ -77,7 +75,7 @@ describe("When asking status", function () {
         var client = new Service("client");
         var server = new Service("server");
         when.all([client.connect(), server.connect()]).then(function () {
-            return when.all([server.subscribe(), client.subscribe()]);
+            return when.all([server.subscribe()]);
         }).then(function () {
             return client.getStatus(server.name, {isElected: true}).then(function (status) {
                 expect(status.isReady).to.be.false;
@@ -95,7 +93,7 @@ describe("When asking status", function () {
         var server = new Service("server", {discoverable: true});
         var server2 = new Service("server", {discoverable: true});
         when.all([client.connect(), server.connect(), server2.connect()]).then(function () {
-            return when.all([server.subscribe(false), client.subscribe(), server2.subscribe(false)]);
+            return when.all([server.subscribe(false), server2.subscribe(false)]);
         }).then(function () {
             server2.setAsReady();
             return client.getStatus(server.name).then(function (status) {
@@ -111,7 +109,7 @@ describe("When asking status", function () {
         var client = new Service("client");
         var server = new Service("server", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
-            return when.all([server.subscribe(false), client.subscribe()]);
+            return when.all([server.subscribe(false)]);
         }).then(function () {
             when().delay(1000).then(function () {
                 server.setAsReady();
@@ -130,7 +128,7 @@ describe("When asking status", function () {
         var client = new Service("client");
         var server = new Service("server", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
-            return when.all([server.subscribe(false), client.subscribe()]);
+            return when.all([server.subscribe(false)]);
         }).then(function () {
             return client.waitForService(server.name, {timeout: 2000}).catch(function (err) {
                 expect(err.info.status.attempts).to.be.above(2);
