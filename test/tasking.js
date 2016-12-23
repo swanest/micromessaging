@@ -152,7 +152,7 @@ describe("When tasking something", function () {
         this.timeout(5000);
         var client = new Service("client");
         var alone = new Service("hey", {
-            config: {
+            entities: {
                 Q_REQUESTS: {
                     noBatch: true
                 }

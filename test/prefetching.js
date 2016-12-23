@@ -32,12 +32,12 @@ describe("When prefetching", function () {
             }),
             client = new Service("clientMem", {memoryPressureHandled: false});
         when.all([www_1.connect(), www_2.connect(), client.connect()]).then(function () {
-            return when.all([www_1.subscribe(), www_2.subscribe()]);
+            return when.all([client.subscribe(), www_1.subscribe(), www_2.subscribe()]);
         }).then(function () {
             var www_1_i = 0, www_2_i = 0, buff = [];
             www_1.handle("test", function (msg) {
                 www_1_i++;
-                msg.reply();
+                msg.reply({response: true});
             });
             www_2.handle("test", function (msg) {
                 www_2_i++;
@@ -46,14 +46,14 @@ describe("When prefetching", function () {
                         buff.push(doc);
                     });
                 }
-                msg.reply();
+                msg.reply({response: true});
             });
             var i = 0;
 
             function req() {
                 return when().then(function () {
                     return client.request(www_1.name, "test");
-                }).then(function () {
+                }).then(function (r) {
                     i++;
                     if (i < 1000)
                         return req();
@@ -77,7 +77,7 @@ describe("When prefetching", function () {
         this.timeout(10000);
         var www_1 = new Service("www"), www_2 = new Service("www"), client = new Service("client");
         when.all([www_1.connect(), www_2.connect(), client.connect()]).then(function () {
-            return when.all([www_1.subscribe(), www_2.subscribe()]);
+            return when.all([client.subscribe(), www_1.subscribe(), www_2.subscribe()]);
         }).then(function () {
             var www_1_i = 0, www_2_i = 0;
             www_1.handle("test", function (msg) {
@@ -121,7 +121,7 @@ describe("When prefetching", function () {
         var abc_1 = new Service("server-prefetch");
 
         when.all([client.connect(), abc_1.connect()]).then(function () {
-            return abc_1.subscribe();
+            return when.all([abc_1.subscribe(), client.subscribe()]);
         }).then(function () {
 
             try {
@@ -171,7 +171,6 @@ describe("When prefetching", function () {
                 });
             };
 
-            //todo : fix bug error channel ended no reply will be forthcoming sometimes happening
             return stats(null).then(function () {
                 return stats(0, true);
             }).then(function () {
@@ -203,7 +202,7 @@ describe("When prefetching", function () {
         this.timeout(6000000);
         var client = new Service("client");
         var abc_1 = new Service("autoDelete", {
-            config: {
+            entities: {
                 Q_REQUESTS: {
                     noBatch: true, //ack,nack,reject do not take place immediately
                     noAck: true, //acks are required
@@ -241,7 +240,7 @@ describe("When prefetching", function () {
         this.timeout(6000000);
         var client = new Service("client");
         var abc_1 = new Service("test4", {
-            config: {
+            entities: {
                 Q_REQUESTS: {
                     noBatch: true, //ack,nack,reject do not take place immediately
                     noAck: true,

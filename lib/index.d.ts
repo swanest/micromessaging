@@ -36,7 +36,7 @@ declare namespace Config {
     interface Setup {
         discoverable?: boolean;
         memoryPressureHandled?: boolean | MemoryPressure
-        config?: {
+        entities?: {
             EXCHANGE_MESSAGES?: Exchange;
             EXCHANGE_REQUESTS?: Exchange;
             EXCHANGE_DEAD_REQUESTS?: Exchange;
@@ -70,6 +70,15 @@ declare namespace Config {
         expiresAfter: number;
     }
 
+    interface GetStatus {
+        isElected?: boolean
+        expiresAfter?: number
+    }
+
+    interface WaitForService {
+        isElected?: boolean
+        timeout?: number
+    }
 }
 
 /*
@@ -92,6 +101,26 @@ interface HandleResult {
     };
     remove: () => When.Promise<any>;
     promise: When.Promise<any>;
+}
+
+
+interface ServiceInstanceSummary {
+    serviceName: string,
+    uniqueID: string,
+    onlineSince: number,
+    isReady: boolean,
+    isElected: boolean,
+    memoryUsage: {
+        rss: number,
+        heapTotal: number,
+        heapUsed: number,
+        external?: number
+    }
+}
+
+interface Status {
+    isReady: boolean,
+    instances: Array<ServiceInstanceSummary>
 }
 
 interface SimpleMessage {
@@ -168,18 +197,18 @@ export declare class Service {
 
     connect(uri?: string): When.Promise<void>;
 
-    subscribe(): When.Promise<void>;
+    subscribe(setAsReady?: boolean): When.Promise<void>;
 
-    emit(serviceName: string, route: string, body: any, headers?: any, opts?: Config.Emit): When.Promise<void>;
+    emit(serviceName: string, route: string, body?: any, headers?: any, opts?: Config.Emit): When.Promise<void>;
 
     publicly: ScopeEmit;
     privately: ScopeEmit;
 
-    request(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Request): ProgressivePromise<SimpleMessage>;
+    request(serviceName: string, taskName: string, body?: any, headers?: any, opts?: Config.Request): ProgressivePromise<SimpleMessage>;
 
-    task(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Task): When.Promise<void>;
+    task(serviceName: string, taskName: string, body?: any, headers?: any, opts?: Config.Task): When.Promise<void>;
 
-    notify(serviceName: string, taskName: string, body: any, headers?: any, opts?: Config.Task): When.Promise<void>;
+    notify(serviceName: string, taskName: string, body?: any, headers?: any, opts?: Config.Task): When.Promise<void>;
 
     listen(route: string, cb: (message: Message) => void, serviceName?: string): ListenResult;
 
@@ -188,8 +217,16 @@ export declare class Service {
 
     handle(taskName: string, cb: (message: Message) => void): HandleResult;
 
-    prefetch(count: number): When.Promise<void>;
+    prefetch(count?: number): When.Promise<void>;
 
     getRequestReport(serviceName: string): When.Promise<{queueSize: number;}>;
+
+    setAsReady(): this;
+
+    setAsUnready(): this;
+
+    getStatus(serviceName: string, opts?: Config.GetStatus): When.Promise<Status>
+
+    waitForService(serviceName: string, opts?: Config.WaitForService): When.Promise<Status>
 
 }

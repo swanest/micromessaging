@@ -17,7 +17,7 @@ describe("When requesting a report", function () {
         var abc_1 = new Service("server");
 
         when.all([client.connect(), abc_1.connect()]).then(function () {
-            //return abc_1.subscribe();
+            return client.subscribe();
         }).then(function () {
             for (var i = 0; i < 300; i++)
                 client.request("server", "foo", null, null, {
@@ -28,7 +28,7 @@ describe("When requesting a report", function () {
             setTimeout(function () {
                 client.getRequestsReport("server").then(function (r) {
                     expect(r.queueSize).to.equal(300);
-                    done();
+                    when.all([client.close(),abc_1.close()]).then(()=>done());
                 })
             }, 500)
 

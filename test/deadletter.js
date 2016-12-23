@@ -13,7 +13,7 @@ describe("When dead-lettering", function () {
     it("dead-letters", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var abc_1 = new Service("server-dl", {config:{
+        var abc_1 = new Service("server-dl", {entities:{
             Q_REQUESTS:{
                 autoDelete:false
             }
@@ -45,7 +45,7 @@ describe("When dead-lettering", function () {
     //     this.timeout(6000000);
     //     var client = new Service("client");
     //     var abc_1 = new Service("test6", {
-    //         config: {
+    //         entities: {
     //             Q_REQUESTS: {
     //                 noBatch: true,
     //                 noAck: true,
