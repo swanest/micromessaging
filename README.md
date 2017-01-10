@@ -1,7 +1,6 @@
 Micromessaging
 ===================
 
-
 This module has been written for Swanest back-end. It eases the use of messaging between microservices. It already uses a higher level of abstraction of RabbitMQ provided by the great [Rabbot module written by Alex Robson](https://github.com/arobson/rabbot)
 
 ----------
@@ -10,7 +9,7 @@ This module has been written for Swanest back-end. It eases the use of messaging
 Installation
 -------------
 
-    npm install https://github.com/swanest/micromessaging
+    npm install micromessaging --save
 
 
 Client
@@ -18,8 +17,8 @@ Client
 
 ```js
 let logLib = require("sw-logger"),
-    tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-client"),
-    Service = require("../lib").Service;
+    tracer = new logLib.Logger({namespace: "micromessaging"}).context("tests-client"),
+    Service = require("micromessaging").Service;
 
 let micromessaging = new Service("client"); //name your service
 
@@ -49,7 +48,7 @@ micromessaging.on("connected", ()=> {
 
     tracer.log(micromessaging.name + " is connected");
 
-    //Emit message on ‘abc‘ service
+    //Publicly emit message on ‘abc‘ service
     micromessaging.emit("abc", "stock.aapl.split", {ratio: "7:1"}, {headerAppInfo: "test"}, {timeout:300, expiresAfter:4000}).then(()=> {
         console.log("ok");
     }).catch(console.error);
@@ -64,13 +63,13 @@ micromessaging.on("connected", ()=> {
     }).catch(console.error);
 
     //Emit on xyz
-    micromessaging.emit("xyz", "health.memory", {status: "bad"}, {
+    micromessaging.privately.emit("xyz", "health.memory", {status: "bad"}, {
         additionalInfoA: 1,
         additionalInfoB: 3
     }).catch(console.error); //abc won't receive it
 
-    //Emit on xyz in public mode
-    micromessaging.emit("xyz", "health.memory", {status: "good"}, null, {isPublic:true}).catch(console.error); //abc will receive it
+    //Emit on xyz in public mode (publicly is optional, by default it's public)
+    micromessaging.publicly.emit("xyz", "health.memory", {status: "good"}, null).catch(console.error); //abc will receive it
 
     //Emit on all microservices
     micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo: 1}).catch(console.error); //abc will receive it
@@ -91,10 +90,6 @@ micromessaging.on("connected", ()=> {
     //Notify() is a synonyme for task()
     micromessaging.notify("abc", "time-serie", {test: "ok"}).then(console.log, console.error)
 
-
-
-
-
 });
 ```
 
@@ -104,9 +99,9 @@ Server
 
 ```js
 let logLib = require("sw-logger"),
-    Service = require("../lib").Service,
+    Service = require("micromessaging").Service,
     serviceName = process.argv[2],
-    tracer = new logLib.Logger({namespace: "micromessaging"}).context(null, "tests-server-" + serviceName);
+    tracer = new logLib.Logger({namespace: "micromessaging"}).context("tests-server-" + serviceName);
 
 tracer.log("Welcome on %s process", serviceName); //launch at the same time ‘abc‘ and ‘zxy' modules
 
@@ -174,17 +169,75 @@ micromessaging.on("connected", ()=> {
 
     //we could remove the subscription by doing handler.remove();
 
-
     //As this service has consumers, it needs to subscribe to be able to start receiving messages !
     micromessaging.subscribe();
 });
 ```
 
-Roadmap
+
+Options
 -------------
 
-* Integrate dead-letter exchange
-* redeliver counter
+`new Service(name, opts)`
+
+__Memory pressure handling__
+
+This is by default set to `false`. But you can enable it by passing `true` as it will stop entering requests when memory is under pressure.
+You can also specify the configuration.
+
+```js
+let opts = {
+    memoryPressureHandled: {
+            memoryThreshold: 300000000, //in bytes (300mb)
+            interval: 1000, //interval check in ms (1 sec)
+            consecutiveGrowths: 5
+    }
+}
+```
+
+
+__Discoverable__
+
+Sometimes you need a leader among instances of the same service. This is possible by setting `discoverable:true` or a more specific config. 
+
+```js
+let opts = {
+    discoverable: {
+            intervalCheck: 3 * 60 * 1000, //in ms (3 min) - every 3min we check whether an elected instance exists
+            electionTimeout: 500 //in ms, time to wait after the last signal to elect an instance
+    }
+}
+```
+
+You can then use as events such as "elected", "electedAndSubscribing", "electedAndReady" to perform some actions.
+
+Exclusively
+-------------
+
+By `exclusively.listen()`, only one instance will get the message reserved to its service.
+
+
+Ready / Unready
+-------------
+
+By default, calling `subscribe()` makes the instance as ready. 
+But you can distinguish by calling `subscribing(false)` and then later call `ready()` or `unready()`.
+This status will be used by and in both methods `getStatus(serviceName)` and `waitForService(serviceName)` 
+
+Get status
+-------------
+
+You can ask for a partner status.
+
+`getStatus(serviceName, [{isElected:boolean}])`
+
+
+Wait for service
+-------------
+
+You can wait for a service to be ready
+
+`waitForService(serviceName, [{isElected:boolean}])`
 
 
 Tests

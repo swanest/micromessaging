@@ -55,6 +55,7 @@ async function test() {
 tx.on('unreachable', () => {
     console.warn(tx.name + ' failed to reach rabbit server');
 });
+
 tx.on('unroutableMessage', (message: Micromessaging.SimpleMessage) => {
     console.warn(tx.name + ' encountered an unroutable message', message);
 });

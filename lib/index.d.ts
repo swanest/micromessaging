@@ -33,8 +33,13 @@ declare namespace Config {
         consecutiveGrowths: number;
     }
 
+    interface Discoverable {
+        intervalCheck: number;
+        electionTimeout: number;
+    }
+
     interface Setup {
-        discoverable?: boolean;
+        discoverable?: boolean | Discoverable;
         memoryPressureHandled?: boolean | MemoryPressure
         entities?: {
             EXCHANGE_MESSAGES?: Exchange;
@@ -186,11 +191,7 @@ export declare class Service {
     on(event: 'unroutableMessage', cb: (message: SimpleMessage) => void): void;
     on(event: 'unhandledMessage', cb: (message: Message) => void): void;
     on(event: 'failed', cb: (error: Error) => void): void;
-    on(event: 'closed', cb: () => void): void;
-    on(event: 'unreachable', cb: () => void): void;
-    on(event: 'connected', cb: () => void): void;
-    on(event: 'elected', cb: () => void): void;
-
+    on(event: Types.event, cb?: (message: Message | Error) => void): void;
     once(event: Types.event, cb?: (message: Message | Error) => void): void;
 
     close(): When.Promise<void>;
