@@ -235,9 +235,9 @@ You can ask for a partner status.
 Wait for service
 -------------
 
-You can wait for a service to be ready
+You can wait for one or more services to be ready
 
-`waitForService(serviceName, [{isElected:boolean}])`
+`waitForService(serviceName, [{isElected:boolean}])` or `waitForServices(serviceNames, [{isElected:boolean}])` 
 
 
 Tests
