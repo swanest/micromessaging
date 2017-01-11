@@ -192,6 +192,7 @@ export declare class Service {
     on(event: 'unhandledMessage', cb: (message: Message) => void): void;
     on(event: 'failed', cb: (error: Error) => void): void;
     on(event: Types.event, cb?: (message: Message | Error) => void): void;
+
     once(event: Types.event, cb?: (message: Message | Error) => void): void;
 
     close(): When.Promise<void>;
@@ -229,5 +230,8 @@ export declare class Service {
     getStatus(serviceName: string, opts?: Config.GetStatus): When.Promise<Status>
 
     waitForService(serviceName: string, opts?: Config.WaitForService): When.Promise<Status>
+
+    waitForServices(serviceNames: Array<string>, opts?: Config.WaitForService): When.Promise<Array<Status>>
+
 
 }

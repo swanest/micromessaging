@@ -114,8 +114,8 @@ describe("When asking status", function () {
             when().delay(1000).then(function () {
                 server.setAsReady();
             });
-            return client.waitForService(server.name).then(function (status) {
-                expect(status.attempts).to.be.above(2);
+            return client.waitForServices([server.name]).then(function (statusArray) {
+                expect(statusArray[0].attempts).to.be.above(2);
                 done();
             }).finally(function () {
                 return when.all([client.close(), server.close()]);
@@ -130,7 +130,7 @@ describe("When asking status", function () {
         when.all([client.connect(), server.connect()]).then(function () {
             return when.all([server.subscribe(false)]);
         }).then(function () {
-            return client.waitForService(server.name, {timeout: 2000}).catch(function (err) {
+            return client.waitForServices([server.name], {timeout: 2000}).catch(function (err) {
                 expect(err.info.status.attempts).to.be.above(2);
                 done();
             }).finally(function () {
