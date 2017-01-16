@@ -131,6 +131,7 @@ interface Status {
 interface SimpleMessage {
     type: string;
     body: any;
+    headers: Object;
     properties: {
         isRedelivered: boolean;
         exchange: string;
