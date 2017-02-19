@@ -10,10 +10,11 @@ var tracer = new (require("sw-logger").Logger)();
 describe("When dead-lettering", function () {
 
 
+    let n = require('uuid').v4();
     it("dead-letters", function (done) {
         this.timeout(40000);
-        var client = new Service("client");
-        var abc_1 = new Service("server-dl", {entities:{
+        var client = new Service("client"+n);
+        var abc_1 = new Service("server-dl"+n, {entities:{
             Q_REQUESTS:{
                 autoDelete:false
             }
@@ -33,8 +34,8 @@ describe("When dead-lettering", function () {
             let mess;
             client.death.listen("foo", function (message) {
                 mess = message
-            }, "server-dl").promise.then(function () {
-                client.task("server-dl", "foo", {test: 1}, {blabla: 2}, {
+            }, abc_1.name).promise.then(function () {
+                client.task(abc_1.name, "foo", {test: 1}, {blabla: 2}, {
                     expiresAfter: 500
                 }).catch(done);
             });

@@ -5,6 +5,7 @@ var moment = require("moment");
 var _ = require("lodash");
 var CustomError = require("sw-logger").CustomError;
 var fs = require("fs");
+var uuid = require('uuid');
 
 
 describe("When prefetching", function () {
@@ -22,11 +23,24 @@ describe("When prefetching", function () {
 
     it("pauses due to memory pressure", function (done) {
         this.timeout(120000);
-        var www_1 = new Service("memory", {memoryPressureHandled: false}),
-            www_2 = new Service("memory", {
+        let sname = 'memory-' + uuid.v4();
+        var www_1 = new Service(sname, {
+                entities: {
+                    Q_REQUESTS: {
+                        limit: 1
+                    }
+                },
+                memoryPressureHandled: false
+            }),
+            www_2 = new Service(sname, {
+                entities: {
+                    Q_REQUESTS: {
+                        limit: 1
+                    }
+                },
                 memoryPressureHandled: {
-                    memoryThreshold: 100 * 1000000,
-                    interval: 1000,
+                    memoryThreshold: 50 * 1000000,
+                    interval: 300,
                     consecutiveGrowths: 3
                 }
             }),
@@ -52,17 +66,17 @@ describe("When prefetching", function () {
 
             function req() {
                 return when().then(function () {
-                    return client.request(www_1.name, "test");
-                }).then(function (r) {
+                    client.request(www_1.name, "test");
+                }).delay(300).then(function (r) {
                     i++;
                     if (i < 1000)
                         return req();
                 });
             };
-            return req().then(function () {
+            req();
+            return when().delay(10000).then(function () {
                 buff = [];
                 expect(www_1_i > 2 * www_2_i).to.be.ok;
-                expect(www_1_i + www_2_i).to.equal(1000);
                 when.all([www_1.close(), www_2.close(), client.close()]).then(function () {
                     done();
                 });
@@ -88,7 +102,6 @@ describe("When prefetching", function () {
                 www_2_i++;
                 msg.reply();
             });
-
             var i = 0;
 
             function req() {
@@ -103,7 +116,6 @@ describe("When prefetching", function () {
                         return req();
                 });
             };
-
             return req().then(function () {
                 expect([www_1_i, www_2_i]).to.deep.equal([875, 125]);
                 when.all([www_1.close(), www_2.close(), client.close()]).then(function () {
@@ -115,15 +127,13 @@ describe("When prefetching", function () {
 
 
     it("prefetches correctly with one consumer", function (done) {
-
         this.timeout(40000);
-        var client = new Service("client-prefetch");
-        var abc_1 = new Service("server-prefetch");
-
+        let rand = require('uuid').v4();
+        var client = new Service("client-prefetch" + rand);
+        var abc_1 = new Service("server-prefetch" + rand);
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return when.all([abc_1.subscribe(), client.subscribe()]);
         }).then(function () {
-
             try {
                 abc_1.subscribe();
             } catch (e) {
@@ -134,15 +144,15 @@ describe("When prefetching", function () {
                 message.reply();
             });
 
+
             var results = [];
 
             function stats(p, isPaused) {
                 var reqs = 0, n, t = 0, i = 0;
 
-
                 function req() {
                     return when().then(function () {
-                        return client.request("server-prefetch", "test", reqs, null, {
+                        return client.request(abc_1.name, "test", reqs, null, {
                             expiresAfter: 5000,
                             replyTimeout: 1000
                         }).then(function () {
@@ -150,7 +160,7 @@ describe("When prefetching", function () {
                                 throw new CustomError("notSupposedToReceiveResponse", 500, "fatal");
                             reqs++;
                             t = moment.utc().unix() - n;
-                            if (t < 1)
+                            if (t < 2) // during 2 seconds !
                                 return req();
                         }, function (err) {
                             if (!isPaused) {
@@ -161,7 +171,6 @@ describe("When prefetching", function () {
                         console.log(err, p, isPaused);
                     });
                 };
-
                 return abc_1.prefetch(p).delay(1000).then(function () {
                 }).then(function () {
                     n = moment.utc().unix();
@@ -171,14 +180,10 @@ describe("When prefetching", function () {
                 });
             };
 
-            return stats(null).then(function () {
+            return stats(1000).then(function () {
                 return stats(0, true);
             }).then(function () {
-                return stats(null);
-            }).then(function () {
-                return stats(1);
-            }).then(function () {
-                return stats(null);
+                return stats(1000);
             }).then(function () {
                 return stats(1);
             }).then(function () {

@@ -62,7 +62,23 @@ describe("When asking status", function () {
             return when.all([server.subscribe()]);
         }).delay(1000).then(function () {
             return client.getStatus(server.name, {isElected: false}).then(function (status) {
-                expect(status.isReady).to.be.false;
+                expect(status.isReady).to.be.true;
+                done();
+            }).finally(function () {
+                return when.all([client.close(), server.close()]);
+            });
+        }).catch(done);
+    });
+
+    it("should get status true - b", function (done) {
+        this.timeout(40000);
+        var client = new Service("client");
+        var server = new Service("serverB", {discoverable: {intervalCheck: 200}});
+        when.all([client.connect(), server.connect()]).then(function () {
+            return when.all([server.subscribe()]);
+        }).delay(3000).then(function () {
+            return client.getStatus(server.name, {isElected: true}).then(function (status) {
+                expect(status.isReady).to.be.true;
                 done();
             }).finally(function () {
                 return when.all([client.close(), server.close()]);
@@ -73,7 +89,7 @@ describe("When asking status", function () {
     it("should get status false (x4)", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var server = new Service("server");
+        var server = new Service("server2");
         when.all([client.connect(), server.connect()]).then(function () {
             return when.all([server.subscribe()]);
         }).then(function () {
@@ -107,7 +123,7 @@ describe("When asking status", function () {
     it("should wait for service", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var server = new Service("server", {discoverable: true});
+        var server = new Service("server5", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
             return when.all([server.subscribe(false)]);
         }).then(function () {
@@ -126,7 +142,7 @@ describe("When asking status", function () {
     it("should fail to wait for service", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var server = new Service("server", {discoverable: true});
+        var server = new Service("server6", {discoverable: true});
         when.all([client.connect(), server.connect()]).then(function () {
             return when.all([server.subscribe(false)]);
         }).then(function () {

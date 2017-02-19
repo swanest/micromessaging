@@ -6,29 +6,24 @@ var _ = require("lodash");
 var CustomError = require("sw-logger").CustomError;
 
 
+describe("When getting a report", function () {
 
-describe("When requesting a report", function () {
 
-
-    it("gets a report", function (done) {
-
+    it("should get it", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var abc_1 = new Service("server");
-
+        var abc_1 = new Service("serverRep");
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return client.subscribe();
         }).then(function () {
             for (var i = 0; i < 300; i++)
-                client.request("server", "foo", null, null, {
-                    expiresAfter: 5000,
-                    replyTimeout: 10000
+                client.task(abc_1.name, "foo", null, null, {
+                    expiresAfter: 5000
                 }).then(_.noop, done);
-
             setTimeout(function () {
-                client.getRequestsReport("server").then(function (r) {
+                client.getRequestsReport(abc_1.name).then(function (r) {
                     expect(r.queueSize).to.equal(300);
-                    when.all([client.close(),abc_1.close()]).then(()=>done());
+                    when.all([client.close(), abc_1.close()]).then(() => done());
                 })
             }, 500)
 

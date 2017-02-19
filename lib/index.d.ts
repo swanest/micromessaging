@@ -39,6 +39,7 @@ declare namespace Config {
     }
 
     interface Setup {
+        timeoutToSubscribe?: number;
         discoverable?: boolean | Discoverable;
         memoryPressureHandled?: boolean | MemoryPressure
         entities?: {
@@ -57,11 +58,13 @@ declare namespace Config {
         timeout?: number;
         expiresAfter: number;
         isPublic?: boolean;
+        mandatory?: boolean;
     }
 
     interface ScopeEmit {
         timeout?: number;
         expiresAfter: number;
+        mandatory?: boolean;
     }
 
     interface Request {

@@ -6,10 +6,10 @@ var _ = require("lodash");
 var CustomError = require("sw-logger").CustomError;
 
 
-
 describe("When electing", function () {
 
 
+    let n = require('uuid').v4();
     it("elects correctly", function (done) {
 
         this.timeout(20000);
@@ -17,7 +17,7 @@ describe("When electing", function () {
         var electedCalls = 0;
 
         function newInstance() {
-            var s = new Service("abc", {discoverable: {electionTimeout:50, intervalCheck:500}});
+            var s = new Service("abc" + n, {discoverable: {electionTimeout: 50, intervalCheck: 200}});
             s.on("elected", function () {
                 electedCalls++;
             });
@@ -26,38 +26,22 @@ describe("When electing", function () {
             });
         }
 
-
-        var first, second, third, currentElectedUniqueID;
+        var first, second;
         newInstance().then(function (i) {
             first = i;
             return newInstance();
-        }).delay(300).then(function (i) {
+        }).delay(1000).then(function (i) {
             second = i;
             //2 instances
-            expect(first.replications).to.have.lengthOf(2);
-            expect(second.replications).to.have.lengthOf(2);
             expect(first.isElected).to.be.true;
-            currentElectedUniqueID = _.find(first.replications, {isElected: true, isCurrent: true}).uniqueID;
+            expect(second.isElected).to.be.false;
             return newInstance();
-        }).delay(300).then(function (i) {
-            third = i;
-            expect(first.replications).to.have.lengthOf(3);
-            expect(second.replications).to.have.lengthOf(3);
-            expect(third.replications).to.have.lengthOf(3);
-            //3 instances
-            return third.close();
-        }).delay(300).then(function () {
-            expect(first.replications).to.have.lengthOf(2);
-            expect(second.replications).to.have.lengthOf(2);
-            expect(currentElectedUniqueID).to.equal(_.find(second.replications, {
-                isElected: true
-            }).uniqueID);
-        }).then(function () {
+        }).delay(1000).then(function () {
+            expect(second.isElected).to.be.false;
             return first.close();
-        }).delay(600).then(function () {
-            expect(second.replications).to.have.lengthOf(1);
-            expect(electedCalls).to.equal(2);
-            return second.close().then(function(){
+        }).delay(2000).then(function () {
+            expect(second.isElected).to.be.true;
+            return second.close().then(function () {
                 done();
             });
         });
