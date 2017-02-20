@@ -184,6 +184,7 @@ export declare class Service {
     uniqueID: string;
     replications: Array<any>;
     isElected: boolean;
+    awareOf: Status;
 
     // Are these necessary ?
     // noCheck: boolean;
@@ -224,6 +225,8 @@ export declare class Service {
     handle(taskName: string, cb: (message: Message) => void): HandleResult;
 
     prefetch(count?: number): When.Promise<void>;
+
+    setMemoryHandling(params?: boolean | Config.MemoryPressure): boolean;
 
     getRequestReport(serviceName: string): When.Promise<{queueSize: number;}>;
 
