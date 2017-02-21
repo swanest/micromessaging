@@ -2,6 +2,7 @@ var expect = require("chai").expect;
 var Service = require("../lib").Service;
 var when = require("when");
 var _ = require("lodash");
+var tracer = new (require("sw-logger").Logger)();
 
 
 
