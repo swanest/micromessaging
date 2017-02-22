@@ -39,6 +39,7 @@ declare namespace Config {
     }
 
     interface Setup {
+        simultaneousRequests?: number;
         timeoutToSubscribe?: number;
         discoverable?: boolean | Discoverable;
         memoryPressureHandled?: boolean | MemoryPressure
