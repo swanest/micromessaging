@@ -31,6 +31,7 @@ declare namespace Config {
         memoryThreshold: number;
         interval: number;
         consecutiveGrowths: number;
+        nackAfter?: number;
     }
 
     interface Discoverable {

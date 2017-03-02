@@ -73,7 +73,7 @@ describe("When asking status", function () {
     it("should get status true - b", function (done) {
         this.timeout(40000);
         var client = new Service("client");
-        var server = new Service("serverB", {discoverable: {intervalCheck: 200}});
+        var server = new Service("serverB", {discoverable: {intervalCheck: 200, electionTimeout: 500}});
         when.all([client.connect(), server.connect()]).then(function () {
             return when.all([server.subscribe()]);
         }).delay(3000).then(function () {
