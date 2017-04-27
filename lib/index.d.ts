@@ -25,6 +25,7 @@ declare namespace Config {
         queueLimit?: number;
         expires?: number;
         maxPriority?: number;
+        noBatch?: boolean
     }
 
     interface MemoryPressure {
