@@ -1,11 +1,11 @@
 {
   "name": "micromessaging",
-  "version": "2.1.20",
+  "version": "2.1.21",
   "description": "Easy-to-use interface for Rabbit MQ",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --bail --reporter spec"
+    "test": "DEBUG=micromessaging ./node_modules/.bin/mocha --bail --reporter spec"
   },
   "repository": "https://github.com/swanest/micromessaging",
   "author": "Cyri-l",
