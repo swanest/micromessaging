@@ -44,7 +44,7 @@ declare namespace Config {
         simultaneousRequests?: number;
         timeoutToSubscribe?: number;
         discoverable?: boolean | Discoverable;
-        memoryPressureHandled?: boolean | MemoryPressure
+        memoryPressureHandled?: boolean | MemoryPressure;
         entities?: {
             EXCHANGE_MESSAGES?: Exchange;
             EXCHANGE_REQUESTS?: Exchange;
@@ -82,13 +82,13 @@ declare namespace Config {
     }
 
     interface GetStatus {
-        isElected?: boolean
-        expiresAfter?: number
+        isElected?: boolean;
+        expiresAfter?: number;
     }
 
     interface WaitForService {
-        isElected?: boolean
-        timeout?: number
+        isElected?: boolean;
+        timeout?: number;
     }
 }
 
@@ -97,41 +97,43 @@ declare namespace Config {
  */
 
 interface ListenResult {
-    onError: (cb: (err: Error, message: SimpleMessage)=>void) => {
-        remove: () => When.Promise<any>,
-        promise: When.Promise<any>
+    onError: (cb: (err: Error, message: SimpleMessage) => void) => {
+        remove: () => When.Promise<any>;
+        promise: When.Promise<any>;
     };
     remove: () => When.Promise<any>;
     promise: When.Promise<any>;
 }
 
 interface HandleResult {
-    onError: (cb: (err: Error, message: Message)=>void) => {
-        remove: () => When.Promise<any>,
-        promise: When.Promise<any>
+    onError: (cb: (err: Error, message: Message) => void) => {
+        remove: () => When.Promise<any>;
+        promise: When.Promise<any>;
     };
     remove: () => When.Promise<any>;
     promise: When.Promise<any>;
 }
 
 
+interface MemoryUsage {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+    external?: number;
+}
+
 interface ServiceInstanceSummary {
-    serviceName: string,
-    uniqueID: string,
-    onlineSince: number,
-    isReady: boolean,
-    isElected: boolean,
-    memoryUsage: {
-        rss: number,
-        heapTotal: number,
-        heapUsed: number,
-        external?: number
-    }
+    serviceName: string;
+    uniqueID: string;
+    onlineSince: number;
+    isReady: boolean;
+    isElected: boolean;
+    memoryUsage: MemoryUsage;
 }
 
 interface Status {
-    isReady: boolean,
-    instances: Array<ServiceInstanceSummary>
+    isReady: boolean;
+    instances: Array<ServiceInstanceSummary>;
 }
 
 interface SimpleMessage {
@@ -145,7 +147,7 @@ interface SimpleMessage {
         routingKey: string;
         path: string;
         id?: string;
-        correlatedTo?: string
+        correlatedTo?: string;
         contentType: string;
         contentEncoding: string;
         expiresAfter: number;
@@ -155,7 +157,7 @@ interface SimpleMessage {
             queue: string;
             routingKey: string;
             path: string;
-        }
+        };
     };
     status: "PENDING" | "ACKED" | "NACKED" | "REJECTED";
 }
@@ -182,12 +184,16 @@ declare interface ProgressivePromise<T> extends When.Promise<T> {
     progress(onProgress?: (progress: T) => void): When.Promise<T>;
 }
 
+interface MemoryListen {
+    on(event: 'underPressure'| 'pressureReleased', cb: (mem: {ack: ()=>void; memoryUsageHistory: Array<MemoryUsage>; }) => void): void;
+}
+
 export declare class Service {
     name: string;
     uniqueID: string;
-    replications: Array<any>;
     isElected: boolean;
     awareOf: Status;
+    memoryPressureHandler?: MemoryListen;
 
     // Are these necessary ?
     // noCheck: boolean;

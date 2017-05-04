@@ -45,6 +45,11 @@ describe("When prefetching", function () {
                 }
             }),
             client = new Service("clientMem", {memoryPressureHandled: false});
+
+        www_2.memoryPressureHandler.on('underPressure', (mem) => {
+            mem.ack();
+        });
+
         when.all([www_1.connect(), www_2.connect(), client.connect()]).then(function () {
             return when.all([client.subscribe(), www_1.subscribe(), www_2.subscribe()]);
         }).then(function () {
