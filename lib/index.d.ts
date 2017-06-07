@@ -235,6 +235,8 @@ export declare class Service {
 
     prefetch(count?: number): When.Promise<void>;
 
+    getWaitingRequests(): {status: boolean; nackTimeout: any; bulk: Array<{defer: When.Deferred<any>;message: any}>};
+
     setMemoryHandling(params?: boolean | Config.MemoryPressure): boolean;
 
     getRequestReport(serviceName: string): When.Promise<{queueSize: number;}>;
