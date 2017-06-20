@@ -192,7 +192,6 @@ export declare class Service {
     name: string;
     uniqueID: string;
     isElected: boolean;
-    awareOf: Status;
     memoryPressureHandler?: MemoryListen;
 
     // Are these necessary ?
