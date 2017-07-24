@@ -25,15 +25,14 @@ describe('Dynamic Prefetch', function () {
 
     it('should gradually increase prefetchCount', function () {
         this.timeout(60 * 5 * 1000);
-        const www_1 = new Service('www', {
-                simultaneousRequests: 10,
+        const www_1 = new Service('www-' + uuid.v4(), {
                 memoryPressureHandled: {
                     memoryThreshold: 850 * 1000000,
                     interval: 300,
                     consecutiveGrowths: 3
                 }
             }),
-            client = new Service('client');
+            client = new Service('client-' + uuid.v4());
 
         return when
             .all([www_1.connect(), client.connect()])
