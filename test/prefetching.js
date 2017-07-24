@@ -1,14 +1,14 @@
-var expect = require("chai").expect;
-var Service = require("../lib").Service;
-var when = require("when");
-var moment = require("moment");
-var _ = require("lodash");
-var CustomError = require("sw-logger").CustomError;
-var fs = require("fs");
-var uuid = require('uuid');
+const expect = require('chai').expect,
+    Service = require('../lib').Service,
+    when = require('when'),
+    moment = require('moment'),
+    _ = require('lodash'),
+    CustomError = require('sw-logger').CustomError,
+    fs = require('fs'),
+    uuid = require('uuid');
 
 
-describe("When prefetching", function () {
+describe('When prefetching', function () {
 
     function readFile(path) {
         let d = when.defer();
@@ -21,7 +21,7 @@ describe("When prefetching", function () {
         return d.promise;
     };
 
-    it("pauses due to memory pressure", function (done) {
+    it('pauses due to memory pressure', function (done) {
         this.timeout(120000);
         let sname = 'memory-' + uuid.v4();
         var www_1 = new Service(sname, {
@@ -44,7 +44,7 @@ describe("When prefetching", function () {
                     consecutiveGrowths: 3
                 }
             }),
-            client = new Service("clientMem", {memoryPressureHandled: false});
+            client = new Service('clientMem', { memoryPressureHandled: false });
 
         www_2.memoryPressureHandler.on('underPressure', (mem) => {
             mem.ack();
@@ -54,24 +54,24 @@ describe("When prefetching", function () {
             return when.all([client.subscribe(), www_1.subscribe(), www_2.subscribe()]);
         }).then(function () {
             var www_1_i = 0, www_2_i = 0, buff = [];
-            www_1.handle("test", function (msg) {
+            www_1.handle('test', function (msg) {
                 www_1_i++;
-                msg.reply({response: true});
+                msg.reply({ response: true });
             });
-            www_2.handle("test", function (msg) {
+            www_2.handle('test', function (msg) {
                 www_2_i++;
                 for (let i = 0; i < 10; i++) {
-                    readFile(__dirname + "/data.json").then(function (doc) {
+                    readFile(__dirname + '/data.json').then(function (doc) {
                         buff.push(doc);
                     });
                 }
-                msg.reply({response: true});
+                msg.reply({ response: true });
             });
             var i = 0;
 
             function req() {
                 return when().then(function () {
-                    client.request(www_1.name, "test");
+                    client.request(www_1.name, 'test');
                 }).delay(300).then(function (r) {
                     i++;
                     if (i < 1000)
@@ -92,18 +92,18 @@ describe("When prefetching", function () {
     });
 
 
-    it("pauses correctly with two consumers", function (done) {
+    it('pauses correctly with two consumers', function () {
         this.timeout(10000);
-        var www_1 = new Service("www"), www_2 = new Service("www"), client = new Service("client");
-        when.all([www_1.connect(), www_2.connect(), client.connect()]).then(function () {
+        var www_1 = new Service('www'), www_2 = new Service('www'), client = new Service('client');
+        return when.all([www_1.connect(), www_2.connect(), client.connect()]).then(function () {
             return when.all([client.subscribe(), www_1.subscribe(), www_2.subscribe()]);
         }).then(function () {
             var www_1_i = 0, www_2_i = 0;
-            www_1.handle("test", function (msg) {
+            www_1.handle('test', function (msg) {
                 www_1_i++;
                 msg.reply();
             });
-            www_2.handle("test", function (msg) {
+            www_2.handle('test', function (msg) {
                 www_2_i++;
                 msg.reply();
             });
@@ -111,31 +111,31 @@ describe("When prefetching", function () {
 
             function req() {
                 return when().then(function () {
-                    if (i == 250)
+                    if (i == 5)
                         return www_2.prefetch(0);
                 }).then(function () {
-                    return client.request("www", "test");
+                    return client.request('www', 'test');
                 }).then(function () {
                     i++;
-                    if (i < 1000)
+                    if (i < 50)
                         return req();
                 });
             };
             return req().then(function () {
-                expect([www_1_i, www_2_i]).to.deep.equal([875, 125]);
-                when.all([www_1.close(), www_2.close(), client.close()]).then(function () {
-                    done();
-                });
-            }).catch(done);
+                expect(www_1_i + www_2_i).to.equal(50);
+                expect(www_2_i).to.be.below(6);
+            }).finally(() => {
+                return when.all([www_1.close(), www_2.close(), client.close()]);
+            });
         });
     });
 
 
-    it("prefetches correctly with one consumer", function (done) {
+    it('prefetches correctly with one consumer', function (done) {
         this.timeout(40000);
         let rand = require('uuid').v4();
-        var client = new Service("client-prefetch" + rand);
-        var abc_1 = new Service("server-prefetch" + rand);
+        var client = new Service('client-prefetch' + rand);
+        var abc_1 = new Service('server-prefetch' + rand);
         when.all([client.connect(), abc_1.connect()]).then(function () {
             return when.all([abc_1.subscribe(), client.subscribe()]);
         }).then(function () {
@@ -145,7 +145,7 @@ describe("When prefetching", function () {
                 expect(e).to.match(/already/);
             }
 
-            abc_1.handle("test", function (message) {
+            abc_1.handle('test', function (message) {
                 message.reply();
             });
 
@@ -157,12 +157,12 @@ describe("When prefetching", function () {
 
                 function req() {
                     return when().then(function () {
-                        return client.request(abc_1.name, "test", reqs, null, {
+                        return client.request(abc_1.name, 'test', reqs, null, {
                             expiresAfter: 5000,
                             replyTimeout: 1000
                         }).then(function () {
                             if (isPaused)
-                                throw new CustomError("notSupposedToReceiveResponse", 500, "fatal");
+                                throw new CustomError('notSupposedToReceiveResponse', 500, 'fatal');
                             reqs++;
                             t = moment.utc().unix() - n;
                             if (t < 2) // during 2 seconds !
@@ -208,10 +208,10 @@ describe("When prefetching", function () {
         }).catch(done);
     });
 
-    it("should handle channel disruption due to prefetching", function (done) {
+    it('should handle channel disruption due to prefetching', function (done) {
         this.timeout(6000000);
-        var client = new Service("client");
-        var abc_1 = new Service("autoDelete", {
+        var client = new Service('client');
+        var abc_1 = new Service('autoDelete', {
             entities: {
                 Q_REQUESTS: {
                     noBatch: true, //ack,nack,reject do not take place immediately
@@ -225,7 +225,7 @@ describe("When prefetching", function () {
         }).then(function () {
             let receivedMessages = [];
             when().then(function () {
-                return abc_1.handle("ok", function (msg) {
+                return abc_1.handle('ok', function (msg) {
                     receivedMessages.push(msg);
                     msg.ack(); //First call will raise an error because it's not the proprietary channel due to prefetch
                 }).promise;
@@ -234,9 +234,9 @@ describe("When prefetching", function () {
                     return abc_1.prefetch(1)
                 })
             }).then(function () {
-                return client.task("autoDelete", "ok", "test", {expiresAfter: 5000});
+                return client.task('autoDelete', 'ok', 'test', { expiresAfter: 5000 });
             }).delay(1000).then(function () {
-                return client.task("autoDelete", "ok", "test", {expiresAfter: 5000});
+                return client.task('autoDelete', 'ok', 'test', { expiresAfter: 5000 });
             }).then(function () {
                 expect(receivedMessages).to.have.lengthOf(2);
                 when.all([client.close(), abc_1.close()]).then(function () {
@@ -246,10 +246,10 @@ describe("When prefetching", function () {
         }).catch(done);
     });
 
-    it("should update prefetches sequentially", function (done) {
+    it('should update prefetches sequentially', function (done) {
         this.timeout(6000000);
-        var client = new Service("client");
-        var abc_1 = new Service("test4", {
+        var client = new Service('client');
+        var abc_1 = new Service('test4', {
             entities: {
                 Q_REQUESTS: {
                     noBatch: true, //ack,nack,reject do not take place immediately
