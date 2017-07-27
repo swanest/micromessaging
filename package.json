@@ -1,6 +1,6 @@
 {
   "name": "micromessaging",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Easy-to-use interface for Rabbit MQ",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -18,7 +18,7 @@
     "moment": "^2.14.1",
     "object-sizeof": "^1.2.0",
     "rabbot": "github:swanest/rabbot",
-    "sw-logger": "^1.0.0",
+    "sw-logger": "^1.2.0",
     "uuid": "^3.0.0",
     "when": "^3.7.7"
   },
