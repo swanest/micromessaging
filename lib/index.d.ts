@@ -234,7 +234,7 @@ export declare class Service {
 
     prefetch(count?: number): When.Promise<void>;
 
-    maxPrefetch(count?: number): void | number | When.Promise<void>;
+    maxPrefetch(count?: number): number | When.Promise<void>;
 
     getWaitingRequests(): {status: boolean; nackTimeout: any; bulk: Array<{defer: When.Deferred<any>;message: any}>};
 
