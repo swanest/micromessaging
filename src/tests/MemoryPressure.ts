@@ -10,13 +10,18 @@ describe('MemoryPressure', () => {
         });
         let stop = false;
         c.once('pressure', async (event: PressureEvent) => {
-            expect(event.type).to.equal('memory');
-            await c.close();
-            done();
-            stop = true;
+            try {
+                expect(event.type).to.equal('memory');
+                await c.close();
+                done();
+                stop = true;
+            } catch (e) {
+                done(e);
+            }
         });
         const curDate = new Date().getTime();
         let memFiller: Array<Array<number>> = [];
+
         function fill() {
             if (stop) {
                 memFiller = null;
@@ -26,26 +31,33 @@ describe('MemoryPressure', () => {
             memFiller.push(new Array(1e7));
             setTimeout(fill, 300);
         }
+
         fill();
 
     });
 
-    it('should notify when memory is not under pressure anymore', function(done) {
+    it('should notify when memory is not under pressure anymore', function (done) {
         this.timeout(10000);
         const c = new Messaging('test', {
-            memorySoftLimit: 100
+            memorySoftLimit: 150
         });
+        global.gc();
         let stop = false;
         c.on('pressure', (event: PressureEvent) => {
             stop = true;
         });
         c.once('pressureReleased', async (event: PressureEvent) => {
-            expect(event.type).to.equal('memory');
-            await c.close();
-            done();
+            try {
+                expect(event.type).to.equal('memory');
+                await c.close();
+                done();
+            } catch (e) {
+                done(e);
+            }
         });
         const curDate = new Date().getTime();
         let memFiller: Array<Array<number>> = [];
+
         function fill() {
             if (stop) {
                 memFiller = null;
@@ -55,6 +67,7 @@ describe('MemoryPressure', () => {
             memFiller.push(new Array(1e7));
             setTimeout(fill, 300);
         }
+
         fill();
     });
 });

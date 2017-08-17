@@ -8,6 +8,6 @@ export type OwnEvents =
     'error' | // Connections related errors
     'pressure' |
     'pressureReleased' |
-    'leader'
+    'leader' |
     'unroutableMessage' // Message couldn't be routed and there is no catch
     ;

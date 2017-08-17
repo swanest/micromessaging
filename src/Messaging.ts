@@ -5,7 +5,7 @@ import {Channel, Connection, Message as AMessage} from 'amqplib';
 import {isNull, isNullOrUndefined, isUndefined} from 'util';
 import {defaults, omit, pull, cloneDeep} from 'lodash';
 import {
-    EmitOptions, Exchange, ListenerOptions, MessageHandler, PubPrivEmit, Queue, QueueOptions, ReplyAwaiter,
+    EmitOptions, Exchange, ListenerOptions, MessageHandler, Queue, QueueOptions, ReplyAwaiter,
     RequestOptions,
     RequestReport, Route,
     ServiceOptions,
@@ -67,15 +67,6 @@ export class Messaging {
 
     public static instances: Messaging[] = [];
 
-    /**
-     * When using publicly, every service can subscribe to messages aimed to "targetService"
-     */
-    public publicly: PubPrivEmit;
-    /**
-     * When using privately, only the targetService can read the message
-     */
-    public privately: PubPrivEmit;
-
     public lastMessageDate() {
         return this._lastMessageDate;
     }
@@ -94,7 +85,6 @@ export class Messaging {
     }
 
     public ee() {
-        this._assertNotClosed();
         return this._eventEmitter;
     }
 
@@ -169,8 +159,6 @@ export class Messaging {
     private _reportError(e: Error | CustomError) {
         if (this.ee().listenerCount('error') > 0) {
             this.ee().emit('error', e);
-        } else {
-            throw e;
         }
     }
 
@@ -275,29 +263,6 @@ export class Messaging {
             memorySoftLimit: ~~(heap_size_limit / Math.pow(2, 20) / 2), // Defaults to half heap_size_limit. Expressed in MB
             memoryHardLimit: ~~(heap_size_limit / Math.pow(2, 20) / 5 * 3) // Defaults to 3 fifth of heap_size_limit. Express in MB
         });
-        const that = this;
-        this.publicly = {
-            emit(targetService: string, route: string, messageBody?: any, messageHeaders?: any, options?: EmitOptions): Promise<void> {
-                this._assertNotClosed();
-                if (isNullOrUndefined(options)) {
-                    options = {private: false};
-                } else {
-                    options.private = false;
-                }
-                return that.emit(targetService, route, messageBody, messageHeaders, options);
-            }
-        };
-        this.privately = {
-            emit(targetService: string, route: string, messageBody?: any, messageHeaders?: any, options?: EmitOptions): Promise<void> {
-                this._assertNotClosed();
-                if (isNullOrUndefined(options)) {
-                    options = {private: true};
-                } else {
-                    options.private = true;
-                }
-                return that.emit(targetService, route, messageBody, messageHeaders, options);
-            }
-        };
         this._eventEmitter = new EventEmitter();
         if (this._serviceOptions.enableQos) {
             this._logger.log('Enable QOS');
@@ -344,14 +309,15 @@ export class Messaging {
         this._outgoingChannel = await this._createChannel();
 
         this._peerStatus.startBroadcast();
-        this._election.vote().catch(this._reportError);
 
         // Should be the last assertion so that every declared bit gets opened properly and that we avoid race conditions.
         await this._assertRoutes();
+        this._election.vote().catch(this._reportError);
         this._logger.debug('Routes asserted.');
     }
 
     private async _createChannel(): Promise<Channel> {
+        this._assertConnected();
         const chan = await this._connection.createChannel();
         chan.on('error', (e) => {
             this._logger.error('Got channel error', e);
@@ -388,6 +354,12 @@ export class Messaging {
         }
     }
 
+    private _assertConnected() {
+        if (this._isConnected !== true) {
+            throw new CustomError('This action requires to be connected.');
+        }
+    }
+
     /**
      * Listen to a specific event. See {{OwnEvents}} to know what events exist.
      * @param {OwnEvents} event
@@ -404,7 +376,6 @@ export class Messaging {
      * Sets a callback for an event. Will be triggered at max 1 time.
      * @param {OwnEvents} event
      * @param {(errorOrEvent: (CustomError | PressureEvent), message?: Message) => void} listener
-     * @returns {this}
      */
     public once(event: OwnEvents, listener: (errorOrEvent: CustomError | PressureEvent, message?: Message) => void): this {
         this._assertNotClosed();
@@ -421,18 +392,19 @@ export class Messaging {
      * @param {EmitOptions} options
      * @returns {Promise<void>}
      */
-    public async emit(target: string, route: string, messageBody?: any, messageHeaders?: any, options?: EmitOptions): Promise<void> {
+    public async emit(target: string,
+                      route: string,
+                      messageBody: any = '',
+                      messageHeaders: MessageHeaders = {},
+                      {onlyIfConnected = false}: EmitOptions = {}): Promise<void> {
+
         this._assertNotClosed();
-        if (!this._isConnected && options && options.onlyIfConnected === true) {
+        if (!this._isConnected && onlyIfConnected === true) {
             return;
         }
 
         if (!this._isConnected) {
             throw new CustomError('notConnected', 'No active connection to send the request.');
-        }
-
-        if (isNullOrUndefined(messageBody)) {
-            messageBody = '';
         }
 
         if (!isNullOrUndefined(messageHeaders.__mms)) {
@@ -457,57 +429,7 @@ export class Messaging {
      * RPC implementation. Request a service identified by the name targetService.
      * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
      * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @param streamHandler callback that will be called when the reply is a stream
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string, streamHandler: (message: Message) => void): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @param messageBody The message to send
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string, messageBody: any): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @param messageBody The message to send
-     * @param streamHandler callback that will be called when the reply is a stream
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string, messageBody: any, streamHandler: (message: Message) => void): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @param messageBody The message to send
-     * @param messageHeaders Additional headers. If idRequest is not provided, will auto-generate one.
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string, messageBody: any, messageHeaders: MessageHeaders): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
+     * Use timeout: -1 if you don't want the request to timeout.
      * @param {string} targetService The name of the service that will have to handle the request
      * @param {string} route A routing key to the handler in the targetService
      * @param messageBody The message to send
@@ -515,33 +437,13 @@ export class Messaging {
      * @param streamHandler callback that will be called when the reply is a stream
      * @returns The final response message to the request
      */
-    public async request(targetService: string, route: string, messageBody: any, messageHeaders: MessageHeaders, streamHandler: (message: Message) => void): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @param messageBody The message to send
-     * @param messageHeaders Additional headers. If idRequest is not provided, will auto-generate one.
-     * @param options
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string, messageBody: any, messageHeaders: MessageHeaders, options: RequestOptions): Promise<Message>;
-    /**
-     * RPC implementation. Request a service identified by the name targetService.
-     * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
-     * If there are multiple instances of the targetService, only one will handle it.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
-     * @param messageBody The message to send
-     * @param messageHeaders Additional headers. If idRequest is not provided, will auto-generate one.
-     * @param options
-     * @param streamHandler callback that will be called when the reply is a stream
-     * @returns The final response message to the request
-     */
-    public async request(targetService: string, route: string, messageBody: any, messageHeaders: MessageHeaders, options: RequestOptions, streamHandler: (message: Message) => void): Promise<Message>;
-    public async request(targetService: string, route: string, ...args: any[]): Promise<Message> {
+    public async request(targetService: string,
+                         route: string,
+                         messageBody: any = '',
+                         {idRequest = uuid.v4(), ...remainingHeaders}: MessageHeaders = {},
+                         {timeout = 3000}: RequestOptions = {},
+                         streamHandler: (message: Message) => void = null): Promise<Message> {
+
         this._assertNotClosed();
         if (!this._isConnected) {
             throw new CustomError('notConnected', 'No active connection to send the request.');
@@ -552,49 +454,30 @@ export class Messaging {
         if (isNullOrUndefined(route)) {
             throw new CustomError('notConnected', 'You must specify a target route.');
         }
-        let messageHeaders: any = {},
-            messageBody: any = '',
-            options: RequestOptions = {},
-            streamHandler: (m: Message) => void = null;
-
-        let stop = false;
-        args.forEach((v, i) => {
-            if (stop) {
-                return;
-            }
-            if (typeof v === 'function') {
-                streamHandler = v;
-                stop = true;
-                return;
-            }
-            switch (i) {
-                case 0:
-                    messageBody = v;
-                    break;
-                case 1:
-                    messageHeaders = v;
-                    break;
-                case 2:
-                    options = v;
-                    break;
-            }
-        });
-
-        defaults(options, {
-            replyTimeout: 3000
-        });
-
-        if (isNullOrUndefined(messageHeaders.idRequest)) {
-            messageHeaders.idRequest = uuid.v4();
-        }
 
         await this._assertReplyQueue();
         const correlationId = uuid.v4();
         const def = when.defer<Message>();
-        this._awaitingReply.set(correlationId, {
+        const awaitingReplyObj: ReplyAwaiter = {
             deferred: def,
-            streamHandler: streamHandler
-        });
+            streamHandler: streamHandler,
+            timer: null
+        };
+
+        if (timeout > -1) {
+            awaitingReplyObj.timer = setTimeout(() => {
+                def.reject(new CustomError('timeout', `Request timed out. Expecting response within ${timeout}ms`));
+                this._awaitingReply.delete(correlationId);
+            }, timeout);
+        }
+
+        this._awaitingReply.set(correlationId, awaitingReplyObj);
+
+        if (timeout === 0) {
+            def.reject(new CustomError('timeout', `Request timed out. Expecting response within ${timeout}ms`));
+            this._awaitingReply.delete(correlationId);
+        }
+
         await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}`,
             Buffer.from(JSON.stringify(messageBody)),
@@ -604,7 +487,9 @@ export class Messaging {
                 replyTo: this._replyQueue,
                 contentType: 'application/json',
                 headers: {
-                    __mms: {route}
+                    __mms: {route},
+                    idRequest,
+                    ...remainingHeaders
                 }
             }
         );
@@ -613,28 +498,30 @@ export class Messaging {
 
     /**
      * Worker queue implementation. By default we always want an acknowledgment to a sent task (for backwards compatibility).
-     * @param {string} targetService
-     * @param {string} route
-     * @param messageBody
-     * @param messageHeaders
-     * @param {TaskOptions} options
-     * @returns {Promise<void|Message>}
+     * @param {string} targetService The name of the service that will have to handle the request
+     * @param {string} route A routing key to the handler in the targetService
+     * @param messageBody The message to send.
+     * @param messageHeaders Additional headers. If idRequest is not provided, will auto-generate one.
+     * @returns A promise that resolves once the message has been sent or a proxied request
      */
-    public async task(targetService: string, route: string, messageBody?: any, messageHeaders?: MessageHeaders, options?: TaskOptions): Promise<void | Message> {
+    public async task(targetService: string,
+                      route: string,
+                      messageBody: any = '',
+                      {idRequest = uuid.v4(), ...remainingHeaders}: MessageHeaders = {},
+                      {timeout = 3000, noAck = true}: TaskOptions = {}): Promise<void | Message> {
+
         this._assertNotClosed();
         if (!this._isConnected) {
             throw new CustomError('notConnected', 'No active connection to send the task to.');
         }
-        if (isNullOrUndefined(options)) {
-            options = {};
-        }
-        defaults(options, {
-            noAck: false
-        });
 
-        if (!options.noAck) {
+        if (noAck === false) {
             console.warn('Using task(..) to dispatch requests is deprecated. Use request(..) instead.');
-            return this.request(targetService, route, messageBody, messageHeaders, omit(options, 'noAck'));
+            return this.request(targetService,
+                route,
+                messageBody,
+                {idRequest, ...remainingHeaders},
+                {timeout});
         }
 
         await this._outgoingChannel.sendToQueue(
@@ -642,11 +529,14 @@ export class Messaging {
             Buffer.from(JSON.stringify(messageBody)),
             {
                 contentType: 'application/json',
+                mandatory: true,
                 headers: {
                     __mms: {
                         route,
                         isTask: true
-                    }
+                    },
+                    idRequest,
+                    ...remainingHeaders
                 }
             }
         );
@@ -655,19 +545,26 @@ export class Messaging {
     }
 
     /**
-     * Creates a listener
-     * @param {string} route
-     * @param {MessageHandler} listener
-     * @returns {this}
+     * PUB/SUB creates an event listener
+     * @param target The target on which you want to listen by default it's the serviceName but it can be the name of a commonly agreed exchange
+     * @param route The route on which to listen
+     * @param listener The callback function that will be called each time a message arrives on that route
      */
-    public listen(target: string, route: string, listener: MessageHandler, options?: ListenerOptions): this;
-    public listen(route: string, listener: MessageHandler, options?: ListenerOptions): this;
-    public listen(routeOrTarget: string, routeOrListener: any, listener?: MessageHandler, options?: ListenerOptions): this {
+    public listen(target: string, route: string, listener: MessageHandler): this;
+    /**
+     * PUB/SUB creates an event listener
+     * @param route The route on which to listen
+     * @param listener The callback function that will be called each time a message arrives on that route
+     */
+    public listen(route: string, listener: MessageHandler): this;
+    /**
+     * See the docs of the two other overloaded methods. This is the implementation of them.
+     */
+    public listen(routeOrTarget: string, routeOrListener: any, listener?: MessageHandler): this {
         this._assertNotClosed();
         let target = routeOrTarget,
             route = routeOrListener;
         if (typeof routeOrListener === 'function') {
-            options = listener;
             listener = routeOrListener;
             target = this._serviceName;
             route = routeOrTarget;
@@ -679,7 +576,7 @@ export class Messaging {
             throw new CustomError(`A listener for ${isNull(target) ? '' : target + ':'}${route} is already defined.`);
         }
         this._routes.set(routeAlias, {
-            options,
+            options: null, // Not implemented yet.
             route,
             target,
             type: 'pubSub',
@@ -687,7 +584,7 @@ export class Messaging {
             subjectToQuota: !(target === this._internalExchangeName)
         });
         this._logger.debug('Asserting route', routeAlias);
-        this._assertRoute(routeAlias);
+        this._assertRoute(routeAlias).catch(this._reportError);
         return this;
     }
 
@@ -731,7 +628,6 @@ export class Messaging {
      * @param {string} route
      * @param {MessageHandler} listener
      * @param {ListenerOptions} options
-     * @returns {this}
      */
     public handle(route: string, listener: MessageHandler, options?: ListenerOptions): this {
         this._assertNotClosed();
@@ -818,7 +714,7 @@ export class Messaging {
         return this.emit.call(this, args);
     }
 
-    public async close(deleteAllQueues: boolean = false) {
+    public async close(deleteAllQueues: boolean = false, force: boolean = false) {
         this._logger.debug('Closing connection');
         if (this._isClosed || this._isClosing) {
             // Close is idempotent
@@ -850,10 +746,14 @@ export class Messaging {
         if (deleteAllQueues) {
             const proms: Array<string> = [];
             this._queues.forEach(q => !q.options.autoDelete && !q.options.exclusive && proms.push(q.name)); // Only delete queue that won't auto-delete.
-            await Promise.all(proms.map(name => this._outgoingChannel.deleteQueue(name, {
+            const opts = {
                 ifUnused: true,
                 ifEmpty: true
-            })));
+            };
+            if (force) {
+                opts.ifEmpty = false;
+            }
+            await Promise.all(proms.map(name => this._outgoingChannel.deleteQueue(name, opts)));
         }
 
         if (this._isConnected) {
@@ -929,6 +829,9 @@ export class Messaging {
                     this._logger.debug(`Consuming queue: ${route.queueName} (${route.route})`);
                     if (route.subjectToQuota && route.maxParallelism > 0) {
                         this._logger.debug(`Setting // to ${route.maxParallelism} on ${route.queueName} (${route.route})`);
+                        if (this._isClosing) { // Because of the await just above this line might try to execute on a closing connection.
+                            return;
+                        }
                         await channel.prefetch(route.maxParallelism, true);
                     }
                 }
@@ -1019,12 +922,13 @@ export class Messaging {
     }
 
     private _messageHandler(originalMessage: AMessage, route: Route) {
+        tracer.log(`Received a message in _messageHandler isClosed? ${this._isClosed}, isConnected: ${this._isConnected}, isClosing: ${this._isClosing}`, Message.toJSON(originalMessage));
         if (this._isClosed || !this._isConnected || this._isClosing) {
             // We dont handle messages in those cases. They will auto-nack because the channels and connection will die soon so there is no need to nack them all first.
             return;
         }
         if (this._serviceOptions.enableQos && route.subjectToQuota) {
-            this._qos.handledMessage(); // This enables to keep track of syncronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
+            this._qos.handledMessage(); // This enables to keep track of synchronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
         }
         const m = new Message(route, originalMessage);
         const routeAlias = `${m.isRequest() || m.isTask() ? 'handle' : 'listen'}.${m.destinationRoute()}`;
@@ -1042,7 +946,10 @@ export class Messaging {
         if (m.isAnswer()) {
             m.ack();
             if (!this._awaitingReply.has(m.correlationId())) {
-                throw new CustomError('inconsistency', `No handler found for response with correlationId: ${m.correlationId()}`, m);
+                // throw new CustomError('inconsistency', `No handler found for response with correlationId: ${m.correlationId()}`, m);
+                tracer.debug('A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.');
+                this.ee().emit('unhandledMessage', new CustomError(`A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.`), m);
+                return; // Means it probably timed out or there is a big issue...
             }
             const defMess = this._awaitingReply.get(m.correlationId());
             if (m.isError()) {
@@ -1071,11 +978,11 @@ export class Messaging {
             return;
         }
         if (!this._routes.has(routeAlias)) {
-            m.nack();
-            if (this._eventEmitter.listenerCount('error') > 0) {
+            m.nativeReject();
+            if (this._eventEmitter.listenerCount('unhandledMessage') > 0) {
                 this._eventEmitter.emit('unhandledMessage', new CustomError(`Handler for ${m.destinationRoute()} missing.`));
             } else {
-                throw new CustomError(`Handler for ${m.destinationRoute()} missing.`);
+                this._reportError(new CustomError(`An unhandledMessage arrived but there is no unhandledMessage listener. Handler for ${m.destinationRoute()} missing.`));
             }
             return;
         }

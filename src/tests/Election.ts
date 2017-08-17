@@ -25,6 +25,7 @@ describe('Leader Election', () => {
         await Promise.all(servers.map(s => {
             return new Promise((resolve, reject) => {
                 s.on('leader', o => {
+                    console.log('received leader', o);
                     try {
                         winners.push((o as any).leaderId);
                         resolve();
@@ -36,7 +37,18 @@ describe('Leader Election', () => {
         }));
         const winner = winners[0];
         winners.forEach(id => {
-            expect(id).to.equal(winner);
+            try {
+                expect(id).to.equal(winner);
+            } catch (e) {
+                ids.sort((a, b) => a - b);
+                console.log({
+                    low: ids[0],
+                    high: ids[ids.length - 1],
+                    elected: winner,
+                    ids
+                });
+                throw e;
+            }
         });
         return await Promise.all(servers.map(s => s.close())).then(() => {
             ids.sort((a, b) => a - b);
@@ -49,7 +61,7 @@ describe('Leader Election', () => {
     }
 
     it('should find consensus on leadership', async function () {
-        this.timeout(60000);
+        this.timeout(20000);
         const proms = [];
         for (let i = 0; i < 5; i++) {
             proms.push(voteLoop(i));

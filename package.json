@@ -9,7 +9,8 @@
   "main": "./dist/Messaging.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "DEBUG=micromessaging mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
+    "test": "mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
+    "test:debug": "DEBUG=micromessaging mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
     "build": "rm -rf dist && tsc && rm -rf ./dist/tests",
     "docs": "typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6",
     "prepublish": "npm run build"

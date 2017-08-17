@@ -45,6 +45,8 @@ export class Election {
             if (!isNullOrUndefined(this._leaderId) && this._leaderId !== (m.body as any).leaderId) {
                 // throw new CustomError('leaderAlreadyDefined', `${this._id} expected leader to be ${this._leaderId} but received ${(m.body as any).leaderId}`);
                 this._logger.debug('Leader was already defined but someone pretends its someone else, lets vote again.');
+                clearTimeout(this._leaderNotificationTimer);
+                this._leaderNotificationTimer = null;
                 this.TEMPO *= 2;
                 this.TIMEOUT *= 2;
                 this._leaderId = null;
@@ -93,7 +95,11 @@ export class Election {
         if (!isNullOrUndefined(this._leaderNotificationTimer)) {
             clearTimeout(this._leaderNotificationTimer);
         }
+        this._logger.log(`Will notify leader in ${this.TEMPO}ms.`);
         this._leaderNotificationTimer = setTimeout(() => {
+            if (this._leaderId === null) {
+                return;
+            }
             this._messaging.ee().emit('leader', {leaderId: this._leaderId});
             this._leaderNotificationTimer = null;
         }, this.TEMPO);
@@ -102,6 +108,9 @@ export class Election {
     public shut() {
         if (!isNullOrUndefined(this._voteAnswerTimeout)) {
             clearTimeout(this._voteAnswerTimeout);
+        }
+        if (!isNullOrUndefined(this._leaderNotificationTimer)) {
+            clearTimeout(this._leaderNotificationTimer);
         }
     }
 
@@ -127,20 +136,22 @@ export class Election {
 
     private async _electionListener(message: Message<ElectionMessage>) {
         if (message.body.id === this._id) {
-            // Ignore messages that I sent myself.
             if (this._firstMessageISent) {
                 this._waitAndMakeMeLeader();
                 this._firstMessageISent = false;
             }
             this._pong = new Date();
-            if (this.TEMPO < this._pong.getTime() - this._ping.getTime()) {
-                this.TEMPO = this._pong.getTime() - this._ping.getTime();
+            const pingPong = this._pong.getTime() - this._ping.getTime();
+            if (this.TEMPO < pingPong) {
+                this.TEMPO = Math.ceil(pingPong * 1.5);
+            } else if (this.TEMPO > pingPong * 2) {
+                this.TEMPO = ~~(pingPong * 2); // Put TEMPO at 2 times lantency.
             }
             if (this.TIMEOUT < this.TEMPO) {
                 throw new CustomError('latencyTooHigh', 'Latency is too high and wont help in the election process...');
             }
             this._logger.debug('Received a message I sent myself. Ignoring it.');
-            return;
+            return; // Ignore rest of handle for messages that I sent myself.
         }
         this._logger.log(`${this._id} received a vote message`, message.body, this._lastLeaderSync);
         // Something arrives but vote is already done & lastLeaderSeen < 2/3 TIMEOUT, publish that the elected instance is the previously elected one
@@ -176,7 +187,7 @@ export class Election {
         await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.consensus', {
             id: this._id,
             leaderId: this._leaderId
-        }, null, {onlyIfConnected: true});
+        }, undefined, {onlyIfConnected: true});
     }
 
     private _shallIBeLeader(): boolean {
@@ -194,7 +205,7 @@ export class Election {
         this._logger.debug('winner IMO %d', winnerIMO, this._candidates);
         if (winnerIMO !== this._id && !initialVote) { // Shut the fuck up.
             return;
-        } else if (!initialVote) {
+        } else if (!initialVote && winnerIMO === this._id) {
             this._waitAndMakeMeLeader();
         }
 
@@ -203,7 +214,7 @@ export class Election {
         await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.vote', {
             id: this._id,
             voteFor: winnerIMO
-        }, null, {onlyIfConnected: true});
+        }, undefined, {onlyIfConnected: true});
     }
 
     private _waitAndMakeMeLeader(initialFactor: number = 1) {
@@ -222,8 +233,8 @@ export class Election {
     }
 
     async vote() {
-        this._voteFor(this._id, true);
         this._firstMessageISent = true;
+        return this._voteFor(this._id, true);
         // Wait a proposition from someone within TEMPO
     }
 }

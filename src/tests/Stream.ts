@@ -1,5 +1,6 @@
 import {expect} from "chai";
 import {Messaging} from '../Messaging';
+import {Message} from '../Message';
 
 describe('Stream', () => {
 
@@ -15,7 +16,11 @@ describe('Stream', () => {
         });
         await Promise.all([s.connect(), c.connect()]);
         let received = 0;
-        await c.request('aService', 'something', (m: Messaging) => {
+        await c.request('aService', 'something',
+            undefined,
+            undefined,
+            undefined,
+            (message: Message) => {
             received++;
         });
         received++;
@@ -44,7 +49,11 @@ describe('Stream', () => {
             });
         });
         await Promise.all([s.connect(), c.connect()]);
-        await c.request('aService', 'something', (m: Messaging) => {
+        await c.request('aService', 'something',
+            undefined,
+            undefined,
+            undefined,
+            (m: Message) => {
         });
         await awaiter;
     });

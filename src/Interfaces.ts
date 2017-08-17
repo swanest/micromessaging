@@ -2,6 +2,7 @@ import {Channel} from 'amqplib';
 import {Message} from './Message';
 import {Message as AMessage} from 'amqplib';
 import Deferred = When.Deferred;
+import Timer = NodeJS.Timer;
 
 export type ExchangeType = 'topic' | 'direct' | 'fanout';
 
@@ -74,11 +75,6 @@ export interface Status {
     handlers: Array<String>; // Requests routes the targetService handles
 }
 
-export interface PubPrivEmit {
-    emit(targetService: string, route: string, messageBody?: any, messageHeaders?: any, options?: EmitOptions): Promise<void>;
-}
-
-
 export interface RequestOptions {
     /**
      * @param replyTimeout Defaults to 3000 (MS)
@@ -86,20 +82,20 @@ export interface RequestOptions {
      */
     // timeout?: number; // expressed in milliseconds. Timeout to transmit the message to rabbit
     // expiresIn?: number; // expressed in milliseconds. Listeners to the event/message must read it within this interval
-    replyTimeout?: number; // express in milliseconds. Maximum time to receive an answer
+    timeout?: number; // express in milliseconds. Maximum time to receive an answer
     // maxParallel?: number; // defaults to unlimited. Limits the number of parallel requests for this route at the same time
     // onlyMaster?: boolean; // defaults to false. Request will only arrive on the master node.
-    hasPriority?: boolean; // defaults to false.
+    // hasPriority?: boolean; // defaults to false.
 }
 
 export interface TaskOptions {
     timeout?: number; // expressed in milliseconds. Timeout to transmit the message to rabbit
-    expiresIn?: number; // expressed in milliseconds. Listeners to the event/message must read it within this interval
-    replyTimeout?: number; // express in milliseconds. Maximum time to receive an answer
+    // expiresIn?: number; // expressed in milliseconds. Listeners to the event/message must read it within this interval
+    // replyTimeout?: number; // express in milliseconds. Maximum time to receive an answer
     noAck?: boolean; // defaults to false. Used to say we don't expect to get an ACK for the sent task.
     // maxParallel?: number; // defaults to unlimited. Limits the number of parallel requests for this route at the same time
     // onlyMaster?: boolean; // defaults to false. Task will only arrive on the master node.
-    hasPriority?: boolean; // defaults to false.
+    // hasPriority?: boolean; // defaults to false.
 }
 
 export interface EmitOptions {
@@ -140,6 +136,7 @@ export interface ReplyAwaiter {
     streamHandler: (m: Message) => void;
     deferred: Deferred<Message | Message[]>;
     accumulator?: Array<Message>;
+    timer: Timer;
 }
 
 export interface MessageHeaders {

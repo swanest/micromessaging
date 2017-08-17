@@ -40,6 +40,14 @@ export class Message<T = {}> {
         }
     }
 
+    public static toJSON(message: AMessage) {
+        return {
+            fields: message.fields,
+            properties: message.properties,
+            content: JSON.parse(message.content.toString())
+        }
+    }
+
     public originalMessage() {
         return cloneDeep(this._originalMessage);
     }
@@ -63,8 +71,14 @@ export class Message<T = {}> {
         return this._replyReject(body, headers);
     }
 
-    public async reject(error: CustomError | object, headers?: object) {
+    public async reject(error: CustomError | object, headers?: MessageHeaders) {
         return this._replyReject(error, headers, {isRejection: true});
+    }
+
+    public nativeReject() {
+        if (!this._isAcked) {
+            this._route.channel.nack(this._originalMessage, false, false);
+        }
     }
 
     public ack(): void {
@@ -83,7 +97,10 @@ export class Message<T = {}> {
         }
     }
 
-    private async _replyReject(bodyOrError?: any | CustomError, headers: MessageHeaders = {}, options?: InternalReplyOptions) {
+    private async _replyReject(bodyOrError?: any | CustomError,
+                               headers: MessageHeaders = {idRequest: this._originalMessage.properties.headers.idRequest},
+                               options?: InternalReplyOptions
+    ) {
 
         if (isNullOrUndefined(options)) {
             options = {};
@@ -93,7 +110,7 @@ export class Message<T = {}> {
             throw new CustomError('__mms header property is reserved. Please use another one.');
         }
 
-        defaults(options, {isEnd: true, isRejection: false});
+        defaults(options, {isEnd: true, isRejection: false});``
 
         if (this._isAnswered) {
             throw new CustomError('forbidden', 'Message was already replied (you might want to have used .write(..) and .end(..)?).');

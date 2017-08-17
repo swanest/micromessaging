@@ -70,7 +70,7 @@ export class PeerStatus {
         await this._messaging.emit(this._messaging.internalExchangeName(), 'peer.alive', {
             id: this._messaging.serviceId(),
             electionId: this._messaging.election().id()
-        }, null, {onlyIfConnected: true});
+        }, undefined, {onlyIfConnected: true});
         this._logger.log(`Publish I'm still alive`);
         this._timer = setTimeout(() => {
             this._keepAlive();
