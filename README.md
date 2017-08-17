@@ -31,20 +31,20 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 
 ## TODO
 
-*  Manage timeouts in requests and emit messages.
-*  `waitForService(s)`
-*  `getStatus` of a service (to know if the service is accepting workload)
-*  `.ready` / `.unready` to enable or stop accepting workload
-*  Make API names consistent
-*  Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
-*  Add a version so that if two modules are not working on the same version there is some big announcements in the logs to avoid headaches
-*  Go to the old codebase (within the dir) and check we didn't forgot a working behaviour or features.
-*  Quadruple check that everything works fine through some good testing!
-*  Code review
-*  Delete old JS codebase
-*  Add more comments to that `typedoc` generates a cool and easy doc.
-*  Travis auto tests
-*  Publish a doc under heroku maybe?
+* [ ] Manage timeouts in requests and emit messages.
+* [ ] `waitForService(s)`
+* [ ] `getStatus` of a service (to know if the service is accepting workload)
+* [ ] `.ready` / `.unready` to enable or stop accepting workload
+* [ ] Make API names consistent
+* [ ] Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
+* [ ] Add a version so that if two modules are not working on the same version there is some big announcements in the logs to avoid headaches
+* [ ] Go to the old codebase (within the dir) and check we didn't forgot a working behaviour or features.
+* [ ] Quadruple check that everything works fine through some good testing!
+* [ ] Code review
+* [ ] Delete old JS codebase
+* [ ] Add more comments to that `typedoc` generates a cool and easy doc.
+* [ ] Travis auto tests
+* [ ] Publish a doc under heroku maybe?
 
 ## Useful info
 
