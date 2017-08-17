@@ -34,7 +34,7 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 
 ## TODO
 
-* [ ] Manage timeouts in requests and emit messages.
+* [x] Manage timeouts in requests.
 * [ ] `waitForService(s)`
 * [ ] `getStatus` of a service (to know if the service is accepting workload)
 * [ ] `.ready` / `.unready` to enable or stop accepting workload
