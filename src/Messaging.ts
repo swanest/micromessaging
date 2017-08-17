@@ -46,7 +46,6 @@ export class Messaging {
     private _internalExchangeName: string;
     private _election: Election;
     private _peerStatus: PeerStatus;
-    private _logger: Logger;
     private _lastMessageDate: Date;
 
     private _waitParallelismAsserted: Deferred<void>;
@@ -64,6 +63,8 @@ export class Messaging {
     private _isConnected: boolean = false;
     private _isClosing: boolean = false;
     private _isClosed: boolean = false;
+
+    protected _logger: Logger;
 
     public static instances: Messaging[] = [];
 
@@ -295,7 +296,7 @@ export class Messaging {
      */
     public async connect(rabbitURI?: string): Promise<void> {
         this._assertNotClosed();
-        this._uri = rabbitURI || 'amqp://localhost?heartbeat=30';
+        this._uri = rabbitURI || process.env.RABBIT_URI || 'amqp://localhost?heartbeat=30';
         this._logger.debug(`Establishing connection to ${this._uri}`);
         try {
             this._connection = await amqp.connect(this._uri);

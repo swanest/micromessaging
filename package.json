@@ -6,11 +6,12 @@
     "url": "https://github.com/swanest/micromessaging"
   },
   "description": "Easy-to-use interface for Rabbit MQ",
-  "main": "./dist/Messaging.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "test": "mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
     "test:debug": "DEBUG=micromessaging mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
+    "watch": "nodemon -e ts,json --exec 'node --inspect=5858 node_modules/mocha/bin/mocha --compilers ts:ts-node/register \"src/tests/*.ts\"'",
     "build": "rm -rf dist && tsc && rm -rf ./dist/tests",
     "docs": "typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6",
     "prepublish": "npm run build"

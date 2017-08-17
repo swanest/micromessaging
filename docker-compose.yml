@@ -1,0 +1,15 @@
+version: '3'
+services:
+  messaging:
+    build: docker/messaging
+    volumes:
+      - ".:/app"
+    working_dir: /app
+    depends_on:
+      - rabbit
+    env_file:
+    - variables.env
+  rabbit:
+    image: rabbitmq:3-management
+    expose:
+      - 5672
