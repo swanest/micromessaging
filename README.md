@@ -1,246 +1,51 @@
-Micromessaging
-===================
+# Micromessaging [WIP 3.0.0]
 
-This module has been written for Swanest back-end. It eases the use of messaging between microservices. It already uses a higher level of abstraction of RabbitMQ provided by the great [Rabbot module written by Alex Robson](https://github.com/arobson/rabbot)
+This module has been written for Swanest back-end. It eases the use of messaging between services.
+We use RabbitMQ as the underlying broker service.
+This library is using amqplib (0.9.1) as a core dependency but we do use some parameters that are only RabbitMQ related so it might not work with other AMQP 0.9.1 brokers. 
 
 ----------
 
 
-Installation
--------------
+## Installation
 
-    npm install micromessaging --save
-
-
-Client
--------------
-
-```js
-let logLib = require("sw-logger"),
-    tracer = new logLib.Logger({namespace: "micromessaging"}).context("tests-client"),
-    Service = require("micromessaging").Service;
-
-let micromessaging = new Service("client"); //name your service
-
-//Connect, by default to localhost. You may specify a string URI or ‘RABBITMQ_URI‘ env variable
-micromessaging.connect();
-
-micromessaging.on("unreachable", ()=> {
-    tracer.warn(micromessaging.name + " failed to reach rabbit server");
-});
-micromessaging.on("unroutableMessage", (message)=> {
-    tracer.warn(micromessaging.name + " encountered an unroutable message", message);
-});
-micromessaging.on("unhandledMessage", (message)=> {
-    tracer.warn(micromessaging.name + " encountered an unhandled message", message);
-});
-micromessaging.on("closed", () => {
-    tracer.warn(micromessaging.name + " closed its connection");
-    process.exit(0);
-});
-micromessaging.on("failed", () => {
-    tracer.warn(micromessaging.name + " failed to connect. going to reconnect");
-});
-
-//We could have called micromessaging.connect().then(...).catch(...)
-
-micromessaging.on("connected", ()=> {
-
-    tracer.log(micromessaging.name + " is connected");
-
-    //Publicly emit message on ‘abc‘ service
-    micromessaging.emit("abc", "stock.aapl.split", {ratio: "7:1"}, {headerAppInfo: "test"}, {timeout:300, expiresAfter:4000}).then(()=> {
-        console.log("ok");
-    }).catch(console.error);
-    micromessaging.emit("abc", "stock.aapl.cashDiv", {amount: 0.52}).then(()=> {
-        console.log("ok");
-    }).catch(console.error);
-    micromessaging.emit("abc", "stock.msft.split", {ratio: "3:1"}).then(()=> {
-        console.log("ok");
-    }).catch(console.error);
-    micromessaging.emit("abc", "stock.msft.cashDiv", {amount: 0.72}).then(()=> {
-        console.log("ok");
-    }).catch(console.error);
-
-    //Emit on xyz
-    micromessaging.privately.emit("xyz", "health.memory", {status: "bad"}, {
-        additionalInfoA: 1,
-        additionalInfoB: 3
-    }).catch(console.error); //abc won't receive it
-
-    //Emit on xyz in public mode (publicly is optional, by default it's public)
-    micromessaging.publicly.emit("xyz", "health.memory", {status: "good"}, null).catch(console.error); //abc will receive it
-
-    //Emit on all microservices
-    micromessaging.emit("*", "health.memory", {status: "Hello folks"}, {headerInfo: 1}).catch(console.error); //abc will receive it
-
-    //Send a request
-    micromessaging.request("abc", "time-serie", {test: "ok"}, {replyTimeout:5000})
-        .progress(function (msg) {
-            console.log("progress", msg.body);
-        })
-        .then(function (msg) {
-            console.log("finished", msg.body);
-        })
-        .catch(console.error);
-
-    //Send a task (meaning a request without expected answer, and without any `expiresAfter` constraint)
-    micromessaging.task("abc", "time-serie", {test: "ok"}).then(console.log, console.error);
-
-    //Notify() is a synonyme for task()
-    micromessaging.notify("abc", "time-serie", {test: "ok"}).then(console.log, console.error)
-
-});
-```
+`npm install micromessaging --save`
 
 
-Server
--------------
+## Notes
 
-```js
-let logLib = require("sw-logger"),
-    Service = require("micromessaging").Service,
-    serviceName = process.argv[2],
-    tracer = new logLib.Logger({namespace: "micromessaging"}).context("tests-server-" + serviceName);
+v3.0 is going to have quite some breaking changes and CANT be used with an other module using an earlier version.
 
-tracer.log("Welcome on %s process", serviceName); //launch at the same time ‘abc‘ and ‘zxy' modules
+About what it does:
+*  RPC model (`.request` / `.handle`)
+*  Event subscription (PUB/SUB) (`.emit` / `.listen`)
+*  Worker queue tasks (`.task` / `.handle`)
+*  Election of a master between services that do have the same `serviceName` (in `new Messaging(serviceName[, serviceOptions])`)
+*  Manage the process quality of service (`Qos.ts`)
+   *  The QoS is managed through usage of `HeavyEL` for event-loop management and the `MemoryPressure` module to know about memory usage and pressure.
+   *  What it basically does is to try to keep the process under a certain usage and will stop accepting messages when it reaches a certain threshold to avoid crashes. The reason is that this enables parallelism and it should be properly managed as NodeJS is single threaded.
+*  Has knowledge about the status of it's peers (through `PeerStatus.ts`)
 
-let micromessaging = new Service(serviceName);
+For the full API, `yarn docs` and open `docs/index.html` in your browser. The docs are not full yet.
+The only API that should be exposed should rely on `Messaging.ts` class even though it might expose some underlying processes.
 
-micromessaging.connect();
+## TODO
 
-micromessaging.on("unreachable", ()=> {
-    tracer.warn(micromessaging.name + " failed to reach rabbit server");
-});
-micromessaging.on("unroutableMessage", (message)=> {
-    tracer.warn(micromessaging.name + " encountered an unroutable message", message);
-});
-micromessaging.on("unhandledHandled", (message)=> {
-    tracer.warn(micromessaging.name + " encountered an unhandled message", message);
-});
-micromessaging.on("closed", () => {
-    tracer.warn(micromessaging.name + " closed its connection");
-    process.exit(0);
-});
-micromessaging.on("failed", () => {
-    tracer.warn(micromessaging.name + " failed to connect. going to reconnect");
-});
+*  Manage timeouts in requests and emit messages.
+*  `waitForService(s)`
+*  `getStatus` of a service (to know if the service is accepting workload)
+*  `.ready` / `.unready` to enable or stop accepting workload
+*  Make API names consistent
+*  Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
+*  Add a version so that if two modules are not working on the same version there is some big announcements in the logs to avoid headaches
+*  Go to the old codebase (within the dir) and check we didn't forgot a working behaviour or features.
+*  Quadruple check that everything works fine through some good testing!
+*  Code review
+*  Delete old JS codebase
+*  Add more comments to that `typedoc` generates a cool and easy doc.
+*  Publish a doc under heroku maybe?
 
-//We could have called micromessaging.connect().then(...).catch(...)
-micromessaging.on("connected", ()=> {
+## Useful info
 
-    //We are connected
-    tracer.log(micromessaging.name + " is connected");
-
-    //Listening to private and public messages regarding service ‘abc‘ related to splits
-    micromessaging.listen("stock.aapl.split", function (message) {
-        tracer.log("stock.aapl.split", message.fields.routingKey, message.body);
-    });
-
-    //Listening to private and public messages regarding service ‘abc‘ related to all corporate actions of Microsoft
-    micromessaging.listen("stock.msft.*", function (message) {
-        tracer.log("stock.msft.*", message.fields.routingKey, message.body);
-    });
-
-    //Listening to private and public messages regarding service ‘abc‘ related to all corporate actions, whatever the stock
-    micromessaging.listen("stock.#", function (message) {
-        tracer.log("stock.#", message.fields.routingKey, message.body);
-    });
-
-    //Listening to public messages regarding service ‘xyz‘ module
-    micromessaging.listen("health.memory", function (message) {
-        tracer.log("health.memory /xyz", message.fields.routingKey, message.body);
-    }, "xyz");
-
-    //Listening to global public messages
-    micromessaging.listen("health.memory", function (message) {
-        tracer.log("health.memory /*", message.fields.routingKey, message.body);
-    }, "*").onError((error, message)=>console.log);
-
-    //Handling a request
-    var handler = micromessaging.handle("time-serie", function (message) {
-        tracer.log("time-serie request", message.body);
-        message.write({m:1},{h:"foo"});
-        message.reply({m:1},{h:"foo"});
-    }).onError(function(error,message){
-        console.log(error);
-        message.nack();
-    });
-
-    //we could remove the subscription by doing handler.remove();
-
-    //As this service has consumers, it needs to subscribe to be able to start receiving messages !
-    micromessaging.subscribe();
-});
-```
-
-
-Options
--------------
-
-`new Service(name, opts)`
-
-__Memory pressure handling__
-
-This is by default set to `false`. But you can enable it by passing `true` as it will stop entering requests when memory is under pressure.
-You can also specify the configuration.
-
-```js
-let opts = {
-    memoryPressureHandled: {
-            memoryThreshold: 300000000, //in bytes (300mb)
-            interval: 1000, //interval check in ms (1 sec)
-            consecutiveGrowths: 5
-    }
-}
-```
-
-
-__Discoverable__
-
-Sometimes you need a leader among instances of the same service. This is possible by setting `discoverable:true` or a more specific config. 
-
-```js
-let opts = {
-    discoverable: {
-            intervalCheck: 3 * 60 * 1000, //in ms (3 min) - every 3min we check whether an elected instance exists
-            electionTimeout: 500 //in ms, time to wait after the last signal to elect an instance
-    }
-}
-```
-
-You can then use as events such as "elected", "electedAndSubscribing", "electedAndReady" to perform some actions.
-
-Exclusively
--------------
-
-By `exclusively.listen()`, only one instance will get the message reserved to its service.
-
-
-Ready / Unready
--------------
-
-By default, calling `subscribe()` makes the instance as ready. 
-But you can distinguish by calling `subscribing(false)` and then later call `ready()` or `unready()`.
-This status will be used by and in both methods `getStatus(serviceName)` and `waitForService(serviceName)` 
-
-Get status
--------------
-
-You can ask for a partner status.
-
-`getStatus(serviceName, [{isElected:boolean}])`
-
-
-Wait for service
--------------
-
-You can wait for one or more services to be ready
-
-`waitForService(serviceName, [{isElected:boolean}])` or `waitForServices(serviceNames, [{isElected:boolean}])` 
-
-
-Tests
--------------
-
-    npm test
+As we are transitionning to a new version, all relevant files will be under `src/` folder but
+to ease work, we kept the old JS codebase so that we can easily sneak peak information in it about the old working procedures to not forget anything.
