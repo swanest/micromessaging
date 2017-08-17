@@ -11,6 +11,9 @@ This library is using amqplib (0.9.1) as a core dependency but we do use some pa
 
 `npm install micromessaging --save`
 
+## Dependencies
+
+Just install RabbitMQ locally to develop (version must be > 3.3.0)
 
 ## Notes
 
