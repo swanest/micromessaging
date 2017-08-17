@@ -43,6 +43,7 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 *  Code review
 *  Delete old JS codebase
 *  Add more comments to that `typedoc` generates a cool and easy doc.
+*  Travis auto tests
 *  Publish a doc under heroku maybe?
 
 ## Useful info
