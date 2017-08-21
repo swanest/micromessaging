@@ -146,6 +146,9 @@ export class Election {
                 this.TEMPO = Math.ceil(pingPong * 1.5);
             } else if (this.TEMPO > pingPong * 2) {
                 this.TEMPO = ~~(pingPong * 2); // Put TEMPO at 2 times lantency.
+                if (this.TEMPO < 500) {
+                    this.TEMPO = 500;
+                }
             }
             if (this.TIMEOUT < this.TEMPO) {
                 throw new CustomError('latencyTooHigh', 'Latency is too high and wont help in the election process...');

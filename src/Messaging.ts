@@ -3,7 +3,7 @@ import {EventEmitter} from 'events';
 import {CustomError, Logger} from 'sw-logger';
 import {Channel, Connection, Message as AMessage} from 'amqplib';
 import {isNull, isNullOrUndefined, isUndefined} from 'util';
-import {defaults, omit, pull, cloneDeep} from 'lodash';
+import {defaults, omit, pull, cloneDeep, find} from 'lodash';
 import {
     EmitOptions, Exchange, ListenerOptions, MessageHandler, Queue, QueueOptions, ReplyAwaiter,
     RequestOptions,
@@ -12,7 +12,7 @@ import {
     Status,
     StatusOptions,
     TaskOptions,
-    MessageHeaders,
+    MessageHeaders, Uptime,
 } from "./Interfaces";
 import {getHeapStatistics} from 'v8';
 import * as amqp from 'amqplib';
@@ -21,7 +21,7 @@ import {PressureEvent, Qos} from './Qos';
 import * as logger from 'sw-logger';
 import uuid = require('uuid');
 import {Election} from './Election';
-import {PeerStatus} from './PeerStatus';
+import {PeerStat, PeerStatus} from './PeerStatus';
 import * as when from 'when';
 import Deferred = When.Deferred;
 
@@ -44,10 +44,14 @@ export class Messaging {
     private _serviceId: string = uuid.v4();
     private _replyQueue: string;
     private _internalExchangeName: string;
+    public static internalExchangePrefix = 'internal';
     private _election: Election;
     private _peerStatus: PeerStatus;
     private _logger: Logger;
     private _lastMessageDate: Date;
+
+    private _isReady: boolean = false;
+    private _startedAt: Date = new Date();
 
     private _waitParallelismAsserted: Deferred<void>;
     private _maxParallelism: number = -1;
@@ -156,6 +160,17 @@ export class Messaging {
         }
     }
 
+    public isReady(): boolean {
+        return this._isReady;
+    }
+
+    public uptime(): Uptime {
+        return {
+            startedAt: this._startedAt,
+            elapsedMs: new Date().getTime() - this._startedAt.getTime(),
+        };
+    }
+
     private _reportError(e: Error | CustomError) {
         if (this.ee().listenerCount('error') > 0) {
             this.ee().emit('error', e);
@@ -197,7 +212,7 @@ export class Messaging {
 
         // Apply quotas to each consumer
         this._routes.forEach((route, name) => {
-            if (route.subjectToQuota === false) {
+            if (route.subjectToQuota === false && route.isReadyForConsumption) {
                 return;
             }
             this._logger.debug(`Applying maxParallelism of ${maxParallelismPerConsumer} on queue: ${name}.`);
@@ -246,23 +261,38 @@ export class Messaging {
         }
     }
 
+    static defaultMemoryLimit() {
+        const {heap_size_limit} = getHeapStatistics();
+        return {
+            soft: ~~(heap_size_limit / Math.pow(2, 20) / 2),
+            hard: ~~(heap_size_limit / Math.pow(2, 20) / 5 * 3)
+        };
+    }
+
     /**
-     * @constructor
      * @param {string} serviceName
-     * @param {ServiceOptions} options
+     * @param options memorySoftLimit and memoryHardLimit respectively defaults to half and 3/5 of heap_size_limit. Expressed in MB.
      */
-    constructor(serviceName: string, options?: ServiceOptions) {
+    constructor(serviceName: string, {
+        readyOnConnected = true,
+        enableQos = true,
+        qosThreshold = 0.7,
+        enableMemoryQos = true,
+        memorySoftLimit = Messaging.defaultMemoryLimit().soft,
+        memoryHardLimit = Messaging.defaultMemoryLimit().hard
+    }: ServiceOptions) {
+
         this._serviceName = serviceName;
         this._logger = tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}`);
         this._qos = new Qos(this, tracer.context('qos'));
-        const {heap_size_limit} = getHeapStatistics();
-        this._serviceOptions = defaults(options, {
-            enableQos: true, // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
-            qosThreshold: 0.7, // Default: 0.7. [0.01; 1]
-            enableMemoryQos: true, // Defaults: true. When activated, tries to keep memory < memorySoftLimit and enforces keeping memory < memoryHardLimit
-            memorySoftLimit: ~~(heap_size_limit / Math.pow(2, 20) / 2), // Defaults to half heap_size_limit. Expressed in MB
-            memoryHardLimit: ~~(heap_size_limit / Math.pow(2, 20) / 5 * 3) // Defaults to 3 fifth of heap_size_limit. Express in MB
-        });
+        this._serviceOptions = {
+            enableQos, // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
+            qosThreshold, // Default: 0.7. [0.01; 1]
+            enableMemoryQos, // Defaults: true. When activated, tries to keep memory < memorySoftLimit and enforces keeping memory < memoryHardLimit
+            readyOnConnected,
+            memorySoftLimit, // Defaults to half heap_size_limit. Expressed in MB
+            memoryHardLimit,  // Defaults to 3 fifth of heap_size_limit. Express in MB
+        };
         this._eventEmitter = new EventEmitter();
         if (this._serviceOptions.enableQos) {
             this._logger.log('Enable QOS');
@@ -280,7 +310,7 @@ export class Messaging {
         this._replyQueue = `q.replyQueue.${serviceName}.${this._serviceId}`;
 
         // Declare an internal queue
-        this._internalExchangeName = `internal.${serviceName}`;
+        this._internalExchangeName = `${Messaging.internalExchangePrefix}.${serviceName}`;
 
         this._election = new Election(this, tracer.context('election'));
         this._peerStatus = new PeerStatus(this, tracer.context('peer-status'));
@@ -312,6 +342,9 @@ export class Messaging {
 
         // Should be the last assertion so that every declared bit gets opened properly and that we avoid race conditions.
         await this._assertRoutes();
+        if (this._serviceOptions.readyOnConnected) {
+            this.ready();
+        }
         this._election.vote().catch(this._reportError);
         this._logger.debug('Routes asserted.');
     }
@@ -392,11 +425,11 @@ export class Messaging {
      * @param {EmitOptions} options
      * @returns {Promise<void>}
      */
-    public async emit(target: string,
-                      route: string,
-                      messageBody: any = '',
-                      messageHeaders: MessageHeaders = {},
-                      {onlyIfConnected = false}: EmitOptions = {}): Promise<void> {
+    public async emit<T = {}>(target: string,
+                              route: string,
+                              messageBody?: T,
+                              messageHeaders: MessageHeaders = {},
+                              {onlyIfConnected = false}: EmitOptions = {}): Promise<void> {
 
         this._assertNotClosed();
         if (!this._isConnected && onlyIfConnected === true) {
@@ -417,7 +450,7 @@ export class Messaging {
         await this._outgoingChannel.publish(
             `x.pubSub`,
             `${target}.${route}`,
-            new Buffer(JSON.stringify(messageBody)),
+            Buffer.from(JSON.stringify(messageBody || '')),
             {
                 contentType: 'application/json',
                 headers: _headers
@@ -549,18 +582,20 @@ export class Messaging {
      * @param target The target on which you want to listen by default it's the serviceName but it can be the name of a commonly agreed exchange
      * @param route The route on which to listen
      * @param listener The callback function that will be called each time a message arrives on that route
+     * @return resolves when listeners are fully asserted
      */
-    public listen(target: string, route: string, listener: MessageHandler): this;
+    public async listen(target: string, route: string, listener: MessageHandler): Promise<void>;
     /**
      * PUB/SUB creates an event listener
      * @param route The route on which to listen
      * @param listener The callback function that will be called each time a message arrives on that route
+     * @return resolves when listeners are fully asserted
      */
-    public listen(route: string, listener: MessageHandler): this;
+    public async listen(route: string, listener: MessageHandler): Promise<void>;
     /**
      * See the docs of the two other overloaded methods. This is the implementation of them.
      */
-    public listen(routeOrTarget: string, routeOrListener: any, listener?: MessageHandler): this {
+    public async listen(routeOrTarget: string, routeOrListener: any, listener?: MessageHandler): Promise<void> {
         this._assertNotClosed();
         let target = routeOrTarget,
             route = routeOrListener;
@@ -584,8 +619,7 @@ export class Messaging {
             subjectToQuota: !(target === this._internalExchangeName)
         });
         this._logger.debug('Asserting route', routeAlias);
-        this._assertRoute(routeAlias).catch(this._reportError);
-        return this;
+        await this._assertRoute(routeAlias);
     }
 
     /**
@@ -662,6 +696,7 @@ export class Messaging {
      */
     public ready(): void {
         this._assertNotClosed();
+        this._isReady = true;
     }
 
     /**
@@ -670,17 +705,24 @@ export class Messaging {
      */
     public unready(): void {
         this._assertNotClosed();
+        this._isReady = false;
     }
 
     /**
      * Ask for the status of a service
      * @param {string} targetService
      * @param {StatusOptions} options
-     * @returns {Promise<Status>}
      */
-    public async getStatus(targetService: string, options?: StatusOptions): Promise<Status> {
-        this._assertNotClosed();
-        return null;
+    public async getStatus(targetService: string = this.serviceName(), options?: StatusOptions): Promise<Status> {
+        this._assertConnected();
+        const members = await this._peerStatus.getStatus(targetService);
+        const hasMaster = members.filter(m => !isNullOrUndefined(m.leaderId)).length > 0;
+        const hasReadyMembers = members.filter(m => !isNullOrUndefined(m.isReady)).length > 0;
+        return {
+            hasMaster,
+            hasReadyMembers,
+            members: members,
+        }
     }
 
     /**
