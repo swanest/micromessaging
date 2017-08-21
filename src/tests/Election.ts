@@ -25,7 +25,6 @@ describe('Leader Election', () => {
         await Promise.all(servers.map(s => {
             return new Promise((resolve, reject) => {
                 s.on('leader', o => {
-                    console.log('received leader', o);
                     try {
                         winners.push((o as any).leaderId);
                         resolve();

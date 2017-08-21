@@ -3,6 +3,7 @@ import {Message} from './Message';
 import {Message as AMessage} from 'amqplib';
 import Deferred = When.Deferred;
 import Timer = NodeJS.Timer;
+import {PeerStat} from './PeerStatus';
 
 export type ExchangeType = 'topic' | 'direct' | 'fanout';
 
@@ -69,10 +70,9 @@ export interface StatusOptions {
 }
 
 export interface Status {
-    ready: boolean;
     hasMaster: boolean;
-    listeners: Array<String>; // Routes the targetService listens to
-    handlers: Array<String>; // Requests routes the targetService handles
+    hasReadyMembers: boolean;
+    members: Array<PeerStat>;
 }
 
 export interface RequestOptions {
@@ -114,6 +114,7 @@ export interface ServiceOptions {
     enableMemoryQos?: boolean; // Defaults: true. When activated, tries to keep memory < memorySoftLimit and enforces keeping memory < memoryHardLimit
     memorySoftLimit?: number; // Defaults to half heap_size_limit. Expressed in MB
     memoryHardLimit?: number; // Defaults to 3 fifth of heap_size_limit. Express in MB
+    readyOnConnected?: boolean;
     // parallelism?: ParallelismOptions;
 }
 
@@ -142,4 +143,9 @@ export interface ReplyAwaiter {
 export interface MessageHeaders {
     idRequest?: string;
     [name: string]: any;
+}
+
+export interface Uptime {
+    startedAt: Date;
+    elapsedMs: number;
 }

@@ -36,7 +36,7 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 
 * [x] Manage timeouts in requests.
 * [ ] `waitForService(s)`
-* [ ] `getStatus` of a service (to know if the service is accepting workload)
+* [x] `getStatus` of a service (to know if the service is accepting workload)
 * [ ] `.ready` / `.unready` to enable or stop accepting workload
 * [ ] Make API names consistent
 * [ ] Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
@@ -48,6 +48,7 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 * [ ] Add more comments to that `typedoc` generates a cool and easy doc.
 * [ ] Travis auto tests
 * [ ] Publish a doc under heroku maybe?
+* [ ] Implement `.remove()` on the return of `emit` and `handle`
 
 ## Useful info
 

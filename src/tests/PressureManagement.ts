@@ -38,7 +38,7 @@ describe('Pressure Message Management', () => {
             //     setTimeout(async () => {
             //         for (let i = 0; i < 1000; i++) {
                         proms.push(c.request('server', 'test').then(function (r) {
-                            console.log('yeah response!', ++responsesCount, messageCount1, messageCount2, r.body);
+                            responsesCount++;
                         }));
                 //     }
                 //     await Promise.all(proms2);
