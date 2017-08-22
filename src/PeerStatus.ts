@@ -18,7 +18,7 @@ export class PeerStatus {
 
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
-        this._logger = logger;
+        this._logger = logger.disable();
         this._peers = new Map();
     }
 

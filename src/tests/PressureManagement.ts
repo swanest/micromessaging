@@ -18,18 +18,17 @@ describe('Pressure Message Management', () => {
         s.handle('test', async m => {
             messageCount1++;
             // setImmediate(async () => {
-                await m.reply({c: messageCount1});
+            await m.reply({c: messageCount1});
             // });
         });
         s2.handle('test', async m => {
             messageCount2++;
             // setImmediate(async () => {
-                await m.reply({c: messageCount2});
+            await m.reply({c: messageCount2});
             // });
         });
         await Promise.all([s.connect(), s2.connect(), c.connect()]);
 
-        setInterval(() => console.log('test'), 1000);
         const proms: any[] = [];
         let responsesCount = 0;
         for (let j = 0; j < 100; j++) {
@@ -37,13 +36,13 @@ describe('Pressure Message Management', () => {
             //     const proms2: any[] = [];
             //     setTimeout(async () => {
             //         for (let i = 0; i < 1000; i++) {
-                        proms.push(c.request('server', 'test').then(function (r) {
-                            responsesCount++;
-                        }));
-                //     }
-                //     await Promise.all(proms2);
-                //     resolve();
-                // }, j * 100);
+            proms.push(c.request('server', 'test', undefined, undefined, {timeout: 60000 * 5}).then(function (r) {
+                responsesCount++;
+            }));
+            //     }
+            //     await Promise.all(proms2);
+            //     resolve();
+            // }, j * 100);
             // }));
         }
         await Promise.all(proms);

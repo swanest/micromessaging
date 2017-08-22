@@ -53,10 +53,13 @@ export interface Route {
     ongoingMessages?: number;
     maxParallelism?: number;
 
-    cancel?: Function;
-    consume?: Function;
+    cancel?: () => Promise<void>;
+    consume?: () => Promise<void>;
     consumerWaiter?: any;
-    isReadyForConsumption?: boolean;
+
+    isDeclaring: boolean;
+    isReady: boolean;
+    isClosed: boolean;
 
     queueName?: string;
 }
@@ -131,6 +134,13 @@ export interface RequestReport {
     queueSize: number;
     queueName: string;
     consumers: number;
+}
+
+export interface ReturnHandler {
+    /**
+     * Make that the listener stops consuming messages.
+     */
+    stop: () => Promise<void>;
 }
 
 export interface ReplyAwaiter {

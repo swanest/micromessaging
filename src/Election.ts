@@ -88,7 +88,7 @@ export class Election {
                 }
             }
         });
-        this._logger = logger;
+        this._logger = logger.disable();
     }
 
     private _notifyLeader() {
@@ -183,7 +183,7 @@ export class Election {
             }
             return;
         }
-        throw new CustomError('inconsistency', 'Case shouldnt happen');
+        throw new CustomError('inconsistency', 'Case should not happen', message.toJSON());
     }
 
     private async _emitKnownLeader() {
