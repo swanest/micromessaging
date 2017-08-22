@@ -1044,8 +1044,6 @@ export class Messaging {
             m.nativeReject();
             if (this._eventEmitter.listenerCount('unhandledMessage') > 0) {
                 this._eventEmitter.emit('unhandledMessage', new CustomError(`Handler for ${m.destinationRoute()} missing.`), m);
-            } else {
-                this._reportError(new CustomError(`An unhandledMessage arrived but there is no unhandledMessage listener. Handler for ${m.destinationRoute()} missing.`));
             }
             return;
         }
