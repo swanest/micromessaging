@@ -10,7 +10,7 @@ describe('Requests Report', () => {
 
         await Promise.all([s.connect(), c.connect()]);
         try {
-            await c.getRequestsReport('aService');
+            await c.getRequestsReport('aService', 'blabla');
             expect(true, 'This line should not have been reached.').to.be.false;
         } catch (e) {
             expect(e).to.have.property('codeString');
@@ -28,10 +28,10 @@ describe('Requests Report', () => {
         });
 
         await Promise.all([s.connect(), c.connect()]);
-        const report = await c.getRequestsReport(serviceName);
+        const report = await c.getRequestsReport(serviceName, 'whathever');
         expect(report).to.deep.equal({
             queueSize: 0,
-            queueName: 'q.requests.' + serviceName,
+            queueName: 'q.requests.' + serviceName + '.whathever',
             consumers: 1
         });
         await Promise.all(Messaging.instances.map(i => i.close(true)));

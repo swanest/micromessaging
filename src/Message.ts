@@ -59,6 +59,16 @@ export class Message<T = {}> {
         return this._originalMessage.properties.headers.__mms.route;
     }
 
+    public isChannelClosed() {
+        return this._route.isClosed;
+    }
+
+    private _assertOpen() {
+        if (this._route.isClosed) {
+            throw new CustomError('closed', 'Channel has been cleanly closed, hence you cannot reply to this message.');
+        }
+    }
+
     public async reply(body?: any, headers?: MessageHeaders): Promise<void> {
         return this._replyReject(body, headers);
     }
@@ -82,6 +92,7 @@ export class Message<T = {}> {
     }
 
     public ack(): void {
+        this._assertOpen();
         if (!this._isAcked) {
             this._route.ongoingMessages--;
             this._route.channel.ack(this._originalMessage);
@@ -90,6 +101,7 @@ export class Message<T = {}> {
     }
 
     public nack(): void {
+        this._assertOpen();
         if (!this._isAcked) {
             this._route.ongoingMessages--;
             this._route.channel.nack(this._originalMessage);
@@ -101,6 +113,11 @@ export class Message<T = {}> {
                                headers: MessageHeaders = {idRequest: this._originalMessage.properties.headers.idRequest},
                                options?: InternalReplyOptions
     ) {
+        if (this.isTask()) { // Tasks do not need to be replied just acked.
+            this.ack();
+            return;
+        }
+        this._assertOpen();
 
         if (isNullOrUndefined(options)) {
             options = {};
@@ -167,6 +184,9 @@ export class Message<T = {}> {
         return this._originalMessage.fields.exchange !== '';
     }
 
+    /**
+     * Converts the message to an Error
+     */
     public error() {
         const e = new CustomError(this.body as any);
         if (isNullOrUndefined(e.info)) {
