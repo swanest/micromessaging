@@ -2,7 +2,6 @@ import {expect} from "chai";
 import {Messaging} from '../Messaging';
 import {CustomError} from 'sw-logger';
 import {Message} from '../Message';
-import {ListenResult} from '../../lib/index';
 import {ReturnHandler} from '../Interfaces';
 
 process.on('unhandledRejection', (reason) => {
