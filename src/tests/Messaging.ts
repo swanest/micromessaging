@@ -2,6 +2,8 @@ import {expect} from "chai";
 import {Messaging} from '../Messaging';
 import {CustomError} from 'sw-logger';
 import {Message} from '../Message';
+import {ListenResult} from '../../lib/index';
+import {ReturnHandler} from '../Interfaces';
 
 process.on('unhandledRejection', (reason) => {
     console.error(reason);
@@ -277,35 +279,102 @@ describe('Messaging', () => {
         await p;
         await Promise.all(proms);
     });
-    // it.only('should stop listening', async () => {
-    //     const c = new Messaging('client');
-    //     const s = new Messaging('server');
-    //     const p = new Promise(async (resolve, reject) => {
-    //         let stopped = false;
-    //         s.on('unhandledMessage', () => {
-    //             resolve();
-    //         });
-    //         const stopper = await s.handle('bla', async (m: Message) => {
-    //             // Do not answer
-    //             if (stopped) {
-    //                 reject(new Error('Should not have received a request'));
-    //             }
-    //             await m.reply();
-    //             stopper.stop();
-    //             stopped = true;
-    //         });
-    //     });
-    //     await Promise.all(Messaging.instances.map(i => i.connect()));
-    //     await c.request('server', 'bla');
-    //     try {
-    //         await c.request('server', 'bla', {message: 'content'}, undefined, {timeout: 1000});
-    //     } catch (e) {
-    //         console.log(e);
-    //         expect(e).to.have.property('codeString');
-    //         expect(e.codeString).to.equal('timeout');
-    //         await p;
-    //         return;
-    //     }
-    //     expect(true, 'This line should not be reached.').to.be.false;
-    // });
+    it('should stop listening', async () => {
+        const c = new Messaging('client');
+        const s = new Messaging('server');
+        const p = new Promise(async (resolve, reject) => {
+            let stopped = false;
+            const stopper = await s.handle('bla', async (m: Message) => {
+                // Do not answer
+                if (stopped) {
+                    reject(new Error('Should not have received a request'));
+                }
+                await m.reply();
+                stopper.stop();
+                resolve();
+            });
+        });
+        await Promise.all(Messaging.instances.map(i => i.connect()));
+        await c.request('server', 'bla');
+        try {
+            await c.request('server', 'bla', {message: 'content'}, undefined, {timeout: 1000});
+        } catch (e) {
+            expect(e).to.have.property('codeString');
+            expect(e.codeString).to.equal('timeout');
+            await p;
+            return;
+        }
+        expect(true, 'This line should not be reached.').to.be.false;
+    });
+    it('stop listening should stay individual', async () => {
+        const c = new Messaging('client');
+        const s = new Messaging('server');
+        const p = new Promise((resolve, reject) => {
+            let stopped = false;
+            let stopper: ReturnHandler;
+            s.handle('bla',  (m: Message) => {
+                // Do not answer
+                if (stopped) {
+                    reject(new Error('Should not have received a request'));
+                }
+                m.reply().then(() => {
+                    stopper.stop();
+                }).then(() => resolve());
+            }).then(s => stopper = s).catch(reject);
+            s.handle('bla2',  (m: Message) => {
+                m.reply().catch(reject);
+            }).catch(reject);
+        });
+        await Promise.all(Messaging.instances.map(i => i.connect()));
+        await c.request('server', 'bla');
+        try {
+            await c.request('server', 'bla', {message: 'content'}, undefined, {timeout: 500});
+        } catch (e) {
+            expect(e).to.have.property('codeString');
+            expect(e.codeString).to.equal('timeout');
+            await p;
+            const r = await c.request('server', 'bla2', {message: 'content'});
+            expect(r).to.include.keys('body');
+            expect(r.body).to.not.be.undefined;
+            return;
+        }
+        expect(true, 'This line should not be reached.').to.be.false;
+    });
+    it('should let user re-listen after a stop', async () => {
+        const c = new Messaging('client');
+        const s = new Messaging('server');
+        const p = new Promise((resolve, reject) => {
+            let stopped = false;
+            let stopper: ReturnHandler;
+            s.handle('bla',  (m: Message) => {
+                // Do not answer
+                if (stopped) {
+                    reject(new Error('Should not have received a request'));
+                }
+                m.reply().then(() => {
+                    return stopper.stop();
+                }).then(() => resolve());
+            }).then(s => stopper = s).catch(reject);
+        });
+        await Promise.all(Messaging.instances.map(i => i.connect()));
+        await c.request('server', 'bla');
+        try {
+            await c.request('server', 'bla', {message: 'content'}, undefined, {timeout: 500});
+        } catch (e) {
+            expect(e).to.have.property('codeString');
+            expect(e.codeString).to.equal('timeout');
+            await p;
+            await new Promise((resolve, reject) => {
+                s.handle('bla', (m) => {
+                    m.reply().then(() => resolve()).catch(reject);
+                }).catch(reject);
+            });
+            const r = await c.request('server', 'bla', {message: 'content'});
+            expect(r).to.include.keys('body');
+            expect(r.body).to.not.be.undefined;
+
+            return;
+        }
+        expect(true, 'This line should not be reached.').to.be.false;
+    });
 });
