@@ -66,6 +66,7 @@ export class Messaging {
 
 
     private _isConnected: boolean = false;
+    private _isConnecting: boolean = false;
     private _isClosing: boolean = false;
     private _isClosed: boolean = false;
 
@@ -317,12 +318,16 @@ export class Messaging {
     }
 
     /**
-     * Connects to a rabbit instance
+     * Connects to a rabbit instance. Indempotent.
      * @param rabbitURI format: amqp://localhost?heartbeat=30 — If heartbeat is not supplied, will default to 30s
      * @returns Returns once the connection is properly initialized and that all listeners and handlers have been fully declared.
      */
     public async connect(rabbitURI?: string): Promise<void> {
         this._assertNotClosed();
+        if (this._isConnected || this._isConnecting) {
+            return;
+        }
+        this._isConnecting = true;
         this._uri = rabbitURI || process.env.RABBIT_URI || 'amqp://localhost';
         const parsed = new URL(this._uri);
         if (!parsed.searchParams.has('heartbeat')) {
@@ -347,6 +352,7 @@ export class Messaging {
         await this._assertRoutes();
         this._election.vote().catch(e => this._reportError(e));
         this._logger.debug('Routes asserted.');
+        this._isConnecting = false;
     }
 
     private async _createChannel(): Promise<Channel> {
@@ -637,20 +643,35 @@ export class Messaging {
             this._logger.log(`Stop handling ${routeName}`);
             const route = this._routes.get(routeName);
             route.isClosed = true;
+            route.isReady = false;
             this._channels.delete(routeName);
             this._routes.delete(routeName);
+            this._queues.delete(route.queueName);
 
-            const proms: any[] = [];
-            if (route.cancel) {
-                proms.push(route.cancel());
+            if (route.isReady) {
+                await route.cancel();
             }
             if (route.type === 'pubSub') {
-                proms.push(route.channel.unbindQueue(route.queueName, 'x.pubSub', `${route.target}.${route.route}`));
-                proms.push(route.channel.deleteQueue(route.queueName));
-                this._queues.delete(route.queueName);
+                await route.channel.unbindQueue(route.queueName, 'x.pubSub', `${route.target}.${route.route}`);
             }
-            await Promise.all(proms);
             await route.channel.close();
+
+            // We do this separately because we could get PRECONDITION errors that we want to ignore.
+            const channelThatCanError = await this._connection.createChannel();
+            channelThatCanError.on('error', () => {
+            });
+            try {
+                await channelThatCanError.deleteQueue(route.queueName, {
+                    ifEmpty: true,
+                    ifUnused: true
+                });
+                await channelThatCanError.close();
+            } catch (e) {
+                if (!/PRECONDITION/.test(e.message)) {
+                    this._reportError(new CustomError('Error while stop listening', e)); // Let's not swallow too much, just what we are sure we need to.
+                }
+                // At this stage the channel is closed so no need to close it again.
+            }
         };
     }
 
