@@ -8,6 +8,6 @@ export class Service extends Messaging {
    */
   constructor(serviceName: string, options?: ServiceOptions) {
     super(serviceName, options);
-    this._logger.warn("Using deprecated class Service. Use Messaging instead!");
+    console.warn("Using deprecated class Service. Use Messaging instead!");
   }
 }

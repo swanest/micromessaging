@@ -68,7 +68,7 @@ export class Messaging {
     private _isClosing: boolean = false;
     private _isClosed: boolean = false;
 
-    protected _logger: Logger;
+    private _logger: Logger;
 
     public static instances: Messaging[] = [];
 
