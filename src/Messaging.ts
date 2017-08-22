@@ -24,6 +24,7 @@ import {Election} from './Election';
 import {PeerStat, PeerStatus} from './PeerStatus';
 import * as when from 'when';
 import Deferred = When.Deferred;
+import {URL} from 'url';
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 
@@ -317,12 +318,17 @@ export class Messaging {
 
     /**
      * Connects to a rabbit instance
-     * @param {string} rabbitURI
-     * @returns {Promise<void>}
+     * @param rabbitURI format: amqp://localhost?heartbeat=30 — If heartbeat is not supplied, will default to 30s
+     * @returns Returns once the connection is properly initialized and that all listeners and handlers have been fully declared.
      */
     public async connect(rabbitURI?: string): Promise<void> {
         this._assertNotClosed();
-        this._uri = rabbitURI || process.env.RABBIT_URI || 'amqp://localhost?heartbeat=30';
+        this._uri = rabbitURI || process.env.RABBIT_URI || 'amqp://localhost';
+        const parsed = new URL(this._uri);
+        if (!parsed.searchParams.has('heartbeat')) {
+            parsed.searchParams.set('heartbeat', '30');
+        }
+        this._uri = parsed.toString();
         this._logger.debug(`Establishing connection to ${this._uri}`);
         try {
             this._connection = await amqp.connect(this._uri);
@@ -457,8 +463,8 @@ export class Messaging {
      * The promise will resolve when the target replies or that there is an error (timeout, unroutable, etc.)
      * If there are multiple instances of the targetService, only one will handle it.
      * Use timeout: -1 if you don't want the request to timeout.
-     * @param {string} targetService The name of the service that will have to handle the request
-     * @param {string} route A routing key to the handler in the targetService
+     * @param targetService The name of the service that will have to handle the request
+     * @param route A routing key to the handler in the targetService
      * @param messageBody The message to send
      * @param messageHeaders Additional headers. If idRequest is not provided, will auto-generate one.
      * @param streamHandler callback that will be called when the reply is a stream
