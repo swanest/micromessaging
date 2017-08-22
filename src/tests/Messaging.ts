@@ -114,6 +114,47 @@ describe('Messaging', () => {
             c.emit('server', 'routingKey1', {how: {are: 'pubSub1?'}})
         });
     });
+    it('should multiple emit/receive', async function () {
+        const s = new Messaging('server');
+        const p = new Promise((resolve, reject) => {
+            s.listen('routingKey1', (message) => {
+                try {
+                    expect(message.isEvent(), 'Task should be an event.').to.be.true;
+                    expect(message.isRequest(), 'Task should be an event.').to.be.false;
+                    expect(message.isTask(), 'Task should be an event.').to.be.false;
+                    expect(message.body).to.equal('pubSub1');
+                    message.ack();
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            }).catch(reject);
+        });
+        const p2 = new Promise((resolve, reject) => {
+            s.listen('routingKey2', (message) => {
+                try {
+                    expect(message.isEvent(), 'Task should be an event.').to.be.true;
+                    expect(message.isRequest(), 'Task should be an event.').to.be.false;
+                    expect(message.isTask(), 'Task should be an event.').to.be.false;
+                    expect(message.body).to.equal('pubSub2');
+                    message.ack();
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            }).catch(reject);
+        });
+        const c = new Messaging('client');
+        await Promise.all([
+            c.connect(),
+            s.connect()
+        ]).then(() => {
+            c.emit('server', 'routingKey1', 'pubSub1');
+            c.emit('server', 'routingKey2', 'pubSub2');
+        });
+        await p;
+        await p2;
+    });
     it('should timeout getting a reply', async () => {
         const c = new Messaging('client');
         const s = new Messaging('server');

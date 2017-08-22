@@ -353,6 +353,7 @@ export class Messaging {
         this._election.vote().catch(e => this._reportError(e));
         this._logger.debug('Routes asserted.');
         this._isConnecting = false;
+        this._isReady = true;
     }
 
     private async _createChannel(): Promise<Channel> {

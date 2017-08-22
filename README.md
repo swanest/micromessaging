@@ -11,6 +11,12 @@ This library is using amqplib (0.9.1) as a core dependency but we do use some pa
 
 `npm install micromessaging --save`
 
+## API
+
+Full API documentation is at: [swanest.github.com/micromessaging](https://swanest.github.com/micromessaging)
+
+Special thanks to [TypeDoc](http://typedoc.org/) that enabled it.
+
 ## Dependencies
 
 Just install RabbitMQ locally to develop (version must be > 3.3.0)
@@ -35,22 +41,18 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 ## TODO
 
 * [x] Manage timeouts in requests.
-* [ ] `waitForService(s)`
 * [x] `getStatus` of a service (to know if the service is accepting workload)
-* [ ] `.ready` / `.unready` to enable or stop accepting workload
 * [ ] Make API names consistent
-* [ ] Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
-* [ ] Add a version so that if two modules are not working on the same version there is some big announcements in the logs to avoid headaches
+* [x] Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
 * [ ] Go to the old codebase (within the dir) and check we didn't forgot a working behaviour or features.
 * [ ] Quadruple check that everything works fine through some good testing!
-* [ ] Code review
 * [ ] Delete old JS codebase
 * [ ] Add more comments to that `typedoc` generates a cool and easy doc.
-* [ ] Travis auto tests
-* [ ] Publish a doc under heroku maybe?
-* [ ] Implement `.remove()` on the return of `emit` and `handle`
+* [x] Travis auto tests
+* [x] Publish a doc under GitHub pages => will be under swanest.github.com/micromessaging
+* [x] Implement `.stop()` on the return of `emit` and `handle` => see ReturnHandler.
 
 ## Useful info
 
-As we are transitionning to a new version, all relevant files will be under `src/` folder but
+As we are transitioning to a new version, all relevant files will be under `src/` folder but
 to ease work, we kept the old JS codebase so that we can easily sneak peak information in it about the old working procedures to not forget anything.
