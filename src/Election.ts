@@ -161,7 +161,7 @@ export class Election {
                 return;
             }
             this._messaging.ee().emit('leader', {leaderId: this._leaderId});
-        }, Math.max(latency * 3.5, 100));
+        }, Math.max(latency * 3.5, 1000));
     }
 
     private _electionListener(message: Message<ElectionMessage>) {
