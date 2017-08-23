@@ -1,75 +1,55 @@
 import {Messaging} from './Messaging';
-import {random} from 'lodash';
 import {Message} from './Message';
 import Timer = NodeJS.Timer;
 import {isNullOrUndefined} from 'util';
 import {CustomError, Logger} from 'sw-logger';
 import {PressureEvent} from './Qos';
-
-let COUNT = 0;
+import {AMQPLatency} from './AMQPLatency';
+import {ReturnHandler} from './Interfaces';
 
 export class Election {
 
-    private _messaging: Messaging;
-    private _id: number;
-    private _leaderId: number;
-    private _lastLeaderSync: Date;
-
-    static DEFAULT_TEMPO: number = 2000;
-    public TEMPO: number = Election.DEFAULT_TEMPO;
+    // public TEMPO: number = Election.DEFAULT_TEMPO;
     static DEFAULT_TIMEOUT: number = 30 * 1000;
     public TIMEOUT: number = Election.DEFAULT_TIMEOUT;
+    private _messaging: Messaging;
 
-    private _voteAnswerTimeout: Timer;
-    private _leaderNotificationTimer: Timer;
+    // static DEFAULT_TEMPO: number = 2000;
+    private _leaderId: string;
+    private _lastLeaderSync: Date;
+    private _selfElectionTimer: Timer;
+    private _leaderByNowTimer: Timer;
     private _logger: Logger;
-    private _ping: Date;
-    private _pong: Date;
-    private _firstMessageISent: boolean = false;
+    private _amqpLatency: AMQPLatency;
+    private _listenersBinding: Promise<ReturnHandler>[] = [];
 
-    private _candidates: Array<number> = [];
+    private _candidates: Array<string> = [];
+    private _players: Array<string> = [];
+    private _stopped: boolean = false;
 
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
-        this.generateId();
-        this._messaging.listen(this._messaging.internalExchangeName(), 'leader.vote', this._electionListener.bind(this));
-        this._messaging.listen(this._messaging.internalExchangeName(), 'leader.consensus', m => {
-            if (this._voteAnswerTimeout) {
-                clearTimeout(this._voteAnswerTimeout);
-                this._voteAnswerTimeout = null;
-            }
-            if ((m as any).id === this._id) {
-                // If I'm receiving the message I just emitted it means I know who is the leader...
-                return;
-            }
-            if (!isNullOrUndefined(this._leaderId) && this._leaderId !== (m.body as any).leaderId) {
-                // throw new CustomError('leaderAlreadyDefined', `${this._id} expected leader to be ${this._leaderId} but received ${(m.body as any).leaderId}`);
-                this._logger.debug('Leader was already defined but someone pretends its someone else, lets vote again.');
-                clearTimeout(this._leaderNotificationTimer);
-                this._leaderNotificationTimer = null;
-                this.TEMPO *= 2;
-                this.TIMEOUT *= 2;
-                this._leaderId = null;
-                this._lastLeaderSync = null;
-                this.vote();
-                return;
-            }
-            this.TEMPO = Election.DEFAULT_TEMPO;
-            this.TIMEOUT = Election.DEFAULT_TIMEOUT;
-            this._leaderId = (m.body as any).leaderId;
-            this._notifyLeader();
-        });
+        this._amqpLatency = new AMQPLatency(this._messaging);
+        this._logger = logger;
+
+        // this.generateId();
+        this._listenersBinding.push(
+            this._messaging.listen(this._messaging.internalExchangeName(), 'leader.vote', this._electionListener.bind(this)),
+            this._messaging.listen(this._messaging.internalExchangeName(), 'leader.consensus', this._leaderConsensusHandler.bind(this))
+        );
 
         let cancelledLeaderNotification = false,
             cancelledVoteAnswer = false;
         this._messaging.on('pressure', (pEvent: PressureEvent) => {
             if (pEvent.type === 'eventLoop') {
-                if (this._leaderNotificationTimer) {
-                    clearTimeout(this._leaderNotificationTimer);
+                if (this._leaderByNowTimer) {
+                    clearTimeout(this._leaderByNowTimer);
+                    this._leaderByNowTimer = null;
                     cancelledLeaderNotification = true;
                 }
-                if (this._voteAnswerTimeout) {
-                    clearTimeout(this._voteAnswerTimeout);
+                if (this._selfElectionTimer) {
+                    clearTimeout(this._selfElectionTimer);
+                    this._selfElectionTimer = null;
                     cancelledVoteAnswer = true;
                 }
             }
@@ -82,45 +62,43 @@ export class Election {
                 }
                 if (cancelledVoteAnswer) {
                     if (isNullOrUndefined(this._leaderId)) {
-                        this.vote();
+                        this.vote().catch(e => this._messaging.reportError(e));
                     }
                     cancelledVoteAnswer = false;
                 }
             }
         });
-        this._logger = logger.disable();
     }
 
-    private _notifyLeader() {
-        if (!isNullOrUndefined(this._leaderNotificationTimer)) {
-            clearTimeout(this._leaderNotificationTimer);
+    private _leaderByTimer() {
+        if (!isNullOrUndefined(this._leaderByNowTimer)) {
+            clearTimeout(this._leaderByNowTimer);
+            this._leaderByNowTimer = null;
         }
-        this._logger.log(`Will notify leader in ${this.TEMPO}ms.`);
-        this._leaderNotificationTimer = setTimeout(() => {
-            if (this._leaderId === null) {
-                return;
+        this._amqpLatency.benchmark().then((latency) => {
+            if (!isNullOrUndefined(this._leaderByNowTimer)) {
+                clearTimeout(this._leaderByNowTimer);
+                this._leaderByNowTimer = null;
             }
-            this._messaging.ee().emit('leader', {leaderId: this._leaderId});
-            this._leaderNotificationTimer = null;
-        }, this.TEMPO);
+
+            this._leaderByNowTimer = setTimeout(() => {
+                // There should be a leader by now...
+                if (isNullOrUndefined(this._leaderId) && this._messaging.isConnected()) {
+                    this._logger.log('There was no leader within 100ms, voting again.');
+                    this.vote().catch(e => this._messaging.reportError(e));
+                }
+            }, Math.max(latency * 2.5, 2000));
+        }).catch(e => this._messaging.reportError(e));
     }
 
     public shut() {
-        if (!isNullOrUndefined(this._voteAnswerTimeout)) {
-            clearTimeout(this._voteAnswerTimeout);
+        this._stopped = true;
+        if (!isNullOrUndefined(this._selfElectionTimer)) {
+            clearTimeout(this._selfElectionTimer);
         }
-        if (!isNullOrUndefined(this._leaderNotificationTimer)) {
-            clearTimeout(this._leaderNotificationTimer);
+        if (!isNullOrUndefined(this._leaderByNowTimer)) {
+            clearTimeout(this._leaderByNowTimer);
         }
-    }
-
-    generateId() {
-        // this._id = random(1, Number.MAX_SAFE_INTEGER, false);
-        this._id = ++COUNT;
-    }
-
-    public id() {
-        return this._id;
     }
 
     public leaderId() {
@@ -134,116 +112,150 @@ export class Election {
         this._lastLeaderSync = date;
     }
 
-    private async _electionListener(message: Message<ElectionMessage>) {
-        if (message.body.id === this._id) {
-            if (this._firstMessageISent) {
-                this._waitAndMakeMeLeader();
-                this._firstMessageISent = false;
-            }
-            this._pong = new Date();
-            const pingPong = this._pong.getTime() - this._ping.getTime();
-            if (this.TEMPO < pingPong) {
-                this.TEMPO = Math.ceil(pingPong * 1.5);
-            } else if (this.TEMPO > pingPong * 2) {
-                this.TEMPO = ~~(pingPong * 2); // Put TEMPO at 2 times lantency.
-                if (this.TEMPO < 500) {
-                    this.TEMPO = 500;
-                }
-            }
-            if (this.TIMEOUT < this.TEMPO) {
-                throw new CustomError('latencyTooHigh', 'Latency is too high and wont help in the election process...');
-            }
-            this._logger.debug('Received a message I sent myself. Ignoring it.');
-            return; // Ignore rest of handle for messages that I sent myself.
+    async vote() {
+        if (!this._messaging.isConnected()) {
+            return;
         }
-        this._logger.log(`${this._id} received a vote message`, message.body, this._lastLeaderSync);
+        await Promise.all(this._listenersBinding) // Wait for the listeners to be in place.
+            .catch(e => this._messaging.reportError(e));
+        this._logger.log('init a voting process');
+        this._candidates = [];
+        this._players = [];
+        this._leaderId = null;
+        this._lastLeaderSync = null;
+        return this._voteFor(this._messaging.serviceId());
+    }
+
+    private _leaderConsensusHandler(m: Message<ConsensusMessage>) {
+        this._leaderByTimer();
+        if (m.body.id === this._messaging.serviceId()) {
+            // If I'm receiving the message I just emitted it means I know who the leader is... Skipping the message.
+            return;
+        }
+        if (!isNullOrUndefined(this._leaderId) && this._leaderId !== m.body.leaderId) {
+            // throw new CustomError('leaderAlreadyDefined', `${this._messaging.serviceId()} expected leader to be ${this._leaderId} but received ${(m.body as any).leaderId}`);
+            this._logger.debug('Leader was already defined but someone pretends its someone else, lets vote again.');
+            this._leaderId = null;
+            this._lastLeaderSync = null;
+            this.vote().catch(e => this._messaging.reportError(e));
+
+            return;
+        }
+        this._leaderId = m.body.leaderId;
+        this._lastLeaderSync = new Date();
+        this._notifyLeader();
+    }
+
+    private _notifyLeader() {
+        if (this._leaderId === null) {
+            throw new CustomError('Should notify the leader but the leader is unknown.');
+        }
+        this._messaging.ee().emit('leader', {leaderId: this._leaderId});
+    }
+
+    private _electionListener(message: Message<ElectionMessage>) {
+        this._leaderByTimer();
+        const howManyPlayers = this._players.length;
+        if (this._players.indexOf(message.body.id) === -1) {
+            this._players.push(message.body.id);
+        }
+
+        if (!isNullOrUndefined(this._selfElectionTimer)) {
+            clearTimeout(this._selfElectionTimer); // Cancel auto proclamation as leader.
+        }
+
+        this._logger.log(`${this._messaging.serviceId()} received a vote message`, message.body, this._leaderId, this._lastLeaderSync, this.TIMEOUT, this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime());
         // Something arrives but vote is already done & lastLeaderSeen < 2/3 TIMEOUT, publish that the elected instance is the previously elected one
         if (!isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
-            this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._id, new Date().getTime() - this._lastLeaderSync.getTime());
-            await this._emitKnownLeader();
+            this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._messaging.serviceId(), new Date().getTime() - this._lastLeaderSync.getTime());
+            this._emitKnownLeader().catch(e => this._messaging.reportError(e));
+            // And vote for the known leader so that the service trying to vote get's he is wrong.
+            this._voteFor(this._leaderId).catch(e => this._messaging.reportError(e));
             return;
         }
-        if (!isNullOrUndefined(message.body.voteFor)) {
-            clearTimeout(this._voteAnswerTimeout);
-            this._voteAnswerTimeout = null;
-            // Something arrives with vote _id > me, publish that I vote for him
-            if (message.body.voteFor > this._id) {
-                await this._voteFor(message.body.voteFor);
-            }
-            // Something arrives with vote _id < me, publish that I still vote for myself
-            if (message.body.voteFor < this._id) {
-                await this._voteFor(this._id);
-            }
-            if (message.body.voteFor === this._id) {
-                this._logger.debug('Shall %i be leader? %b', this._id, this._shallIBeLeader());
-            }
-            if (message.body.voteFor === this._id && this._shallIBeLeader()) {
-                // Wait that no one else NACKs that result.
-                this._waitAndMakeMeLeader();
-            }
-            return;
+        // if (!isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() >= 2 / 3 * this.TIMEOUT) {
+        //     // We haven't seen
+        //     pull(this._candidates, this._leaderId);
+        //     pull(this._players, this._leaderId);
+        // }
+
+        const leaderOpinion = this._leaderOpinion(message.body.voteFor);
+        if (leaderOpinion === this._messaging.serviceId()) {
+            this._waitAndMakeMeLeader();
+        } else if (howManyPlayers !== this._players.length) { // Only vote if there are more voters.
+            this._voteFor(leaderOpinion).catch(e => this._messaging.reportError(e));
         }
-        throw new CustomError('inconsistency', 'Case should not happen', message.toJSON());
     }
 
     private async _emitKnownLeader() {
         await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.consensus', {
-            id: this._id,
+            id: this._messaging.serviceId(),
             leaderId: this._leaderId
-        }, undefined, {onlyIfConnected: true});
+        });
     }
 
-    private _shallIBeLeader(): boolean {
-        this._candidates.sort((a, b) => a - b);
-        return this._id === this._candidates[this._candidates.length - 1];
-    }
-
-    private async _voteFor(id: number, initialVote: boolean = false) {
-        if (this._candidates.indexOf(id) === -1) {
+    private _leaderOpinion(id?: string): string {
+        if (!isNullOrUndefined(id) && this._candidates.indexOf(id) < 0) {
             this._candidates.push(id);
         }
-        this._candidates.sort((a, b) => a - b);
+        this._candidates.sort();
+        this._logger.debug('Leader opinion %d', this._candidates[this._candidates.length - 1], this._candidates, this._players);
+        return this._candidates[this._candidates.length - 1];
+    }
 
-        const winnerIMO = this._candidates[this._candidates.length - 1];
-        this._logger.debug('winner IMO %d', winnerIMO, this._candidates);
-        if (winnerIMO !== this._id && !initialVote) { // Shut the fuck up.
-            return;
-        } else if (!initialVote && winnerIMO === this._id) {
-            this._waitAndMakeMeLeader();
+    private async _voteFor(id: string) {
+
+        this._logger.log(`${this._messaging.serviceId()} proposing to vote for ${id}`, this._players, this._candidates);
+
+        if (!isNullOrUndefined(this._leaderByNowTimer)) {
+            clearTimeout(this._leaderByNowTimer);
+            this._leaderByNowTimer = null;
         }
 
-        this._logger.log(`${this._id} proposing to vote for ${winnerIMO}`);
-        this._ping = new Date();
         await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.vote', {
-            id: this._id,
-            voteFor: winnerIMO
-        }, undefined, {onlyIfConnected: true});
+            id: this._messaging.serviceId(),
+            voteFor: id
+        });
     }
 
-    private _waitAndMakeMeLeader(initialFactor: number = 1) {
-        if (!isNullOrUndefined(this._voteAnswerTimeout)) {
-            clearTimeout(this._voteAnswerTimeout);
+    private _waitAndMakeMeLeader() {
+        if (!isNullOrUndefined(this._selfElectionTimer)) {
+            clearTimeout(this._selfElectionTimer);
         }
-        this._voteAnswerTimeout = setTimeout(async () => {
-            // Nothing? => I become master
-            this._leaderId = this._id;
-            this._logger.debug('I become leader (' + this._id + ') notifying others');
-            this._lastLeaderSync = new Date();
-            this._notifyLeader();
-            this._voteAnswerTimeout = null;
-            await this._emitKnownLeader();
-        }, this.TEMPO * initialFactor);
-    }
+        this._amqpLatency.benchmark().then((latency) => {
+            latency = Math.ceil(latency);
+            this._logger.log(`_waitAndMakeMeLeader in ${Math.max(latency * 2.5, 100)}ms.`);
+            if (!isNullOrUndefined(this._selfElectionTimer)) {
+                clearTimeout(this._selfElectionTimer);
+            }
+            if (this._stopped) {
+                return;
+            }
 
-    async vote() {
-        this._firstMessageISent = true;
-        return this._voteFor(this._id, true);
-        // Wait a proposition from someone within TEMPO
+            this._selfElectionTimer = setTimeout(() => {
+                // If someone would have voted against this service, either the timer would have been cancelled
+                // Or because of the benchmarkLatency the timer would not have been so we need to check one last time it follows what be believed
+                // If still true then we notify everyone that this service will be the leader.
+                if (this._leaderOpinion() !== this._messaging.serviceId() || !this._messaging.isConnected()) {
+                    return;
+                }
+                this._leaderId = this._messaging.serviceId();
+                this._logger.debug('I become leader (' + this._messaging.serviceId() + ') notifying others');
+                this._lastLeaderSync = new Date();
+                this._selfElectionTimer = null;
+                this._notifyLeader();
+                this._emitKnownLeader().catch(e => this._messaging.reportError(e));
+            }, Math.max(latency * 2.5, 100));
+        });
     }
 }
 
 interface ElectionMessage {
-    id: number;
-    leaderId?: number;
-    voteFor?: number;
+    id: string;
+    voteFor: string;
+}
+
+interface ConsensusMessage {
+    id: string;
+    leaderId: string;
 }

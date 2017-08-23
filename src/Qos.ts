@@ -6,6 +6,7 @@ import {Logger} from 'sw-logger';
 import {setInterval, setTimeout} from 'timers';
 import Timer = NodeJS.Timer;
 import {isNullOrUndefined} from 'util';
+import {Route} from './Interfaces';
 
 export class Qos {
     private _client: Messaging;
@@ -24,10 +25,12 @@ export class Qos {
     private _maxParallelism: number = 1;
     private _lastDecreaseApplied: boolean = true;
     private _handledMessagesSinceLastMonitor: number = 0;
+    private _mRoutes: Map<string, Route>;
 
-    constructor(instance: Messaging, logger: Logger) {
+    constructor(instance: Messaging, routes: Map<string, Route>, logger: Logger) {
         this._client = instance;
         this._logger = logger;
+        this._mRoutes = routes;
     }
 
     public enable() {
@@ -74,7 +77,7 @@ export class Qos {
 
     private isLimited() {
         let max = 0, ongoing = 0;
-        this._client.routes().forEach(route => {
+        this._mRoutes.forEach(route => {
             if (!route.subjectToQuota) {
                 return;
             }

@@ -141,6 +141,7 @@ export interface ReturnHandler {
      * Make that the listener stops consuming messages.
      */
     stop: () => Promise<void>;
+    stat: () => Promise<RequestReport>;
 }
 
 export interface ReplyAwaiter {

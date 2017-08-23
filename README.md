@@ -47,7 +47,7 @@ The only API that should be exposed should rely on `Messaging.ts` class even tho
 * [ ] Go to the old codebase (within the dir) and check we didn't forgot a working behaviour or features.
 * [ ] Quadruple check that everything works fine through some good testing!
 * [ ] Delete old JS codebase
-* [ ] Add more comments to that `typedoc` generates a cool and easy doc.
+* [ ] Add more comments so that `typedoc` generates a cool and easy doc.
 * [x] Travis auto tests
 * [x] Publish a doc under GitHub pages => will be under swanest.github.com/micromessaging
 * [x] Implement `.stop()` on the return of `emit` and `handle` => see ReturnHandler.
