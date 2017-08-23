@@ -71,6 +71,9 @@
 				<hr>
 				<h2 id="installation">Installation</h2>
 				<p><code>npm install micromessaging --save</code></p>
+				<h2 id="api">API</h2>
+				<p>Full API documentation is at: <a href="https://swanest.github.com/micromessaging">swanest.github.com/micromessaging</a></p>
+				<p>Special thanks to <a href="http://typedoc.org/">TypeDoc</a> that enabled it.</p>
 				<h2 id="dependencies">Dependencies</h2>
 				<p>Just install RabbitMQ locally to develop (version must be &gt; 3.3.0)</p>
 				<h2 id="notes">Notes</h2>
@@ -93,23 +96,19 @@
 				<h2 id="todo">TODO</h2>
 				<ul>
 					<li>[x] Manage timeouts in requests.</li>
-					<li>[ ] <code>waitForService(s)</code></li>
 					<li>[x] <code>getStatus</code> of a service (to know if the service is accepting workload)</li>
-					<li>[ ] <code>.ready</code> / <code>.unready</code> to enable or stop accepting workload</li>
 					<li>[ ] Make API names consistent</li>
-					<li>[ ] Expose only Messaging so that other modules can do <code>new require(&#39;micromessaging&#39;).Messaging(...)</code> and <code>new require(&#39;micromessaging&#39;).Service(...)</code> (to ease backward compatibility but <code>Service</code> should log a warning to tell it&#39;s deprecated...)</li>
-					<li>[ ] Add a version so that if two modules are not working on the same version there is some big announcements in the logs to avoid headaches</li>
+					<li>[x] Expose only Messaging so that other modules can do <code>new require(&#39;micromessaging&#39;).Messaging(...)</code> and <code>new require(&#39;micromessaging&#39;).Service(...)</code> (to ease backward compatibility but <code>Service</code> should log a warning to tell it&#39;s deprecated...)</li>
 					<li>[ ] Go to the old codebase (within the dir) and check we didn&#39;t forgot a working behaviour or features.</li>
 					<li>[ ] Quadruple check that everything works fine through some good testing!</li>
-					<li>[ ] Code review</li>
 					<li>[ ] Delete old JS codebase</li>
-					<li>[ ] Add more comments to that <code>typedoc</code> generates a cool and easy doc.</li>
-					<li>[ ] Travis auto tests</li>
-					<li>[ ] Publish a doc under heroku maybe?</li>
-					<li>[ ] Implement <code>.remove()</code> on the return of <code>emit</code> and <code>handle</code></li>
+					<li>[ ] Add more comments so that <code>typedoc</code> generates a cool and easy doc.</li>
+					<li>[x] Travis auto tests</li>
+					<li>[x] Publish a doc under GitHub pages =&gt; will be under swanest.github.com/micromessaging</li>
+					<li>[x] Implement <code>.stop()</code> on the return of <code>emit</code> and <code>handle</code> =&gt; see ReturnHandler.</li>
 				</ul>
 				<h2 id="useful-info">Useful info</h2>
-				<p>As we are transitionning to a new version, all relevant files will be under <code>src/</code> folder but
+				<p>As we are transitioning to a new version, all relevant files will be under <code>src/</code> folder but
 				to ease work, we kept the old JS codebase so that we can easily sneak peak information in it about the old working procedures to not forget anything.</p>
 			</div>
 		</div>
@@ -118,6 +117,9 @@
 				<ul>
 					<li class="globals  ">
 						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_amqplatency_.html">"AMQPLatency"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_config_.html">"<wbr>Config"</a>

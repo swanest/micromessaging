@@ -95,6 +95,7 @@
 						<section class="tsd-index-section tsd-is-inherited">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#latencyms" class="tsd-kind-icon">latencyMS</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static"><a href="_service_.service.html#instances" class="tsd-kind-icon">instances</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static"><a href="_service_.service.html#internalexchangeprefix" class="tsd-kind-icon">internal<wbr>Exchange<wbr>Prefix</a></li>
 							</ul>
@@ -105,13 +106,13 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#close" class="tsd-kind-icon">close</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#connect" class="tsd-kind-icon">connect</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#ee" class="tsd-kind-icon">ee</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#election" class="tsd-kind-icon">election</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="_service_.service.html#emit" class="tsd-kind-icon">emit</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#getmaxparallelism" class="tsd-kind-icon">get<wbr>Max<wbr>Parallelism</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#getrequestsreport" class="tsd-kind-icon">get<wbr>Requests<wbr>Report</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#getstatus" class="tsd-kind-icon">get<wbr>Status</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#handle" class="tsd-kind-icon">handle</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#internalexchangename" class="tsd-kind-icon">internal<wbr>Exchange<wbr>Name</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#isconnected" class="tsd-kind-icon">is<wbr>Connected</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#isready" class="tsd-kind-icon">is<wbr>Ready</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#lastmessagedate" class="tsd-kind-icon">last<wbr>Message<wbr>Date</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#listen" class="tsd-kind-icon">listen</a></li>
@@ -119,10 +120,9 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#notify" class="tsd-kind-icon">notify</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#on" class="tsd-kind-icon">on</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#once" class="tsd-kind-icon">once</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#peerstatus" class="tsd-kind-icon">peer<wbr>Status</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#qosmaxparallelism" class="tsd-kind-icon">qos<wbr>Max<wbr>Parallelism</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#reporterror" class="tsd-kind-icon">report<wbr>Error</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="_service_.service.html#request" class="tsd-kind-icon">request</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#routes" class="tsd-kind-icon">routes</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#serviceid" class="tsd-kind-icon">service<wbr>Id</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#servicename" class="tsd-kind-icon">service<wbr>Name</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_service_.service.html#serviceoptions" class="tsd-kind-icon">service<wbr>Options</a></li>
@@ -147,7 +147,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Service.ts#L3">Service.ts:3</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Service.ts#L3">Service.ts:3</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -176,6 +176,17 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
 				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a name="latencyms" class="tsd-anchor"></a>
+					<h3>latencyMS</h3>
+					<div class="tsd-signature tsd-kind-icon">latencyMS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#latencyms">latencyMS</a></p>
+						<ul>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L47">Messaging.ts:47</a></li>
+						</ul>
+					</aside>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static">
 					<a name="instances" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> instances</h3>
@@ -183,7 +194,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#instances">instances</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L75">Messaging.ts:75</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L46">Messaging.ts:46</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -194,7 +205,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#internalexchangeprefix">internalExchangePrefix</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L48">Messaging.ts:48</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L45">Messaging.ts:45</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -212,7 +223,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#close">close</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L772">Messaging.ts:772</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L648">Messaging.ts:648</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -251,7 +262,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#connect">connect</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L325">Messaging.ts:325</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L271">Messaging.ts:271</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -284,28 +295,15 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#ee">ee</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L94">Messaging.ts:94</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L168">Messaging.ts:168</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Access to the eventEmitter.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">EventEmitter</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<a name="election" class="tsd-anchor"></a>
-					<h3>election</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">election<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_election_.election.html" class="tsd-signature-type">Election</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#election">election</a></p>
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L108">Messaging.ts:108</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="_election_.election.html" class="tsd-signature-type">Election</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -320,7 +318,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#emit">emit</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L434">Messaging.ts:434</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L348">Messaging.ts:348</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -372,7 +370,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#getmaxparallelism">getMaxParallelism</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L123">Messaging.ts:123</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L209">Messaging.ts:209</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
@@ -390,7 +388,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#getrequestsreport">getRequestsReport</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L683">Messaging.ts:683</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L562">Messaging.ts:562</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -425,7 +423,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#getstatus">getStatus</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L746">Messaging.ts:746</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L622">Messaging.ts:622</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -459,7 +457,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#handle">handle</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L720">Messaging.ts:720</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L593">Messaging.ts:593</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -493,10 +491,33 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#internalexchangename">internalExchangeName</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L98">Messaging.ts:98</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L175">Messaging.ts:175</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the default name used for declaring internal listen queues.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a name="isconnected" class="tsd-anchor"></a>
+					<h3>is<wbr>Connected</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">is<wbr>Connected<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#isconnected">isConnected</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L255">Messaging.ts:255</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -511,7 +532,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#isready">isReady</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L166">Messaging.ts:166</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L251">Messaging.ts:251</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -529,9 +550,14 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#lastmessagedate">lastMessageDate</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L77">Messaging.ts:77</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L145">Messaging.ts:145</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the last Date object where a message was received. Does not account for internal messages.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Date</span></h4>
 						</li>
 					</ul>
@@ -548,7 +574,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#listen">listen</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L594">Messaging.ts:594</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L508">Messaging.ts:508</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -584,7 +610,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#listen">listen</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L601">Messaging.ts:601</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L516">Messaging.ts:516</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -623,7 +649,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#maxparallelism">maxParallelism</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L145">Messaging.ts:145</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L230">Messaging.ts:230</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -647,7 +673,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#notify">notify</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L761">Messaging.ts:761</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L637">Messaging.ts:637</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -676,7 +702,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#on">on</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L408">Messaging.ts:408</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L322">Messaging.ts:322</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -729,7 +755,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#once">once</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L419">Messaging.ts:419</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L333">Messaging.ts:333</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -774,24 +800,6 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<a name="peerstatus" class="tsd-anchor"></a>
-					<h3>peer<wbr>Status</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">peer<wbr>Status<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_peerstatus_.peerstatus.html" class="tsd-signature-type">PeerStatus</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#peerstatus">peerStatus</a></p>
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L118">Messaging.ts:118</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="_peerstatus_.peerstatus.html" class="tsd-signature-type">PeerStatus</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a name="qosmaxparallelism" class="tsd-anchor"></a>
 					<h3>qos<wbr>Max<wbr>Parallelism</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -802,7 +810,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#qosmaxparallelism">qosMaxParallelism</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L127">Messaging.ts:127</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L213">Messaging.ts:213</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -812,6 +820,33 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a name="reporterror" class="tsd-anchor"></a>
+					<h3>report<wbr>Error</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">report<wbr>Error<span class="tsd-signature-symbol">(</span>e<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CustomError</span>, m<span class="tsd-signature-symbol">?: </span><a href="_message_.message.html" class="tsd-signature-type">Message</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#reporterror">reportError</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L708">Messaging.ts:708</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>e: <span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">CustomError</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> m: <a href="_message_.message.html" class="tsd-signature-type">Message</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -826,7 +861,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#request">request</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L479">Messaging.ts:479</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L393">Messaging.ts:393</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -913,24 +948,6 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<a name="routes" class="tsd-anchor"></a>
-					<h3>routes</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">routes<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_interfaces_.route.html" class="tsd-signature-type">Route</a><span class="tsd-signature-symbol">&gt;</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#routes">routes</a></p>
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L113">Messaging.ts:113</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_interfaces_.route.html" class="tsd-signature-type">Route</a><span class="tsd-signature-symbol">&gt;</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a name="serviceid" class="tsd-anchor"></a>
 					<h3>service<wbr>Id</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -941,9 +958,14 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#serviceid">serviceId</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L103">Messaging.ts:103</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L183">Messaging.ts:183</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the UUID generated for this instance.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 						</li>
 					</ul>
@@ -959,12 +981,12 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#servicename">serviceName</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L84">Messaging.ts:84</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L152">Messaging.ts:152</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Returns the name of the service</p>
+									<p>Returns the name of the service (name supplied while instantiating the service).</p>
 								</div>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -982,9 +1004,14 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#serviceoptions">serviceOptions</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L89">Messaging.ts:89</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L160">Messaging.ts:160</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Getter: options sat while instantiating the service with the corresponding default values.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_interfaces_.serviceoptions.html" class="tsd-signature-type">ServiceOptions</a></h4>
 						</li>
 					</ul>
@@ -1000,7 +1027,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#task">task</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L547">Messaging.ts:547</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L461">Messaging.ts:461</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1067,7 +1094,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#uptime">uptime</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L170">Messaging.ts:170</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L259">Messaging.ts:259</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_interfaces_.uptime.html" class="tsd-signature-type">Uptime</a></h4>
@@ -1085,7 +1112,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_messaging_.messaging.html">Messaging</a>.<a href="_messaging_.messaging.html#defaultmemorylimit">defaultMemoryLimit</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Messaging.ts#L263">Messaging.ts:263</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Messaging.ts#L134">Messaging.ts:134</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">object</span></h4>
@@ -1107,6 +1134,9 @@
 				<ul>
 					<li class="globals  ">
 						<a href="../globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_amqplatency_.html">"AMQPLatency"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_config_.html">"<wbr>Config"</a>
@@ -1156,6 +1186,9 @@
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
 								<a href="_service_.service.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+								<a href="_service_.service.html#latencyms" class="tsd-kind-icon">latencyMS</a>
+							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static">
 								<a href="_service_.service.html#instances" class="tsd-kind-icon">instances</a>
 							</li>
@@ -1170,9 +1203,6 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_service_.service.html#ee" class="tsd-kind-icon">ee</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_service_.service.html#election" class="tsd-kind-icon">election</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
 								<a href="_service_.service.html#emit" class="tsd-kind-icon">emit</a>
@@ -1191,6 +1221,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_service_.service.html#internalexchangename" class="tsd-kind-icon">internal<wbr>Exchange<wbr>Name</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="_service_.service.html#isconnected" class="tsd-kind-icon">is<wbr>Connected</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_service_.service.html#isready" class="tsd-kind-icon">is<wbr>Ready</a>
@@ -1214,16 +1247,13 @@
 								<a href="_service_.service.html#once" class="tsd-kind-icon">once</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_service_.service.html#peerstatus" class="tsd-kind-icon">peer<wbr>Status</a>
+								<a href="_service_.service.html#qosmaxparallelism" class="tsd-kind-icon">qos<wbr>Max<wbr>Parallelism</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_service_.service.html#qosmaxparallelism" class="tsd-kind-icon">qos<wbr>Max<wbr>Parallelism</a>
+								<a href="_service_.service.html#reporterror" class="tsd-kind-icon">report<wbr>Error</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
 								<a href="_service_.service.html#request" class="tsd-kind-icon">request</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_service_.service.html#routes" class="tsd-kind-icon">routes</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_service_.service.html#serviceid" class="tsd-kind-icon">service<wbr>Id</a>

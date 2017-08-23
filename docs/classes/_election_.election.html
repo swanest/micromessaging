@@ -90,17 +90,13 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_election_.election.html#tempo" class="tsd-kind-icon">TEMPO</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_election_.election.html#timeout" class="tsd-kind-icon">TIMEOUT</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_election_.election.html#default_tempo" class="tsd-kind-icon">DEFAULT_<wbr>TEMPO</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_election_.election.html#default_timeout" class="tsd-kind-icon">DEFAULT_<wbr>TIMEOUT</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#generateid" class="tsd-kind-icon">generate<wbr>Id</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#id" class="tsd-kind-icon">id</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#leaderseen" class="tsd-kind-icon">leader<wbr>Seen</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#shut" class="tsd-kind-icon">shut</a></li>
@@ -122,7 +118,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L30">Election.ts:30</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L28">Election.ts:28</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -142,32 +138,12 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="tempo" class="tsd-anchor"></a>
-					<h3>TEMPO</h3>
-					<div class="tsd-signature tsd-kind-icon">TEMPO<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;Election.DEFAULT_TEMPO</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L19">Election.ts:19</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="timeout" class="tsd-anchor"></a>
 					<h3>TIMEOUT</h3>
 					<div class="tsd-signature tsd-kind-icon">TIMEOUT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;Election.DEFAULT_TIMEOUT</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L21">Election.ts:21</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
-					<a name="default_tempo" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> DEFAULT_<wbr>TEMPO</h3>
-					<div class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>TEMPO<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;2000</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L18">Election.ts:18</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L14">Election.ts:14</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -177,7 +153,7 @@
 					<div class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>TIMEOUT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;30 * 1000</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L20">Election.ts:20</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L13">Election.ts:13</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -185,53 +161,19 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="generateid" class="tsd-anchor"></a>
-					<h3>generate<wbr>Id</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">generate<wbr>Id<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L117">Election.ts:117</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="id" class="tsd-anchor"></a>
-					<h3>id</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L122">Election.ts:122</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="leaderid" class="tsd-anchor"></a>
 					<h3>leader<wbr>Id</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">leader<wbr>Id<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						<li class="tsd-signature tsd-kind-icon">leader<wbr>Id<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L126">Election.ts:126</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L104">Election.ts:104</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -245,7 +187,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L130">Election.ts:130</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L108">Election.ts:108</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -268,7 +210,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L108">Election.ts:108</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L94">Election.ts:94</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -285,7 +227,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e85b355/src/Election.ts#L238">Election.ts:238</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L115">Election.ts:115</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -299,6 +241,9 @@
 				<ul>
 					<li class="globals  ">
 						<a href="../globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_amqplatency_.html">"AMQPLatency"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_config_.html">"<wbr>Config"</a>
@@ -349,22 +294,10 @@
 								<a href="_election_.election.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_election_.election.html#tempo" class="tsd-kind-icon">TEMPO</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_election_.election.html#timeout" class="tsd-kind-icon">TIMEOUT</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
-								<a href="_election_.election.html#default_tempo" class="tsd-kind-icon">DEFAULT_<wbr>TEMPO</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
 								<a href="_election_.election.html#default_timeout" class="tsd-kind-icon">DEFAULT_<wbr>TIMEOUT</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_election_.election.html#generateid" class="tsd-kind-icon">generate<wbr>Id</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_election_.election.html#id" class="tsd-kind-icon">id</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_election_.election.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a>
@@ -383,10 +316,10 @@
 				</ul>
 				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../interfaces/_election_.electionmessage.html" class="tsd-kind-icon">Election<wbr>Message</a>
+						<a href="../interfaces/_election_.consensusmessage.html" class="tsd-kind-icon">Consensus<wbr>Message</a>
 					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_election_.html#count" class="tsd-kind-icon">COUNT</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../interfaces/_election_.electionmessage.html" class="tsd-kind-icon">Election<wbr>Message</a>
 					</li>
 				</ul>
 			</nav>
