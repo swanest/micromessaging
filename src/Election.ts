@@ -22,6 +22,8 @@ export class Election {
     private _logger: Logger;
     private _amqpLatency: AMQPLatency;
     private _listenersBinding: Promise<ReturnHandler>[] = [];
+    private _leaderNotification: Timer;
+    private _latency: number;
 
     private _candidates: Array<string> = [];
     private _players: Array<string> = [];
@@ -75,20 +77,19 @@ export class Election {
             clearTimeout(this._leaderByNowTimer);
             this._leaderByNowTimer = null;
         }
-        this._amqpLatency.benchmark().then((latency) => {
-            if (!isNullOrUndefined(this._leaderByNowTimer)) {
-                clearTimeout(this._leaderByNowTimer);
-                this._leaderByNowTimer = null;
-            }
+        const latency = Math.ceil(this._latency);
+        if (!isNullOrUndefined(this._leaderByNowTimer)) {
+            clearTimeout(this._leaderByNowTimer);
+            this._leaderByNowTimer = null;
+        }
 
-            this._leaderByNowTimer = setTimeout(() => {
-                // There should be a leader by now...
-                if (isNullOrUndefined(this._leaderId) && this._messaging.isConnected()) {
-                    this._logger.log('There was no leader within 100ms, voting again.');
-                    this.vote().catch(e => this._messaging.reportError(e));
-                }
-            }, Math.max(latency * 2.5, 2000));
-        }).catch(e => this._messaging.reportError(e));
+        this._leaderByNowTimer = setTimeout(() => {
+            // There should be a leader by now...
+            if (isNullOrUndefined(this._leaderId) && this._messaging.isConnected()) {
+                this._logger.log('There was no leader within 100ms, voting again.');
+                this.vote().catch(e => this._messaging.reportError(e));
+            }
+        }, Math.max(latency * 3.5, 2000));
     }
 
     public shut() {
@@ -118,6 +119,7 @@ export class Election {
         }
         await Promise.all(this._listenersBinding) // Wait for the listeners to be in place.
             .catch(e => this._messaging.reportError(e));
+        this._latency = await this._amqpLatency.benchmark();
         this._logger.log('init a voting process');
         this._candidates = [];
         this._players = [];
@@ -143,18 +145,28 @@ export class Election {
         }
         this._leaderId = m.body.leaderId;
         this._lastLeaderSync = new Date();
+        this._candidates = [];
+        this._players = [];
         this._notifyLeader();
     }
 
     private _notifyLeader() {
-        if (this._leaderId === null) {
-            throw new CustomError('Should notify the leader but the leader is unknown.');
+        if (!isNullOrUndefined(this._leaderNotification)) {
+            clearTimeout(this._leaderNotification);
+            this._leaderNotification = null;
         }
-        this._messaging.ee().emit('leader', {leaderId: this._leaderId});
+        const latency = Math.ceil(this._latency);
+        this._leaderNotification = setTimeout(() => {
+            if (!this._messaging.isConnected() || isNullOrUndefined(this._leaderId)) {
+                return;
+            }
+            this._messaging.ee().emit('leader', {leaderId: this._leaderId});
+        }, Math.max(latency * 3.5, 100));
     }
 
     private _electionListener(message: Message<ElectionMessage>) {
         this._leaderByTimer();
+        clearTimeout(this._leaderNotification);
         const howManyPlayers = this._players.length;
         if (this._players.indexOf(message.body.id) === -1) {
             this._players.push(message.body.id);
@@ -166,11 +178,11 @@ export class Election {
 
         this._logger.log(`${this._messaging.serviceId()} received a vote message`, message.body, this._leaderId, this._lastLeaderSync, this.TIMEOUT, this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime());
         // Something arrives but vote is already done & lastLeaderSeen < 2/3 TIMEOUT, publish that the elected instance is the previously elected one
-        if (!isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
+        if (message.body.id !== this._messaging.serviceId() && !isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
             this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._messaging.serviceId(), new Date().getTime() - this._lastLeaderSync.getTime());
             this._emitKnownLeader().catch(e => this._messaging.reportError(e));
             // And vote for the known leader so that the service trying to vote get's he is wrong.
-            this._voteFor(this._leaderId).catch(e => this._messaging.reportError(e));
+            // this._voteFor(this._leaderId).catch(e => this._messaging.reportError(e));
             return;
         }
         // if (!isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() >= 2 / 3 * this.TIMEOUT) {
@@ -222,31 +234,23 @@ export class Election {
         if (!isNullOrUndefined(this._selfElectionTimer)) {
             clearTimeout(this._selfElectionTimer);
         }
-        this._amqpLatency.benchmark().then((latency) => {
-            latency = Math.ceil(latency);
-            this._logger.log(`_waitAndMakeMeLeader in ${Math.max(latency * 2.5, 100)}ms.`);
-            if (!isNullOrUndefined(this._selfElectionTimer)) {
-                clearTimeout(this._selfElectionTimer);
-            }
-            if (this._stopped) {
+        const latency = Math.ceil(this._latency);
+        this._logger.log(`_waitAndMakeMeLeader in ${Math.max(latency * 3.5, 100)}ms.`);
+
+        this._selfElectionTimer = setTimeout(() => {
+            // If someone would have voted against this service, either the timer would have been cancelled
+            // Or because of the benchmarkLatency the timer would not have been so we need to check one last time it follows what be believed
+            // If still true then we notify everyone that this service will be the leader.
+            if (this._leaderOpinion() !== this._messaging.serviceId() || !this._messaging.isConnected()) {
                 return;
             }
-
-            this._selfElectionTimer = setTimeout(() => {
-                // If someone would have voted against this service, either the timer would have been cancelled
-                // Or because of the benchmarkLatency the timer would not have been so we need to check one last time it follows what be believed
-                // If still true then we notify everyone that this service will be the leader.
-                if (this._leaderOpinion() !== this._messaging.serviceId() || !this._messaging.isConnected()) {
-                    return;
-                }
-                this._leaderId = this._messaging.serviceId();
-                this._logger.debug('I become leader (' + this._messaging.serviceId() + ') notifying others');
-                this._lastLeaderSync = new Date();
-                this._selfElectionTimer = null;
-                this._notifyLeader();
-                this._emitKnownLeader().catch(e => this._messaging.reportError(e));
-            }, Math.max(latency * 2.5, 100));
-        });
+            this._leaderId = this._messaging.serviceId();
+            this._logger.debug('I become leader (' + this._messaging.serviceId() + ') notifying others');
+            this._lastLeaderSync = new Date();
+            this._selfElectionTimer = null;
+            this._notifyLeader();
+            this._emitKnownLeader().catch(e => this._messaging.reportError(e));
+        }, Math.max(latency * 3.5, 100));
     }
 }
 

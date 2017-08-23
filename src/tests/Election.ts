@@ -102,17 +102,17 @@ describe('Leader Election', () => {
         await Promise.all([s.close(), s2.close()]);
     });
     it('should elect a new leader when the actual one seems offline', async function () {
-        this.timeout(10000);
-        Election.DEFAULT_TIMEOUT = 100;
+        this.timeout(20000);
+        Election.DEFAULT_TIMEOUT = 2000;
         const s = new Messaging('server1');
         const s2 = new Messaging('server1');
         const s3 = new Messaging('server1');
-        await Promise.all([s.connect(), s3.connect()]);
+        await Promise.all([s3.connect(), s.connect()]);
         await new Promise((resolve, reject) => {
             s.once('leader', (lM) => {
                 console.log('leader event on 1', lM);
                 const originalLeader = (lM as any).leaderId;
-                s2.on('leader', (m) => {
+                s2.once('leader', (m) => {
                     console.log('leader event on 2', m);
                     try {
                         expect((m as any).leaderId).to.not.equal(originalLeader);
@@ -126,14 +126,14 @@ describe('Leader Election', () => {
                     setTimeout(() => {
                         res();
                         console.log('resolve');
-                    }, 1000);
+                    }, 2000);
                 })).then(() => {
                     console.log('going to connect s2');
                     return s2.connect()
                 });
             });
 
-            s3.on('leader', (m) => {
+            s3.once('leader', (m) => {
                 console.log('leader event on 3', m);
             });
         });
