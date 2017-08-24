@@ -88,11 +88,19 @@
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#topologyready" class="tsd-kind-icon">topology<wbr>Ready</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#getpeers" class="tsd-kind-icon">get<wbr>Peers</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#getstatus" class="tsd-kind-icon">get<wbr>Status</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#startbroadcast" class="tsd-kind-icon">start<wbr>Broadcast</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#stopbroadcast" class="tsd-kind-icon">stop<wbr>Broadcast</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#setelection" class="tsd-kind-icon">set<wbr>Election</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#start" class="tsd-kind-icon">start</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_peerstatus_.peerstatus.html#stop" class="tsd-kind-icon">stop</a></li>
 							</ul>
 						</section>
 					</div>
@@ -104,22 +112,19 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Peer<wbr>Status<span class="tsd-signature-symbol">(</span>messaging<span class="tsd-signature-symbol">: </span><a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a>, election<span class="tsd-signature-symbol">: </span><a href="_election_.election.html" class="tsd-signature-type">Election</a>, logger<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Logger</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_peerstatus_.peerstatus.html" class="tsd-signature-type">PeerStatus</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Peer<wbr>Status<span class="tsd-signature-symbol">(</span>messaging<span class="tsd-signature-symbol">: </span><a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a>, logger<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Logger</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_peerstatus_.peerstatus.html" class="tsd-signature-type">PeerStatus</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/PeerStatus.ts#L22">PeerStatus.ts:22</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L30">PeerStatus.ts:30</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>messaging: <a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a></h5>
-								</li>
-								<li>
-									<h5>election: <a href="_election_.election.html" class="tsd-signature-type">Election</a></h5>
 								</li>
 								<li>
 									<h5>logger: <span class="tsd-signature-type">Logger</span></h5>
@@ -131,7 +136,42 @@
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="topologyready" class="tsd-anchor"></a>
+					<h3>topology<wbr>Ready</h3>
+					<div class="tsd-signature tsd-kind-icon">topology<wbr>Ready<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;false</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L17">PeerStatus.ts:17</a></li>
+						</ul>
+					</aside>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getpeers" class="tsd-anchor"></a>
+					<h3>get<wbr>Peers</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Peers<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_peerstatus_.peerstat.html" class="tsd-signature-type">PeerStat</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L137">PeerStatus.ts:137</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the actual peers list</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_peerstatus_.peerstat.html" class="tsd-signature-type">PeerStat</a><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="getstatus" class="tsd-anchor"></a>
 					<h3>get<wbr>Status</h3>
@@ -142,7 +182,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/PeerStatus.ts#L40">PeerStatus.ts:40</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L57">PeerStatus.ts:57</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -156,35 +196,68 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="startbroadcast" class="tsd-anchor"></a>
-					<h3>start<wbr>Broadcast</h3>
+					<a name="setelection" class="tsd-anchor"></a>
+					<h3>set<wbr>Election</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">start<wbr>Broadcast<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">set<wbr>Election<span class="tsd-signature-symbol">(</span>election<span class="tsd-signature-symbol">: </span><a href="_election_.election.html" class="tsd-signature-type">Election</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/PeerStatus.ts#L85">PeerStatus.ts:85</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L53">PeerStatus.ts:53</a></li>
 								</ul>
 							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>election: <a href="_election_.election.html" class="tsd-signature-type">Election</a></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="stopbroadcast" class="tsd-anchor"></a>
-					<h3>stop<wbr>Broadcast</h3>
+					<a name="start" class="tsd-anchor"></a>
+					<h3>start</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">stop<wbr>Broadcast<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">start<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/PeerStatus.ts#L95">PeerStatus.ts:95</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L105">PeerStatus.ts:105</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Starts the process of knowing about peers and the system topology.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="stop" class="tsd-anchor"></a>
+					<h3>stop</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">stop<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/PeerStatus.ts#L128">PeerStatus.ts:128</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Stops the timers</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -248,14 +321,23 @@
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
 								<a href="_peerstatus_.peerstatus.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_peerstatus_.peerstatus.html#topologyready" class="tsd-kind-icon">topology<wbr>Ready</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_peerstatus_.peerstatus.html#getpeers" class="tsd-kind-icon">get<wbr>Peers</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_peerstatus_.peerstatus.html#getstatus" class="tsd-kind-icon">get<wbr>Status</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_peerstatus_.peerstatus.html#startbroadcast" class="tsd-kind-icon">start<wbr>Broadcast</a>
+								<a href="_peerstatus_.peerstatus.html#setelection" class="tsd-kind-icon">set<wbr>Election</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_peerstatus_.peerstatus.html#stopbroadcast" class="tsd-kind-icon">stop<wbr>Broadcast</a>
+								<a href="_peerstatus_.peerstatus.html#start" class="tsd-kind-icon">start</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_peerstatus_.peerstatus.html#stop" class="tsd-kind-icon">stop</a>
 							</li>
 						</ul>
 					</li>

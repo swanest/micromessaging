@@ -99,8 +99,8 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#leaderseen" class="tsd-kind-icon">leader<wbr>Seen</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#shut" class="tsd-kind-icon">shut</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#vote" class="tsd-kind-icon">vote</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#start" class="tsd-kind-icon">start</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_election_.election.html#stop" class="tsd-kind-icon">stop</a></li>
 							</ul>
 						</section>
 					</div>
@@ -112,19 +112,22 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Election<span class="tsd-signature-symbol">(</span>messaging<span class="tsd-signature-symbol">: </span><a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a>, logger<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Logger</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_election_.election.html" class="tsd-signature-type">Election</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Election<span class="tsd-signature-symbol">(</span>messaging<span class="tsd-signature-symbol">: </span><a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a>, peerStatus<span class="tsd-signature-symbol">: </span><a href="_peerstatus_.peerstatus.html" class="tsd-signature-type">PeerStatus</a>, logger<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Logger</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_election_.election.html" class="tsd-signature-type">Election</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L28">Election.ts:28</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L31">Election.ts:31</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>messaging: <a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a></h5>
+								</li>
+								<li>
+									<h5>peerStatus: <a href="_peerstatus_.peerstatus.html" class="tsd-signature-type">PeerStatus</a></h5>
 								</li>
 								<li>
 									<h5>logger: <span class="tsd-signature-type">Logger</span></h5>
@@ -143,7 +146,7 @@
 					<div class="tsd-signature tsd-kind-icon">TIMEOUT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;Election.DEFAULT_TIMEOUT</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L14">Election.ts:14</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L16">Election.ts:16</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -153,7 +156,7 @@
 					<div class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>TIMEOUT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;30 * 1000</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L13">Election.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L15">Election.ts:15</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -170,9 +173,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L104">Election.ts:104</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L91">Election.ts:91</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the leader ID</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 						</li>
 					</ul>
@@ -187,9 +195,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L108">Election.ts:108</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L98">Election.ts:98</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Sets the last date the leader was seen</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -201,36 +214,41 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="shut" class="tsd-anchor"></a>
-					<h3>shut</h3>
+					<a name="start" class="tsd-anchor"></a>
+					<h3>start</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">shut<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">start<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L94">Election.ts:94</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L108">Election.ts:108</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Starts an election process.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="vote" class="tsd-anchor"></a>
-					<h3>vote</h3>
+					<a name="stop" class="tsd-anchor"></a>
+					<h3>stop</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">vote<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">stop<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/b2e2a78/src/Election.ts#L115">Election.ts:115</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Election.ts#L80">Election.ts:80</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -306,10 +324,10 @@
 								<a href="_election_.election.html#leaderseen" class="tsd-kind-icon">leader<wbr>Seen</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_election_.election.html#shut" class="tsd-kind-icon">shut</a>
+								<a href="_election_.election.html#start" class="tsd-kind-icon">start</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_election_.election.html#vote" class="tsd-kind-icon">vote</a>
+								<a href="_election_.election.html#stop" class="tsd-kind-icon">stop</a>
 							</li>
 						</ul>
 					</li>
