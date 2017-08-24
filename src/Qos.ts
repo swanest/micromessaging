@@ -39,13 +39,13 @@ export class Qos {
         }
         this._logger.debug('QOS has been enabled. Managing memory and event-loop.');
         this._isEnabled = true;
-        const serviceOptions = this._client.serviceOptions();
+        const serviceOptions = this._client.getServiceOptions();
         this._config = {
             memorySoftLimit: serviceOptions.memorySoftLimit * Math.pow(2, 20),
             memoryHardLimit: serviceOptions.memoryHardLimit * Math.pow(2, 20),
             eventLoopThreshold: serviceOptions.qosThreshold * 100
         };
-        this._mPressure = memoryPressure.new(this._client.serviceName(), {
+        this._mPressure = memoryPressure.new(this._client.getServiceName(), {
             memoryThreshold: this._config.memorySoftLimit,
             interval: this._sampleInterval,
             consecutiveGrowths: 3
@@ -60,15 +60,15 @@ export class Qos {
         this._elMonitor.on('pressure', this._elPressure.bind(this));
         this._elMonitor.on('released', this._elReleased.bind(this));
         this._elMonitor.start();
-        this._client.qosMaxParallelism(1);
+        this._client.setQosMaxParallelism(1);
         this._looper();
     }
 
     private isHandlingMessages() {
-        if (!this._lastLoop || isNullOrUndefined(this._client.lastMessageDate())) {
+        if (!this._lastLoop || isNullOrUndefined(this._client.getLastMessageDate())) {
             return false;
         }
-        return this._client.lastMessageDate().getTime() > this._lastLoop.getTime();
+        return this._client.getLastMessageDate().getTime() > this._lastLoop.getTime();
     }
 
     public handledMessage() {
@@ -105,11 +105,11 @@ export class Qos {
                     if (this.isLimited()) {
                         this._maxParallelism += 10;
                         this._logger.debug('Assert new parallelism', this._maxParallelism);
-                        await this._client.qosMaxParallelism(this._maxParallelism);
+                        await this._client.setQosMaxParallelism(this._maxParallelism);
                         this._lastDecreaseApplied = true;
                     }
                 } else {
-                    await this._client.qosMaxParallelism(this._maxParallelism);
+                    await this._client.setQosMaxParallelism(this._maxParallelism);
                     this._lastDecreaseApplied = true;
                 }
             } else if (this._lastDecreaseApplied) {
@@ -121,7 +121,7 @@ export class Qos {
                 this._lastDecreaseApplied = false;
             }
         } else if (!this._isUnderPressure && this._client.getMaxParallelism() === 0) {
-            await this._client.qosMaxParallelism(this._maxParallelism);
+            await this._client.setQosMaxParallelism(this._maxParallelism);
         }
         this._lastLoop = new Date();
         this._lastLoopFinished = true;
@@ -132,8 +132,8 @@ export class Qos {
         this._logger.log(`Event loop is under pressure. Threshold set to ${this._config.eventLoopThreshold} but got ${status.eventLoopDelayedByMS}. Status attached`, status);
         this._lastUnderPressure = new Date();
         this._isUnderPressure = true;
-        this._client.qosMaxParallelism(0);
-        this._client.ee().emit('pressure', {
+        this._client.setQosMaxParallelism(0);
+        this._client.getEventEmitter().emit('pressure', {
             type: 'eventLoop',
             contents: status
         });
@@ -142,7 +142,7 @@ export class Qos {
     private _elReleased(status: Status) {
         this._logger.log(`Event loop is now ok. Threshold set to ${this._config.eventLoopThreshold} > ${status.eventLoopDelayedByMS}. Status attached`, status);
         this._isUnderPressure = false;
-        this._client.ee().emit('pressureReleased', {
+        this._client.getEventEmitter().emit('pressureReleased', {
             type: 'eventLoop',
             contents: status
         });
@@ -151,7 +151,7 @@ export class Qos {
     private _memoryPressure(args: MemoryPressureArgs) {
         this._logger.log(`Memory is exceeding softLimit of ${this._config.memorySoftLimit / Math.pow(2, 20)}MB. History attached.`, args.memoryUsageHistory);
         args.ack();
-        this._client.ee().emit('pressure', {
+        this._client.getEventEmitter().emit('pressure', {
             type: 'memory',
             contents: args
         });
@@ -160,7 +160,7 @@ export class Qos {
     private _memoryPressureReleased(args: MemoryPressureArgs) {
         this._logger.log(`Memory went below softLimit of ${this._config.memorySoftLimit / Math.pow(2, 20)}MB. History attached.`, args.memoryUsageHistory);
         args.ack();
-        this._client.ee().emit('pressureReleased', {
+        this._client.getEventEmitter().emit('pressureReleased', {
             type: 'memory',
             contents: args
         });

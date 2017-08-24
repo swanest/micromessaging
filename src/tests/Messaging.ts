@@ -437,4 +437,37 @@ describe('Messaging', () => {
         expect(r.body).to.not.be.undefined;
 
     });
+
+    it('should throw when trying to listen to the same route', async () => {
+        const s = new Messaging('s');
+        let threw = false;
+        try {
+            await s.listen('s', 'queue', () => {});
+            await s.listen('s', 'queue', () => {});
+        } catch (err) {
+            threw = true;
+            expect(err).to.be.instanceof(Error);
+        }
+        expect(threw).to.be.true;
+    });
+
+    it('should throw when not able to connect', async () => {
+        const s = new Messaging('s');
+        let threw = false;
+        try {
+            await Promise.all(Messaging.instances.map(i => i.connect('wrong-instance-uri')));
+        } catch (err) {
+            threw = true;
+            expect(err).to.be.instanceof(Error);
+        }
+        expect(threw).to.be.true;
+    });
+
+    it('should work when trying to connect an already connected instance', async () => {
+        const s = new Messaging('s');
+        await s.connect();
+        let res = await s.connect('wrong-url'); // Question: is this the behavior we want?
+        expect(res).to.be.undefined;
+    });
+
 });

@@ -41,7 +41,7 @@ export class AMQPLatency {
             this._id = uuid.v4();
             const samples: number[] = [];
             this._sampleCount = 0;
-            this._listener = this._messaging.listen(this._messaging.internalExchangeName(), `latency.${this._id}`, (m: Message<SampleMessage>) => {
+            this._listener = this._messaging.listen(this._messaging.getInternalExchangeName(), `latency.${this._id}`, (m: Message<SampleMessage>) => {
                 samples.push(Utils.hrtimeToMS(process.hrtime(m.body.sentAt)));
                 if (this._sampleCount < 10) {
                     this._sendSample().catch(reject);
@@ -64,7 +64,7 @@ export class AMQPLatency {
         if (isNullOrUndefined(this._sampleCount) || isNullOrUndefined(this._id)) {
             throw new CustomError('forbidden', 'sendSample cannot be called before benchmark.');
         }
-        await this._messaging.emit<SampleMessage>(this._messaging.internalExchangeName(), `latency.${this._id}`, {
+        await this._messaging.emit<SampleMessage>(this._messaging.getInternalExchangeName(), `latency.${this._id}`, {
             sample: this._sampleCount++,
             sentAt: process.hrtime()
         });

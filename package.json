@@ -14,7 +14,8 @@
     "watch": "nodemon -e ts,json --exec 'node --inspect=5858 node_modules/mocha/bin/mocha --compilers ts:ts-node/register \"src/tests/*.ts\"'",
     "build": "rm -rf dist && tsc && rm -rf ./dist/tests",
     "docs": "typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "coverage": "nyc -e '.ts' --r html -r lcov -r text npm run test"
   },
   "author": "Swanest",
   "files": [

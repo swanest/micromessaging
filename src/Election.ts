@@ -38,8 +38,8 @@ export class Election {
 
         // this.generateId();
         this._listenersBinding.push(
-            this._messaging.listen(this._messaging.internalExchangeName(), 'leader.vote', this._electionListener.bind(this)),
-            this._messaging.listen(this._messaging.internalExchangeName(), 'leader.consensus', this._leaderConsensusHandler.bind(this))
+            this._messaging.listen(this._messaging.getInternalExchangeName(), 'leader.vote', this._electionListener.bind(this)),
+            this._messaging.listen(this._messaging.getInternalExchangeName(), 'leader.consensus', this._leaderConsensusHandler.bind(this))
         );
 
         if (this._peers.topologyReady) {
@@ -68,7 +68,7 @@ export class Election {
                     }
                 }).catch(e => this._messaging.reportError(e));
                 if (cancelledSelfElection) {
-                    if (this._leaderOpinion() === this._messaging.serviceId()) {
+                    if (this._leaderOpinion() === this._messaging.getServiceId()) {
                         this._waitAndMakeMeLeader();
                     }
                     cancelledSelfElection = false;
@@ -117,16 +117,16 @@ export class Election {
 
         this._leaderId = null;
         this._lastLeaderSync = null;
-        return this._voteFor(this._messaging.serviceId());
+        return this._voteFor(this._messaging.getServiceId());
     }
 
     private _leaderConsensusHandler(m: Message<ConsensusMessage>) {
-        if (m.body.id === this._messaging.serviceId()) {
+        if (m.body.id === this._messaging.getServiceId()) {
             // If I'm receiving the message I just emitted it means I know who the leader is... Skipping the message.
             return;
         }
         if (!isNullOrUndefined(this._leaderId) && this._leaderId !== m.body.leaderId) {
-            // throw new CustomError('leaderAlreadyDefined', `${this._messaging.serviceId()} expected leader to be ${this._leaderId} but received ${(m.body as any).leaderId}`);
+            // throw new CustomError('leaderAlreadyDefined', `${this._messaging.getServiceId()} expected leader to be ${this._leaderId} but received ${(m.body as any).leaderId}`);
             this._logger.debug('Leader was already defined but someone pretends its someone else, lets vote again.');
             this._leaderId = null;
             this._lastLeaderSync = null;
@@ -150,7 +150,7 @@ export class Election {
         if (!this._messaging.isConnected() || isNullOrUndefined(this._leaderId)) {
             return;
         }
-        this._messaging.ee().emit('leader', {leaderId: this._leaderId});
+        this._messaging.getEventEmitter().emit('leader', {leaderId: this._leaderId});
     }
 
     private _electionListener(message: Message<ElectionMessage>) {
@@ -162,11 +162,10 @@ export class Election {
             this._selfElectionTimer = null;
         }
 
-        this._logger.log(`${this._messaging.serviceId()} received a vote message`, message.body, this._leaderId, this._lastLeaderSync, this.TIMEOUT, this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime());
+        this._logger.log(`${this._messaging.getServiceId()} received a vote message`, message.body, this._leaderId, this._lastLeaderSync, this.TIMEOUT, this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime());
         // Something arrives but vote is already done & lastLeaderSeen < 2/3 TIMEOUT, publish that the elected instance is the previously elected one
-        if (message.body.id !== this._messaging.serviceId() && !isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
-
-            this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._messaging.serviceId(), new Date().getTime() - this._lastLeaderSync.getTime());
+        if (message.body.id !== this._messaging.getServiceId() && !isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
+            this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._messaging.getServiceId(), new Date().getTime() - this._lastLeaderSync.getTime());
             this._emitKnownLeader().catch(e => this._messaging.reportError(e));
             return;
         }
@@ -175,7 +174,7 @@ export class Election {
         this._playersVote.set(message.body.id, message.body.voteFor);
 
         const foundUnanimity = this._unanimity();
-        if (foundUnanimity && leaderOpinion === this._messaging.serviceId()) {
+        if (foundUnanimity && leaderOpinion === this._messaging.getServiceId()) {
             this._waitAndMakeMeLeader();
         } else if (!foundUnanimity) { // Only vote if not everyone agrees
             this._voteFor(leaderOpinion).catch(e => this._messaging.reportError(e));
@@ -215,8 +214,8 @@ export class Election {
     }
 
     private async _emitKnownLeader() {
-        await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.consensus', {
-            id: this._messaging.serviceId(),
+        await this._messaging.emit(this._messaging.getInternalExchangeName(), 'leader.consensus', {
+            id: this._messaging.getServiceId(),
             leaderId: this._leaderId
         }, undefined, {onlyIfConnected: true});
     }
@@ -235,10 +234,10 @@ export class Election {
             return;
         }
 
-        this._logger.log(`${this._messaging.serviceId()} proposing to vote for ${id}`, this._candidates, this._playersVote);
+        this._logger.log(`${this._messaging.getServiceId()} proposing to vote for ${id}`, this._candidates, this._playersVote);
 
-        await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.vote', {
-            id: this._messaging.serviceId(),
+        await this._messaging.emit(this._messaging.getInternalExchangeName(), 'leader.vote', {
+            id: this._messaging.getServiceId(),
             voteFor: id
         }, undefined, {onlyIfConnected: true});
     }
@@ -258,11 +257,11 @@ export class Election {
             // If someone would have voted against this service, either the timer would have been cancelled
             // Or because of the benchmarkLatency the timer would not have been so we need to check one last time it follows what be believed
             // If still true then we notify everyone that this service will be the leader.
-            if (this._leaderOpinion() !== this._messaging.serviceId() || !this._messaging.isConnected()) {
+            if (this._leaderOpinion() !== this._messaging.getServiceId() || !this._messaging.isConnected()) {
                 return;
             }
-            this._leaderId = this._messaging.serviceId();
-            this._logger.debug('I become leader (' + this._messaging.serviceId() + ') notifying others');
+            this._leaderId = this._messaging.getServiceId();
+            this._logger.debug('I become leader (' + this._messaging.getServiceId() + ') notifying others');
             this._lastLeaderSync = new Date();
             this._selfElectionTimer = null;
             this._notifyLeader();
