@@ -124,8 +124,9 @@ export class Messaging {
         // Declare an internal queue
         this._internalExchangeName = `${Messaging.internalExchangePrefix}.${serviceName}`;
 
-        this._election = new Election(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
-        this._peerStatus = new PeerStatus(this, this._election, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:peer-status`));
+        this._peerStatus = new PeerStatus(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:peer-status`));
+        this._election = new Election(this, this._peerStatus, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
+        this._peerStatus.setElection(this._election);
         this._amqpLatency = new AMQPLatency(this);
 
         Messaging.instances.push(this);
@@ -181,7 +182,6 @@ export class Messaging {
      * Get the UUID generated for this instance.
      */
     public serviceId() {
-        this._assertNotClosed();
         return this._serviceId;
     }
 
@@ -300,17 +300,17 @@ export class Messaging {
 
         // Instance is now ready, process to vote
         this._peerStatus.startBroadcast();
-        setTimeout(() => {
-            if (this._isClosing || this._isClosed || !this._isConnected) {
-                return;
-            }
-            this._election.vote().catch(e => this.reportError(e));
-        }, 100);
+        // setTimeout(() => {
+        //     if (this._isClosing || this._isClosed || !this._isConnected) {
+        //         return;
+        //     }
+        //     this._election.vote().catch(e => this.reportError(e));
+        // }, 100);
         this._benchmarkLatency();
     }
 
     private _benchmarkLatency() {
-        this._amqpLatency.benchmark().then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
+        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
     }
 
     /**

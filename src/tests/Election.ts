@@ -9,9 +9,9 @@ describe('Leader Election', () => {
 
     let instances = 0;
 
-    async function voteLoop(i: number) {
+    async function voteLoop(i: number, serversCounts: number = random(1, 6)) {
         const servers = [];
-        const howManyServers = random(1, 6);
+        const howManyServers = serversCounts;
         // const howManyServers = 5;
         instances += howManyServers;
         for (let j = 0; j < howManyServers; j++) {
@@ -60,14 +60,19 @@ describe('Leader Election', () => {
         });
     }
 
-    it('should find consensus on leadership', async function () {
+    it('should find consensus on leadership (random)', async function () {
         this.timeout(20000);
         const proms = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
             proms.push(voteLoop(i));
             // await voteLoop(i).then(console.log);
         }
         await Promise.all(proms).then(console.log);
+        console.log('how many instances', instances);
+    });
+
+    it('should find consensus on leadership (2 instances)', async function () {
+        await voteLoop(1, 2).then(console.log);
         console.log('how many instances', instances);
     });
 
@@ -81,14 +86,56 @@ describe('Leader Election', () => {
         });
     });
 
+    it('should not emit multiple times the leader', async function () {
+        this.timeout(10000);
+        const s = new Messaging('server1');
+        const s2 = new Messaging('server1');
+        await Promise.all(Messaging.instances.map(i => i.connect()));
+        let leaderKnown1 = false,
+            leaderKnown2 = false,
+            rejected = false;
+        await new Promise((resolve, reject) => {
+            s.on('leader', (lM) => {
+                if (leaderKnown1) {
+                    reject(new Error('Leader was already known but we got the event again with a vote for '+(lM as any).leaderId));
+                    rejected = true;
+                    return;
+                }
+                console.log('leader event on 1', lM);
+                leaderKnown1 = true;
+            });
+            s2.on('leader', (m) => {
+                console.log('leader event on 2', m);
+                if (leaderKnown2) {
+                    reject(new Error('Leader was already known but we got the event again with a vote for '+(m as any).leaderId));
+                    rejected = true;
+                    return;
+                }
+                leaderKnown2 = true;
+            });
+            setTimeout(() => {
+                if (!rejected) {
+                    resolve();
+                } else if (!leaderKnown1 || !leaderKnown2) {
+                    reject(new Error('Unknown leader'));
+                }
+            }, 1000);
+        });
+        await new Promise((resolve, reject) => {
+            setTimeout(() => resolve(), 1000);
+        });
+        await Promise.all([s.close(), s2.close()]);
+    });
+
     it('should maintain leader when someone joining later', async function () {
         const s = new Messaging('server1');
         const s2 = new Messaging('server1');
         await s.connect();
         await new Promise((resolve, reject) => {
             s.on('leader', (lM) => {
+                console.log('leader event on 1', lM);
                 s2.on('leader', (m) => {
-                    console.log('leader event', m);
+                    console.log('leader event on 2', m);
                     try {
                         expect((m as any).leaderId).to.equal(s.serviceId());
                         resolve();
@@ -98,6 +145,9 @@ describe('Leader Election', () => {
                 });
                 s2.connect().catch(reject);
             });
+        });
+        await new Promise((resolve, reject) => {
+            setTimeout(() => resolve(), 1000);
         });
         await Promise.all([s.close(), s2.close()]);
     });

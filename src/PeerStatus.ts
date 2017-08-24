@@ -8,6 +8,9 @@ import {isNullOrUndefined} from 'util';
 import {pull} from 'lodash';
 import {Election} from './Election';
 import {AMQPLatency} from './AMQPLatency';
+import {PressureEvent} from './Qos';
+import {Status} from './HeavyEL';
+import {Utils} from './Utils';
 
 export class PeerStatus {
 
@@ -20,11 +23,15 @@ export class PeerStatus {
     private _proxies: Array<(message: Message<PeerStat>) => void> = [];
     private _listenersBinding: Promise<ReturnHandler | void>[] = [];
     private _amqpLatency: AMQPLatency;
+    private _topologyTimer: Timer;
+    private _ongoingPublish: boolean = false;
+    private _latency: number;
+    private _startedAt: [number, number]; // hrtime()
+    public topologyReady: boolean = false;
 
-    constructor(messaging: Messaging, election: Election, logger: Logger) {
+    constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
         this._amqpLatency = new AMQPLatency(this._messaging);
-        this._election = election;
         this._logger = logger;
         this._peers = new Map();
         this._listenersBinding.push(
@@ -35,6 +42,16 @@ export class PeerStatus {
                 this._request();
             }).catch(e => this._messaging.reportError(e))
         );
+        this._messaging.on('pressure', (ev: PressureEvent) => {
+            if (ev.type === 'eventLoop') {
+                const cont = ev.contents as Status;
+                cont.eventLoopDelayedByMS
+            }
+        });
+    }
+
+    public setElection(election: Election) {
+        this._election = election;
     }
 
     public async getStatus(targetService: string): Promise<PeerStat[]> {
@@ -57,7 +74,7 @@ export class PeerStatus {
                 }
             };
 
-            this._amqpLatency.benchmark().then((latency) => {
+            this._amqpLatency.benchmark(true).then((latency) => {
                 if (cancelTimer) {
                     return;
                 }
@@ -78,7 +95,7 @@ export class PeerStatus {
             } else {
                 this._proxies.push(messageHandler);
             }
-            await this._messaging.emit(`${Messaging.internalExchangePrefix}.${targetService}`, 'peer.alive.req');
+            await this._messaging.emit(`${Messaging.internalExchangePrefix}.${targetService}`, 'peer.alive.req', undefined, undefined, {onlyIfConnected: true});
         });
     }
 
@@ -86,8 +103,18 @@ export class PeerStatus {
         if (this._isActive) {
             return;
         }
+        this._startedAt = process.hrtime();
         this._logger.log(`${this._messaging.serviceId()} start peer alive`);
         this._isActive = true;
+        this._amqpLatency.benchmark(true)
+            .then(l => {
+                this._latency = l * 2;
+                this._logger.debug('latency known as: ' + this._latency);
+                if (!this.topologyReady) {
+                    this._topologyNotify();
+                }
+            })
+            .catch(e => this._messaging.reportError(e));
 
         Promise.all(this._listenersBinding).then(() => this._keepAlive());
     }
@@ -95,10 +122,16 @@ export class PeerStatus {
     public stopBroadcast() {
         this._isActive = false;
         clearTimeout(this._timer);
+        clearTimeout(this._topologyTimer);
+    }
+
+    public getPeers() {
+        return this._peers;
     }
 
     private _request() {
         // Someone is asking for who is still there!
+        this._logger.debug('Received a topology request, emitting presence');
         this._keepAlive().catch(e => this._messaging.reportError(e));
     }
 
@@ -113,10 +146,36 @@ export class PeerStatus {
             this._election.leaderSeen(new Date());
         }
         message.body.lastSeen = new Date();
+        const peerSize = this._peers.size;
         this._peers.set(message.body.id, message.body);
         this._peers.forEach((stat: PeerStat, peerId: string) => {
             this._removeDeadPeerAndElect(stat, peerId);
         });
+        if (this._peers.size > peerSize) {
+            this._keepAlive().catch(e => this._messaging.reportError(e));
+        }
+        this._topologyNotify();
+    }
+
+    private _topologyNotify(timedOut: boolean = false) {
+        if (!isNullOrUndefined(this._topologyTimer)) {
+            clearTimeout(this._topologyTimer);
+            this._topologyTimer = null;
+        }
+        if (!this.topologyReady && !isNullOrUndefined(this._latency)) {
+            const timeSinceStart = Utils.hrtimeToMS(process.hrtime(this._startedAt));
+            if (timedOut && timeSinceStart - (this._latency) * 2 > 300) { // 300ms to know the topology & there shouldn't be new peers.
+                this.topologyReady = true;
+                this._logger.debug(`Topology is now known within ${timeSinceStart}ms as the following`, this._peers);
+                if (!isNullOrUndefined(this._election)) {
+                    this._election.vote().catch(e => this._messaging.reportError(e));
+                }
+                return;
+            }
+            this._topologyTimer = setTimeout(() => {
+                this._topologyNotify(true);
+            }, (this._latency) * 3);
+        }
     }
 
     private _removeDeadPeerAndElect(stat: PeerStat, peerId: string) {
@@ -133,14 +192,11 @@ export class PeerStatus {
         }
     }
 
-    private async _keepAlive() {
-        if (this._election.TIMEOUT / 10 < 10) {
-            this._logger.warn('electionTimeoutTooSmall', 'Election timeout should be at least 10s');
+    private async _publishAlive() {
+        if (this._ongoingPublish) {
+            return;
         }
-        if (!isNullOrUndefined(this._timer)) {
-            clearTimeout(this._timer);
-            this._timer = null;
-        }
+        this._ongoingPublish = true;
         await this._messaging.emit<PeerStat>(this._messaging.internalExchangeName(), 'peer.alive', {
             id: this._messaging.serviceId(),
             name: this._messaging.serviceName(),
@@ -152,10 +208,22 @@ export class PeerStatus {
             memoryUsage: process.memoryUsage(),
             knownPeers: this._peers.size + (this._peers.size === 0 ? 1 : 0)
         }, undefined, {onlyIfConnected: true});
-        this._logger.log(`Publish I'm still alive`);
+        this._ongoingPublish = false;
+        this._logger.log(`Published I'm still alive`);
+    }
+
+    private async _keepAlive() {
+        if (this._election.TIMEOUT / 3 < 10) {
+            this._logger.warn('electionTimeoutTooSmall', 'Election timeout should be at least 10s');
+        }
+        if (!isNullOrUndefined(this._timer)) {
+            clearTimeout(this._timer);
+            this._timer = null;
+        }
+        this._publishAlive().catch(e => this._messaging.reportError(e));
         this._timer = setTimeout(() => {
             this._keepAlive().catch(e => this._messaging.reportError(e));
-        }, Math.max(~~(this._election.TIMEOUT / 10), 10))
+        }, Math.max(~~(this._election.TIMEOUT / 3), 10))
     }
 }
 

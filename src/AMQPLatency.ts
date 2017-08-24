@@ -22,9 +22,13 @@ export class AMQPLatency {
      * Benchmarks the current messaging broker latency.
      * @returns The average time it took to exchange 100 messages.
      */
-    public async benchmark(): Promise<number> {
+    public async benchmark(silent: boolean = false): Promise<number> {
         if (!this._messaging.isConnected()) {
-            throw new CustomError('forbidden', 'Messaging instance is not ready. Try again later.');
+            if (silent) {
+                return 10000;
+            } else {
+                throw new CustomError('forbidden', 'Messaging instance is not ready. Try again later.');
+            }
         }
         if (this._listener) {
             return this._ongoingBenchmark;
@@ -39,7 +43,7 @@ export class AMQPLatency {
             this._sampleCount = 0;
             this._listener = this._messaging.listen(this._messaging.internalExchangeName(), `latency.${this._id}`, (m: Message<SampleMessage>) => {
                 samples.push(Utils.hrtimeToMS(process.hrtime(m.body.sentAt)));
-                if (this._sampleCount < 100) {
+                if (this._sampleCount < 10) {
                     this._sendSample().catch(reject);
                 } else {
                     resolve(samples.reduce((previousValue, currentValue) => {
