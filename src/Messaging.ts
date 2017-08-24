@@ -188,23 +188,10 @@ export class Messaging {
     /**
      * Get the Election instance created
      */
-    private election() {
-        this._assertNotClosed();
-        return this._election;
-    }
-
-    /**
-     * Get the routes declared
-     */
-    private routes() {
-        this._assertNotClosed();
-        return this._routes;
-    }
-
-    private peerStatus() {
-        this._assertNotClosed();
-        return this._peerStatus;
-    }
+    // private election() {
+    //     this._assertNotClosed();
+    //     return this._election;
+    // }
 
     public getMaxParallelism() {
         return this._maxParallelism;
@@ -299,13 +286,7 @@ export class Messaging {
         this._isReady = true;
 
         // Instance is now ready, process to vote
-        this._peerStatus.startBroadcast();
-        // setTimeout(() => {
-        //     if (this._isClosing || this._isClosed || !this._isConnected) {
-        //         return;
-        //     }
-        //     this._election.vote().catch(e => this.reportError(e));
-        // }, 100);
+        this._peerStatus.start();
         this._benchmarkLatency();
     }
 
@@ -659,10 +640,10 @@ export class Messaging {
             this._qos.disable();
         }
         if (this._peerStatus) {
-            this._peerStatus.stopBroadcast();
+            this._peerStatus.stop();
         }
         if (this._election) {
-            this._election.shut();
+            this._election.stop();
         }
 
         // Stop consuming
@@ -706,6 +687,10 @@ export class Messaging {
     }
 
     public reportError(e: Error | CustomError, m?: Message) {
+        if (this._isClosing || this._isClosed) {
+            // Swallow errors while closing.
+            return;
+        }
         this.ee().emit('error', e, m);
     }
 

@@ -2,12 +2,12 @@ import {Messaging} from './Messaging';
 import {Message} from './Message';
 import Timer = NodeJS.Timer;
 import {isNullOrUndefined} from 'util';
-import {CustomError, Logger} from 'sw-logger';
+import {Logger} from 'sw-logger';
 import {PressureEvent} from './Qos';
 import {AMQPLatency} from './AMQPLatency';
 import {ReturnHandler} from './Interfaces';
 import {Status} from './HeavyEL';
-import {PeerStat, PeerStatus} from './PeerStatus';
+import {PeerStatus} from './PeerStatus';
 
 export class Election {
 
@@ -20,12 +20,10 @@ export class Election {
     private _leaderId: string;
     private _lastLeaderSync: Date;
     private _selfElectionTimer: Timer;
-    private _leaderByNowTimer: Timer;
     private _logger: Logger;
     private _amqpLatency: AMQPLatency;
     private _peers: PeerStatus;
     private _listenersBinding: Promise<ReturnHandler>[] = [];
-    private _leaderNotification: Timer;
     private _latency: number;
 
     private _candidates: Array<string> = [];
@@ -45,25 +43,19 @@ export class Election {
         );
 
         if (this._peers.topologyReady) {
-            this.vote().catch(e => this._messaging.reportError(e));
+            this.start().catch(e => this._messaging.reportError(e));
         }
 
-        let cancelledLeaderNotification = false,
-            cancelledVoteAnswer = false,
+        let cancelledSelfElection = false,
             isUnderPressure = false;
         this._messaging.on('pressure', (pEvent: PressureEvent) => {
             if (pEvent.type === 'eventLoop') {
                 isUnderPressure = true;
                 this._latency += (pEvent.contents as Status).eventLoopDelayedByMS;
-                if (this._leaderByNowTimer) {
-                    clearTimeout(this._leaderByNowTimer);
-                    this._leaderByNowTimer = null;
-                    cancelledLeaderNotification = true;
-                }
                 if (this._selfElectionTimer) {
                     clearTimeout(this._selfElectionTimer);
                     this._selfElectionTimer = null;
-                    cancelledVoteAnswer = true;
+                    cancelledSelfElection = true;
                 }
             }
         });
@@ -75,51 +67,34 @@ export class Election {
                         this._latency = l;
                     }
                 }).catch(e => this._messaging.reportError(e));
-                if (cancelledLeaderNotification) {
-                    // this._notifyLeader();
-                    // this._leaderByTimer(); // TODO: uncomment
-                    cancelledLeaderNotification = false;
-                }
-                if (cancelledVoteAnswer) {
-                    if (isNullOrUndefined(this._leaderId)) {
-                        this.vote().catch(e => this._messaging.reportError(e));
+                if (cancelledSelfElection) {
+                    if (this._leaderOpinion() === this._messaging.serviceId()) {
+                        this._waitAndMakeMeLeader();
                     }
-                    cancelledVoteAnswer = false;
+                    cancelledSelfElection = false;
                 }
             }
         });
     }
 
-    private _leaderByTimer() {
-        // if (!isNullOrUndefined(this._leaderByNowTimer)) {
-        //     clearTimeout(this._leaderByNowTimer);
-        //     this._leaderByNowTimer = null;
-        // }
-        // const latency = Math.ceil(this._latency);
-        //
-        // this._leaderByNowTimer = setTimeout(() => {
-        //     // There should be a leader by now...
-        //     if (isNullOrUndefined(this._leaderId) && this._messaging.isConnected()) {
-        //         this._logger.log('There was no leader within 100ms, voting again.');
-        //         this.vote().catch(e => this._messaging.reportError(e));
-        //     }
-        // }, Math.max(latency * 3.5, 50000));
-    }
-
-    public shut() {
+    public stop() {
         this._stopped = true;
         if (!isNullOrUndefined(this._selfElectionTimer)) {
             clearTimeout(this._selfElectionTimer);
-        }
-        if (!isNullOrUndefined(this._leaderByNowTimer)) {
-            clearTimeout(this._leaderByNowTimer);
+            this._selfElectionTimer = null;
         }
     }
 
+    /**
+     * Get the leader ID
+     */
     public leaderId() {
         return this._leaderId;
     }
 
+    /**
+     * Sets the last date the leader was seen
+     */
     public leaderSeen(date?: Date) {
         if (!date) {
             return this._lastLeaderSync;
@@ -127,7 +102,10 @@ export class Election {
         this._lastLeaderSync = date;
     }
 
-    async vote() {
+    /**
+     * Starts an election process.
+     */
+    public async start() {
         if (!this._messaging.isConnected()) {
             return;
         }
@@ -137,16 +115,12 @@ export class Election {
         this._logger.log('init a voting process');
         this._candidates = [];
 
-        // Array.from(this._peers.getPeers().keys()).forEach(k => {
-        //     this._playersVote.set(k, '-1')
-        // });
         this._leaderId = null;
         this._lastLeaderSync = null;
         return this._voteFor(this._messaging.serviceId());
     }
 
     private _leaderConsensusHandler(m: Message<ConsensusMessage>) {
-        // this._leaderByTimer();
         if (m.body.id === this._messaging.serviceId()) {
             // If I'm receiving the message I just emitted it means I know who the leader is... Skipping the message.
             return;
@@ -156,12 +130,13 @@ export class Election {
             this._logger.debug('Leader was already defined but someone pretends its someone else, lets vote again.');
             this._leaderId = null;
             this._lastLeaderSync = null;
-            this.vote().catch(e => this._messaging.reportError(e));
+            this.start().catch(e => this._messaging.reportError(e));
 
             return;
         }
         this._logger.debug('Received consensus for', m, this._leaderId);
         clearTimeout(this._selfElectionTimer);
+        this._selfElectionTimer = null;
         const newLeader = m.body.leaderId !== this._leaderId;
         this._leaderId = m.body.leaderId;
         this._lastLeaderSync = new Date();
@@ -172,17 +147,10 @@ export class Election {
     }
 
     private _notifyLeader() {
-        // if (!isNullOrUndefined(this._leaderNotification)) {
-        //     clearTimeout(this._leaderNotification);
-        //     this._leaderNotification = null;
-        // }
-        // const latency = Math.ceil(this._latency);
-        // this._leaderNotification = setTimeout(() => {
         if (!this._messaging.isConnected() || isNullOrUndefined(this._leaderId)) {
             return;
         }
         this._messaging.ee().emit('leader', {leaderId: this._leaderId});
-        // }, Math.max(latency * 3.5, 1000));
     }
 
     private _electionListener(message: Message<ElectionMessage>) {
@@ -191,22 +159,17 @@ export class Election {
 
         if (!isNullOrUndefined(this._selfElectionTimer)) {
             clearTimeout(this._selfElectionTimer); // Cancel auto proclamation as leader.
+            this._selfElectionTimer = null;
         }
 
         this._logger.log(`${this._messaging.serviceId()} received a vote message`, message.body, this._leaderId, this._lastLeaderSync, this.TIMEOUT, this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime());
         // Something arrives but vote is already done & lastLeaderSeen < 2/3 TIMEOUT, publish that the elected instance is the previously elected one
         if (message.body.id !== this._messaging.serviceId() && !isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
+
             this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._messaging.serviceId(), new Date().getTime() - this._lastLeaderSync.getTime());
             this._emitKnownLeader().catch(e => this._messaging.reportError(e));
-            // And vote for the known leader so that the service trying to vote get's he is wrong.
-            // this._voteFor(this._leaderId).catch(e => this._messaging.reportError(e));
             return;
         }
-        // if (!isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() >= 2 / 3 * this.TIMEOUT) {
-        //     // We haven't seen
-        //     pull(this._candidates, this._leaderId);
-        //     pull(this._players, this._leaderId);
-        // }
 
         const leaderOpinion = this._leaderOpinion(message.body.voteFor);
         this._playersVote.set(message.body.id, message.body.voteFor);
@@ -220,7 +183,7 @@ export class Election {
     }
 
     private _unanimity(): boolean {
-        if (!this._peers.getPeers()) {
+        if (isNullOrUndefined(this._peers.getPeers())) {
             return false;
         }
         const peers = this._peers.getPeers();
@@ -274,11 +237,6 @@ export class Election {
 
         this._logger.log(`${this._messaging.serviceId()} proposing to vote for ${id}`, this._candidates, this._playersVote);
 
-        if (!isNullOrUndefined(this._leaderByNowTimer)) {
-            clearTimeout(this._leaderByNowTimer);
-            this._leaderByNowTimer = null;
-        }
-
         await this._messaging.emit(this._messaging.internalExchangeName(), 'leader.vote', {
             id: this._messaging.serviceId(),
             voteFor: id
@@ -286,8 +244,12 @@ export class Election {
     }
 
     private _waitAndMakeMeLeader() {
+        if (isNullOrUndefined(this._peers.getPeers())) {
+            return;
+        }
         if (!isNullOrUndefined(this._selfElectionTimer)) {
             clearTimeout(this._selfElectionTimer);
+            this._selfElectionTimer = null;
         }
         const latency = Math.ceil(this._latency);
         this._logger.log(`_waitAndMakeMeLeader in ${Math.max(latency * 3.5, 100)}ms.`);

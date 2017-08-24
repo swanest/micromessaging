@@ -14,6 +14,7 @@ import {Utils} from './Utils';
 
 export class PeerStatus {
 
+    public topologyReady: boolean = false;
     private _messaging: Messaging;
     private _election: Election;
     private _peers: Map<string, PeerStat>;
@@ -27,7 +28,6 @@ export class PeerStatus {
     private _ongoingPublish: boolean = false;
     private _latency: number;
     private _startedAt: [number, number]; // hrtime()
-    public topologyReady: boolean = false;
 
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
@@ -99,7 +99,10 @@ export class PeerStatus {
         });
     }
 
-    public startBroadcast() {
+    /**
+     * Starts the process of knowing about peers and the system topology.
+     */
+    public start() {
         if (this._isActive) {
             return;
         }
@@ -119,12 +122,18 @@ export class PeerStatus {
         Promise.all(this._listenersBinding).then(() => this._keepAlive());
     }
 
-    public stopBroadcast() {
+    /**
+     * Stops the timers
+     */
+    public stop() {
         this._isActive = false;
         clearTimeout(this._timer);
         clearTimeout(this._topologyTimer);
     }
 
+    /**
+     * Get the actual peers list
+     */
     public getPeers() {
         return this._peers;
     }
@@ -168,7 +177,7 @@ export class PeerStatus {
                 this.topologyReady = true;
                 this._logger.debug(`Topology is now known within ${timeSinceStart}ms as the following`, this._peers);
                 if (!isNullOrUndefined(this._election)) {
-                    this._election.vote().catch(e => this._messaging.reportError(e));
+                    this._election.start().catch(e => this._messaging.reportError(e));
                 }
                 return;
             }
@@ -188,7 +197,7 @@ export class PeerStatus {
         if (stat.id === this._election.leaderId()) {
             // Haven't seen leader for TIMEOUT so we proceed to a new election
             this._logger.log(`Leader not seen since ${diff}ms, vote again!`);
-            this._election.vote().catch(e => this._messaging.reportError(e));
+            this._election.start().catch(e => this._messaging.reportError(e));
         }
     }
 

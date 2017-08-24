@@ -128,6 +128,7 @@ describe('Leader Election', () => {
     });
 
     it('should maintain leader when someone joining later', async function () {
+        this.timeout(5000);
         const s = new Messaging('server1');
         const s2 = new Messaging('server1');
         await s.connect();
