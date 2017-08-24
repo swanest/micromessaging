@@ -82,19 +82,26 @@ export class Messaging {
      * @param {string} _serviceName
      * @param options memorySoftLimit and memoryHardLimit respectively defaults to half and 3/5 of heap_size_limit. Expressed in MB.
      */
-    constructor(private _serviceName: string, options: ServiceOptions = {}) {
+    constructor(private _serviceName: string, {
+        readyOnConnected = true,
+        enableQos = true,
+        qosThreshold = 0.7,
+        enableMemoryQos = true,
+        memorySoftLimit = Messaging.defaultMemoryLimit().soft,
+        memoryHardLimit = Messaging.defaultMemoryLimit().hard
+    }: ServiceOptions = {}) {
 
         this._logger = tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}`);
         this._qos = new Qos(this, this._routes, this._logger.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:qos`));
 
-        this._serviceOptions = Object.assign({}, {
-            readyOnConnected: true,
-            enableQos: true, // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
-            qosThreshold: 0.7, // Default: 0.7. [0.01; 1]
-            enableMemoryQos: true, // Defaults: true. When activated, tries to keep memory < memorySoftLimit and enforces keeping memory < memoryHardLimit
-            memorySoftLimit: Messaging.defaultMemoryLimit().soft, // Defaults to half heap_size_limit. Expressed in MB
-            memoryHardLimit: Messaging.defaultMemoryLimit().hard // Defaults to 3 fifth of heap_size_limit. Express in MB
-        }, options);
+        this._serviceOptions = {
+            enableQos, // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
+            qosThreshold, // Default: 0.7. [0.01; 1]
+            enableMemoryQos, // Defaults: true. When activated, tries to keep memory < memorySoftLimit and enforces keeping memory < memoryHardLimit
+            readyOnConnected,
+            memorySoftLimit, // Defaults to half heap_size_limit. Expressed in MB
+            memoryHardLimit,  // Defaults to 3 fifth of heap_size_limit. Express in MB
+        };
 
         this._eventEmitter = new EventEmitter();
         if (this._serviceOptions.enableQos) {
