@@ -12,7 +12,9 @@ end_of_line = crlf
 [{lib,src,test}/**.js]
 indent_style = space
 indent_size = 4
+quote_type = 'single'
 
 [{lib,src,test}/**.ts]
 indent_style = space
 indent_size = 4
+quote_type = 'single'

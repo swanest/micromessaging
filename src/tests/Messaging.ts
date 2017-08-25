@@ -1,8 +1,8 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {CustomError} from 'sw-logger';
-import {Message} from '../Message';
-import {ReturnHandler} from '../Interfaces';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { CustomError } from 'sw-logger';
+import { Message } from '../Message';
+import { ReturnHandler } from '../Interfaces';
 
 process.on('unhandledRejection', (reason) => {
     console.error(reason);
@@ -442,8 +442,10 @@ describe('Messaging', () => {
         const s = new Messaging('s');
         let threw = false;
         try {
-            await s.listen('s', 'queue', () => {});
-            await s.listen('s', 'queue', () => {});
+            await s.listen('s', 'queue', () => {
+            });
+            await s.listen('s', 'queue', () => {
+            });
         } catch (err) {
             threw = true;
             expect(err).to.be.instanceof(Error);

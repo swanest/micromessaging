@@ -1,9 +1,9 @@
-import {Channel} from 'amqplib';
-import {Message} from './Message';
-import {Message as AMessage} from 'amqplib';
+import { Channel } from 'amqplib';
+import { Message } from './Message';
+import { Message as AMessage } from 'amqplib';
 import Deferred = When.Deferred;
 import Timer = NodeJS.Timer;
-import {PeerStat} from './PeerStatus';
+import { PeerStat } from './PeerStatus';
 
 export type ExchangeType = 'topic' | 'direct' | 'fanout';
 
@@ -153,6 +153,7 @@ export interface ReplyAwaiter {
 
 export interface MessageHeaders {
     idRequest?: string;
+
     [name: string]: any;
 }
 

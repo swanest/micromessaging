@@ -1,9 +1,9 @@
 import { PeerStatus } from './../PeerStatus';
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {random} from 'lodash';
-import {Election} from '../Election';
-import {isNullOrUndefined} from 'util';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { random } from 'lodash';
+import { Election } from '../Election';
+import { isNullOrUndefined } from 'util';
 import { CustomError, Logger } from 'sw-logger';
 
 describe('Leader Election', () => {
@@ -98,7 +98,7 @@ describe('Leader Election', () => {
         await new Promise((resolve, reject) => {
             s.on('leader', (lM) => {
                 if (leaderKnown1) {
-                    reject(new Error('Leader was already known but we got the event again with a vote for '+(lM as any).leaderId));
+                    reject(new Error('Leader was already known but we got the event again with a vote for ' + (lM as any).leaderId));
                     rejected = true;
                     return;
                 }
@@ -108,7 +108,7 @@ describe('Leader Election', () => {
             s2.on('leader', (m) => {
                 console.log('leader event on 2', m);
                 if (leaderKnown2) {
-                    reject(new Error('Leader was already known but we got the event again with a vote for '+(m as any).leaderId));
+                    reject(new Error('Leader was already known but we got the event again with a vote for ' + (m as any).leaderId));
                     rejected = true;
                     return;
                 }

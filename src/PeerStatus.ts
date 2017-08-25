@@ -1,16 +1,16 @@
-import {Messaging} from './Messaging';
-import {Message} from './Message';
-import {CustomError, Logger} from 'sw-logger';
+import { Messaging } from './Messaging';
+import { Message } from './Message';
+import { CustomError, Logger } from 'sw-logger';
 import Timer = NodeJS.Timer;
-import {ReturnHandler, Uptime} from "./Interfaces";
+import { ReturnHandler, Uptime } from './Interfaces';
 import MemoryUsage = NodeJS.MemoryUsage;
-import {isNullOrUndefined} from 'util';
-import {pull} from 'lodash';
-import {Election} from './Election';
-import {AMQPLatency} from './AMQPLatency';
-import {PressureEvent} from './Qos';
-import {Status} from './HeavyEL';
-import {Utils} from './Utils';
+import { isNullOrUndefined } from 'util';
+import { pull } from 'lodash';
+import { Election } from './Election';
+import { AMQPLatency } from './AMQPLatency';
+import { PressureEvent } from './Qos';
+import { Status } from './HeavyEL';
+import { Utils } from './Utils';
 
 export class PeerStatus {
 

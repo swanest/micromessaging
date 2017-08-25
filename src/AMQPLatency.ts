@@ -1,18 +1,18 @@
-import {Messaging} from './Messaging';
-import {Message} from './Message';
-import {ReturnHandler} from './Interfaces';
+import { Messaging } from './Messaging';
+import { Message } from './Message';
+import { ReturnHandler } from './Interfaces';
 import uuid = require('uuid');
-import {CustomError} from 'sw-logger';
-import {isNullOrUndefined} from 'util';
-import {Utils} from './Utils';
+import { CustomError } from 'sw-logger';
+import { isNullOrUndefined } from 'util';
+import { Utils } from './Utils';
 
 export class AMQPLatency {
+    public lastLatencyMS: number;
     private _messaging: Messaging;
     private _id: string;
     private _sampleCount: number;
     private _listener: Promise<ReturnHandler>;
     private _ongoingBenchmark: Promise<number>;
-    public lastLatencyMS: number;
 
     constructor(messaging: Messaging) {
         this._messaging = messaging;

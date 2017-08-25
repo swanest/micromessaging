@@ -1,12 +1,12 @@
-import {Messaging} from './Messaging';
+import { Messaging } from './Messaging';
 import * as memoryPressure from 'memory-pressure';
 import MemoryUsage = NodeJS.MemoryUsage;
-import {HeavyEL, Status} from './HeavyEL';
-import {Logger} from 'sw-logger';
-import {setInterval, setTimeout} from 'timers';
+import { HeavyEL, Status } from './HeavyEL';
+import { Logger } from 'sw-logger';
+import { setInterval, setTimeout } from 'timers';
 import Timer = NodeJS.Timer;
-import {isNullOrUndefined} from 'util';
-import {Route} from './Interfaces';
+import { isNullOrUndefined } from 'util';
+import { Route } from './Interfaces';
 
 export class Qos {
     private _client: Messaging;
@@ -64,15 +64,27 @@ export class Qos {
         this._looper();
     }
 
+    public handledMessage() {
+        this._handledMessagesSinceLastMonitor++;
+    }
+
+    public disable() {
+        this._disabled = true;
+        if (!this._isEnabled) {
+            return;
+        }
+        clearTimeout(this._monitor);
+        this._mPressure.clear();
+        this._mPressure = null; // Allows GC
+        this._elMonitor.stop();
+        this._elMonitor = null; // Allows GC
+    }
+
     private isHandlingMessages() {
         if (!this._lastLoop || isNullOrUndefined(this._client.getLastMessageDate())) {
             return false;
         }
         return this._client.getLastMessageDate().getTime() > this._lastLoop.getTime();
-    }
-
-    public handledMessage() {
-        this._handledMessagesSinceLastMonitor++;
     }
 
     private isLimited() {
@@ -164,18 +176,6 @@ export class Qos {
             type: 'memory',
             contents: args
         });
-    }
-
-    public disable() {
-        this._disabled = true;
-        if (!this._isEnabled) {
-            return;
-        }
-        clearTimeout(this._monitor);
-        this._mPressure.clear();
-        this._mPressure = null; // Allows GC
-        this._elMonitor.stop();
-        this._elMonitor = null; // Allows GC
     }
 }
 

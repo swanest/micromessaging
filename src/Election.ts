@@ -1,13 +1,13 @@
-import {Messaging} from './Messaging';
-import {Message} from './Message';
+import { Messaging } from './Messaging';
+import { Message } from './Message';
 import Timer = NodeJS.Timer;
-import {isNullOrUndefined} from 'util';
-import {Logger} from 'sw-logger';
-import {PressureEvent} from './Qos';
-import {AMQPLatency} from './AMQPLatency';
-import {ReturnHandler} from './Interfaces';
-import {Status} from './HeavyEL';
-import {PeerStatus} from './PeerStatus';
+import { isNullOrUndefined } from 'util';
+import { Logger } from 'sw-logger';
+import { PressureEvent } from './Qos';
+import { AMQPLatency } from './AMQPLatency';
+import { ReturnHandler } from './Interfaces';
+import { Status } from './HeavyEL';
+import { PeerStatus } from './PeerStatus';
 
 export class Election {
 

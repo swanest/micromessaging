@@ -1,6 +1,6 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {PressureEvent} from '../Qos';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { PressureEvent } from '../Qos';
 
 describe('EventLoopPressure', () => {
     it('should notify when event-loop is under pressure', (done) => {
@@ -11,7 +11,8 @@ describe('EventLoopPressure', () => {
             done();
         });
         const curDate = new Date().getTime();
-        while (new Date().getTime() - curDate < 1000) {}
+        while (new Date().getTime() - curDate < 1000) {
+        }
     });
 
     it('should notify when event-loop is not under pressure anymore', (done) => {
@@ -22,6 +23,7 @@ describe('EventLoopPressure', () => {
             done();
         });
         const curDate = new Date().getTime();
-        while (new Date().getTime() - curDate < 1000) {}
+        while (new Date().getTime() - curDate < 1000) {
+        }
     });
 });

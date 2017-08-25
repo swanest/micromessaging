@@ -1,16 +1,16 @@
-import {Channel, Message as AMessage} from 'amqplib';
-import {isNullOrUndefined, isUndefined} from 'util';
-import {defaults, cloneDeep} from 'lodash';
-import {CustomError} from 'sw-logger';
-import {MessageHeaders, Route} from './Interfaces';
+import { Channel, Message as AMessage } from 'amqplib';
+import { isNullOrUndefined, isUndefined } from 'util';
+import { defaults, cloneDeep } from 'lodash';
+import { CustomError } from 'sw-logger';
+import { MessageHeaders, Route } from './Interfaces';
 
 export class Message<T = {}> {
+    public body: T;
     private _originalMessage: AMessage;
     private _isRequest: boolean = false;
     private _route: Route;
     private _isAcked: boolean;
     private _isAnswered: boolean;
-    public body: T;
 
     constructor(route: Route, originalMessage: AMessage) {
         this._originalMessage = originalMessage;
@@ -63,12 +63,6 @@ export class Message<T = {}> {
         return this._route.isClosed;
     }
 
-    private _assertOpen() {
-        if (this._route.isClosed) {
-            throw new CustomError('closed', 'Channel has been cleanly closed, hence you cannot reply to this message.');
-        }
-    }
-
     public async reply(body?: any, headers?: MessageHeaders): Promise<void> {
         return this._replyReject(body, headers);
     }
@@ -106,57 +100,6 @@ export class Message<T = {}> {
             this._route.ongoingMessages--;
             this._route.channel.nack(this._originalMessage);
             this._isAcked = true;
-        }
-    }
-
-    private async _replyReject(bodyOrError?: any | CustomError,
-                               headers: MessageHeaders = {idRequest: this._originalMessage.properties.headers.idRequest},
-                               options?: InternalReplyOptions
-    ) {
-        if (this.isTask()) { // Tasks do not need to be replied just acked.
-            this.ack();
-            return;
-        }
-        this._assertOpen();
-
-        if (isNullOrUndefined(options)) {
-            options = {};
-        }
-
-        if (headers && (headers as any).__mms) {
-            throw new CustomError('__mms header property is reserved. Please use another one.');
-        }
-
-        defaults(options, {isEnd: true, isRejection: false});``
-
-        if (this._isAnswered) {
-            throw new CustomError('forbidden', 'Message was already replied (you might want to have used .write(..) and .end(..)?).');
-        }
-        if (!this.isRequest()) {
-            throw new CustomError('forbidden', 'You cannot reply/reject a message that is not a request nor a acked task');
-        }
-
-        const _headers = cloneDeep(headers);
-        (_headers as any).__mms = {
-            isError: options.isRejection,
-            isEnd: options.isEnd,
-        };
-        if (isNullOrUndefined(_headers.idRequest) && !isNullOrUndefined(this._originalMessage.properties.headers.idRequest)) {
-            _headers.idRequest = this._originalMessage.properties.headers.idRequest;
-        }
-
-        await this._route.channel.sendToQueue(
-            this._originalMessage.properties.replyTo,
-            Buffer.from(JSON.stringify(bodyOrError || '')),
-            {
-                contentType: 'application/json',
-                correlationId: this._originalMessage.properties.correlationId,
-                headers: _headers
-            }
-        );
-        this.ack();
-        if (options.isEnd) {
-            this._isAnswered = true;
         }
     }
 
@@ -211,6 +154,63 @@ export class Message<T = {}> {
             fields: this._originalMessage.fields,
             body: this.body
         };
+    }
+
+    private _assertOpen() {
+        if (this._route.isClosed) {
+            throw new CustomError('closed', 'Channel has been cleanly closed, hence you cannot reply to this message.');
+        }
+    }
+
+    private async _replyReject(bodyOrError?: any | CustomError,
+                               headers: MessageHeaders = {idRequest: this._originalMessage.properties.headers.idRequest},
+                               options?: InternalReplyOptions) {
+        if (this.isTask()) { // Tasks do not need to be replied just acked.
+            this.ack();
+            return;
+        }
+        this._assertOpen();
+
+        if (isNullOrUndefined(options)) {
+            options = {};
+        }
+
+        if (headers && (headers as any).__mms) {
+            throw new CustomError('__mms header property is reserved. Please use another one.');
+        }
+
+        defaults(options, {isEnd: true, isRejection: false});
+        ``
+
+        if (this._isAnswered) {
+            throw new CustomError('forbidden', 'Message was already replied (you might want to have used .write(..) and .end(..)?).');
+        }
+        if (!this.isRequest()) {
+            throw new CustomError('forbidden', 'You cannot reply/reject a message that is not a request nor a acked task');
+        }
+
+        const _headers = cloneDeep(headers);
+        (_headers as any).__mms = {
+            isError: options.isRejection,
+            isEnd: options.isEnd,
+        };
+        if (isNullOrUndefined(_headers.idRequest) && !isNullOrUndefined(this._originalMessage.properties.headers.idRequest)) {
+            _headers.idRequest = this._originalMessage.properties.headers.idRequest;
+        }
+
+        await this._route.channel.sendToQueue(
+            this._originalMessage.properties.replyTo,
+            Buffer.from(JSON.stringify(bodyOrError || '')),
+            {
+                contentType: 'application/json',
+                correlationId: this._originalMessage.properties.correlationId,
+                headers: _headers
+            }
+        );
+        this.ack();
+        if (options.isEnd) {
+            this._isAnswered = true;
+        }
     }
 }
 

@@ -1,11 +1,11 @@
-import {OwnEvents} from './Events';
-import {EventEmitter} from 'events';
+import { OwnEvents } from './Events';
+import { EventEmitter } from 'events';
 import * as logger from 'sw-logger';
-import {CustomError, Logger} from 'sw-logger';
+import { CustomError, Logger } from 'sw-logger';
 import * as amqp from 'amqplib';
-import {Channel, Connection, Message as AMessage} from 'amqplib';
-import {isNull, isNullOrUndefined, isUndefined} from 'util';
-import {cloneDeep, omit, pull} from 'lodash';
+import { Channel, Connection, Message as AMessage } from 'amqplib';
+import { isNull, isNullOrUndefined, isUndefined } from 'util';
+import { cloneDeep, omit, pull } from 'lodash';
 import {
     EmitOptions,
     Exchange,
@@ -24,18 +24,17 @@ import {
     StatusOptions,
     TaskOptions,
     Uptime,
-} from "./Interfaces";
-import {getHeapStatistics} from 'v8';
-import {Message} from './Message';
-import {PressureEvent, Qos} from './Qos';
-import {Election} from './Election';
-import {PeerStatus} from './PeerStatus';
+} from './Interfaces';
+import { getHeapStatistics } from 'v8';
+import { Message } from './Message';
+import { PressureEvent, Qos } from './Qos';
+import { Election } from './Election';
+import { PeerStatus } from './PeerStatus';
 import * as when from 'when';
-import {URL} from 'url';
+import { URL } from 'url';
 import uuid = require('uuid');
 import Deferred = When.Deferred;
-import Timer = NodeJS.Timer;
-import {AMQPLatency} from './AMQPLatency';
+import { AMQPLatency } from './AMQPLatency';
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 let ID = 0;
@@ -271,10 +270,6 @@ export class Messaging {
         // Instance is now ready, process to vote
         this._peerStatus.start();
         this._benchmarkLatency();
-    }
-
-    private _benchmarkLatency() {
-        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
     }
 
     /**
@@ -528,26 +523,6 @@ export class Messaging {
         return this._queueReport({queueName: `q.requests.${serviceName}.${route}`});
     }
 
-    private async _queueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
-        if (isNullOrUndefined(queueName)) {
-            queueName = this._routes.get(routeAlias).queueName;
-        }
-        // Create a dedicated channel so that it can fail alone without annoying other channels
-        const channel = await this._assertChannel('__requestReport', true);
-        try {
-            const report = await channel.checkQueue(queueName);
-            return {
-                queueSize: report.messageCount,
-                queueName: report.queue,
-                consumers: report.consumerCount
-            };
-        } catch (e) {
-            if (/NOT_FOUND/.test(e.message)) {
-                throw new CustomError('notFound', `Queue named ${queueName} doesnt exist.`);
-            }
-        }
-    }
-
     /**
      *
      * @param {string} route
@@ -669,6 +644,30 @@ export class Messaging {
             return;
         }
         this._eventEmitter.emit('error', e, m);
+    }
+
+    private _benchmarkLatency() {
+        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
+    }
+
+    private async _queueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
+        if (isNullOrUndefined(queueName)) {
+            queueName = this._routes.get(routeAlias).queueName;
+        }
+        // Create a dedicated channel so that it can fail alone without annoying other channels
+        const channel = await this._assertChannel('__requestReport', true);
+        try {
+            const report = await channel.checkQueue(queueName);
+            return {
+                queueSize: report.messageCount,
+                queueName: report.queue,
+                consumers: report.consumerCount
+            };
+        } catch (e) {
+            if (/NOT_FOUND/.test(e.message)) {
+                throw new CustomError('notFound', `Queue named ${queueName} doesnt exist.`);
+            }
+        }
     }
 
     private async _assertParallelBoundaries() {

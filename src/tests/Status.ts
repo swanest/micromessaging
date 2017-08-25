@@ -1,5 +1,5 @@
-import {Messaging} from '../Messaging';
-import {expect} from "chai";
+import { Messaging } from '../Messaging';
+import { expect } from 'chai';
 
 describe('Status', () => {
 
