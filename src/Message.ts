@@ -4,15 +4,10 @@ import { cloneDeep, defaults, omit } from 'lodash';
 import { CustomError } from 'sw-logger';
 import { MessageHeaders, Route } from './Interfaces';
 import { Messaging } from './Messaging';
-import * as zlib from 'zlib';
 import * as stream from 'stream';
+import { PassThrough } from 'stream';
 import { Utils } from './Utils';
-import { PassThrough, Readable } from 'stream';
 
-/**
- * TODO: Add check on reply/ack etc to see whether the connection is still open...
- * TODO: Check for full/drain workflow when replying.
- */
 export class Message<T = {}> {
     public body: T;
     public headers: any;
@@ -54,9 +49,6 @@ export class Message<T = {}> {
         }
     }
 
-    /**
-     * TODO: finish implementing compression system
-     */
     public static async toBuffer(ref: any = ''): Promise<ToBuffer> {
         let buf: Buffer,
             compression: string = undefined;
@@ -214,6 +206,10 @@ export class Message<T = {}> {
 
         if (isNullOrUndefined(options)) {
             options = {};
+        }
+
+        if (bodyOrError instanceof Error) {
+            options.isRejection = true;
         }
 
         if (headers && (headers as any).__mms) {
