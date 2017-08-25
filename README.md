@@ -1,4 +1,6 @@
 # Micromessaging [WIP 3.0.0]
+[![Build Status](https://travis-ci.org/swanest/micromessaging.svg?branch=v3)](https://travis-ci.org/swanest/micromessaging)
+[![codecov](https://codecov.io/gh/swanest/micromessaging/branch/master/graph/badge.svg)](https://codecov.io/gh/swanest/micromessaging)
 
 This module has been written for Swanest back-end. It eases the use of messaging between services.
 We use RabbitMQ as the underlying broker service.
