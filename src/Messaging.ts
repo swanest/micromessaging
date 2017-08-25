@@ -20,7 +20,6 @@ import {
     Route,
     ServiceOptions,
     Status,
-    StatusOptions,
     TaskOptions,
     Uptime,
 } from './Interfaces';
@@ -346,12 +345,16 @@ export class Messaging {
         const _headers = cloneDeep(messageHeaders);
         (_headers as any).__mms = {};
 
+        const content = await Message.toBuffer(messageBody);
+        this._assertNotClosed();
+
         const ret = await this._outgoingChannel.publish(
             `x.pubSub`,
             `${target}.${route}`,
-            Buffer.from(JSON.stringify(messageBody || '')),
+            content.buffer,
             {
                 contentType: 'application/json',
+                contentEncoding: content.compression,
                 headers: _headers
             }
         );
@@ -418,14 +421,18 @@ export class Messaging {
             this._awaitingReply.delete(correlationId);
         }
 
+        const content = await Message.toBuffer(messageBody);
+        this._assertNotClosed();
+
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
-            Buffer.from(JSON.stringify(messageBody)),
+            content.buffer,
             {
                 correlationId,
                 mandatory: true,
                 replyTo: this._replyQueue,
                 contentType: 'application/json',
+                contentEncoding: content.compression,
                 headers: {
                     __mms: {route},
                     idRequest,
@@ -471,11 +478,15 @@ export class Messaging {
             await this._bufferFull.promise;
         }
 
+        const content = await Message.toBuffer(messageBody);
+        this._assertNotClosed();
+
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
-            Buffer.from(JSON.stringify(messageBody)),
+            content.buffer,
             {
                 contentType: 'application/json',
+                contentEncoding: content.compression,
                 mandatory: true,
                 headers: {
                     __mms: {
@@ -679,6 +690,9 @@ export class Messaging {
         if (this._isClosing || this._isClosed) {
             // Swallow errors while closing.
             return;
+        }
+        if (!this._eventEmitter) {
+            throw e;
         }
         this._eventEmitter.emit('error', e, m);
     }
@@ -1076,7 +1090,7 @@ export class Messaging {
         if (this._serviceOptions.enableQos && route.subjectToQuota) {
             this._qos.handledMessage(); // This enables to keep track of synchronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
         }
-        const m = new Message(route, originalMessage);
+        const m = new Message(this, route, originalMessage);
         const routeAlias = `${m.isRequest() || m.isTask() ? 'handle' : 'listen'}.${m.destinationRoute()}`;
 
         // this._logger.log(`Message arriving on queue ${route.queueName} with ${route.ongoingMessages}/${route.maxParallelism}`);

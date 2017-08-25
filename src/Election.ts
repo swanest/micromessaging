@@ -36,7 +36,6 @@ export class Election {
         this._amqpLatency = new AMQPLatency(this._messaging);
         this._logger = logger;
 
-        // this.generateId();
         this._listenersBinding.push(
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'leader.vote', this._electionListener.bind(this)),
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'leader.consensus', this._leaderConsensusHandler.bind(this))
@@ -174,6 +173,7 @@ export class Election {
         this._playersVote.set(message.body.id, message.body.voteFor);
 
         const foundUnanimity = this._unanimity();
+        this._logger.log('Unanimity', foundUnanimity);
         if (foundUnanimity && leaderOpinion === this._messaging.getServiceId()) {
             this._waitAndMakeMeLeader();
         } else if (!foundUnanimity) { // Only vote if not everyone agrees

@@ -5,7 +5,7 @@ import { Message } from '../Message';
 import { ReturnHandler } from '../Interfaces';
 
 process.on('unhandledRejection', (reason) => {
-    console.error(reason);
+    console.error('unhandledRejection', reason);
 });
 describe('Messaging', () => {
     it('should connect to Rabbit', async () => {
@@ -25,6 +25,37 @@ describe('Messaging', () => {
         ]);
         const response = await c.request('server', 'request1', {how: {are: 'you?'}});
         expect(response.body).to.deep.equal({hello: 'world'});
+    });
+
+    it('should properly compress requests', async () => {
+        const s = new Messaging('server');
+        let textThatWillCompress = '';
+        for (let i = 0; i < 1e6; i++) {
+            textThatWillCompress += 'A';
+        }
+        const p = new Promise((resolve, reject) => {
+            s.handle('request1', (message) => {
+                message.reply('reply:' + textThatWillCompress).then(() => {
+                    try {
+                        expect(message.originalMessage().content.length).to.be.below(1e6);
+                        expect(message.body).to.equal(textThatWillCompress);
+                        expect(message.originalMessage().properties.contentEncoding).to.equal('gzip');
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+        });
+        const c = new Messaging('client');
+        await Promise.all([
+            c.connect(),
+            s.connect()
+        ]);
+        const response = await c.request('server', 'request1', textThatWillCompress);
+        await p;
+        expect(response.body).to.deep.equal('reply:' + textThatWillCompress);
+        expect(response.originalMessage().properties.contentEncoding).to.equal('gzip');
     });
 
     it('should properly get back errors', async () => {

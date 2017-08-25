@@ -3,6 +3,11 @@ import { isNullOrUndefined, isUndefined } from 'util';
 import { cloneDeep, defaults, omit } from 'lodash';
 import { CustomError } from 'sw-logger';
 import { MessageHeaders, Route } from './Interfaces';
+import { Messaging } from './Messaging';
+import * as zlib from 'zlib';
+import * as stream from 'stream';
+import { Utils } from './Utils';
+import { PassThrough, Readable } from 'stream';
 
 /**
  * TODO: Add check on reply/ack etc to see whether the connection is still open...
@@ -16,26 +21,29 @@ export class Message<T = {}> {
     private _route: Route;
     private _isAcked: boolean;
     private _isAnswered: boolean;
+    private _messaging: Messaging;
 
-    constructor(route: Route, originalMessage: AMessage) {
+    constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
+        this._messaging = messaging;
         this._originalMessage = originalMessage;
         this._route = route;
         this._route.ongoingMessages++;
+
+        let body = originalMessage.content.toString();
         switch (originalMessage.properties.contentEncoding) {
             case undefined:
                 break;
             case 'gzip':
-                throw new CustomError('notImplemented', 'contentEncoding: gzip not yet supported.'); // TODO: implement
+                body = Utils.uncompress(originalMessage.content).toString();
+                break;
             case 'deflate':
                 throw new CustomError('notImplemented', 'contentEncoding: deflate not yet supported.'); // TODO: implement
             default:
                 throw new CustomError('notImplemented', `contentEncoding: ${originalMessage.properties.contentEncoding} not yet supported.`);
         }
         switch (originalMessage.properties.contentType) {
-            case undefined: // for backwards compatibility
-                this.body = JSON.parse(originalMessage.content.toString()); // TODO: get rid of it.
             case 'application/json':
-                this.body = JSON.parse(originalMessage.content.toString());
+                this.body = JSON.parse(body);
                 break;
             default:
                 throw new CustomError('notImplemented', `contentType: ${originalMessage.properties.contentType} not yet supported.`);
@@ -44,6 +52,30 @@ export class Message<T = {}> {
         if (!isNullOrUndefined(this.correlationId())) {
             this._isRequest = true;
         }
+    }
+
+    /**
+     * TODO: finish implementing compression system
+     */
+    public static async toBuffer(ref: any = ''): Promise<ToBuffer> {
+        let buf: Buffer,
+            compression: string = undefined;
+        if (ref instanceof stream.Readable) {
+            buf = await Utils.compress(ref);
+            compression = 'gzip';
+        } else {
+            const str = JSON.stringify(ref);
+            if (str.length > 1000) {
+                compression = 'gzip';
+                let stream = new PassThrough();
+                stream.push(str);
+                stream.push(null);
+                buf = await Utils.compress(stream);
+            } else {
+                buf = Buffer.from(str);
+            }
+        }
+        return {buffer: buf, compression};
     }
 
     public static toJSON(message: AMessage) {
@@ -163,8 +195,11 @@ export class Message<T = {}> {
     }
 
     private _assertOpen() {
+        if (!this._messaging.isConnected()) {
+            throw new CustomError('closed', 'Connection has been cleanly closed, hence you cannot reply to this message. If it is a task or a request, it will be redelivered.');
+        }
         if (this._route.isClosed) {
-            throw new CustomError('closed', 'Channel has been cleanly closed, hence you cannot reply to this message.');
+            throw new CustomError('closed', 'Channel has been cleanly closed, hence you cannot reply to this message. If it is a task or a request, it will be redelivered.');
         }
     }
 
@@ -203,11 +238,14 @@ export class Message<T = {}> {
             _headers.idRequest = this._originalMessage.properties.headers.idRequest;
         }
 
+        const content = await Message.toBuffer(bodyOrError);
+
         await this._route.channel.sendToQueue(
             this._originalMessage.properties.replyTo,
-            Buffer.from(JSON.stringify(bodyOrError || '')),
+            content.buffer,
             {
                 contentType: 'application/json',
+                contentEncoding: content.compression,
                 correlationId: this._originalMessage.properties.correlationId,
                 headers: _headers
             }
@@ -230,4 +268,9 @@ export interface IncomingHeaders {
 interface InternalReplyOptions {
     isRejection?: boolean;
     isEnd?: boolean;
+}
+
+export interface ToBuffer {
+    buffer: Buffer;
+    compression: string;
 }

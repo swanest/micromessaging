@@ -1,16 +1,13 @@
-import { PeerStatus } from './../PeerStatus';
 import { expect } from 'chai';
 import { Messaging } from '../Messaging';
 import { random } from 'lodash';
 import { Election } from '../Election';
-import { isNullOrUndefined } from 'util';
-import { CustomError, Logger } from 'sw-logger';
 
 describe('Leader Election', () => {
 
     let instances = 0;
 
-    async function voteLoop(i: number, serversCounts: number = random(1, 6)) {
+    async function voteLoop(i: number, serversCounts: number = random(1, 3)) {
         const servers = [];
         const howManyServers = serversCounts;
         // const howManyServers = 5;
@@ -65,10 +62,16 @@ describe('Leader Election', () => {
         this.timeout(20000);
         const proms = [];
         for (let i = 0; i < 10; i++) {
-            proms.push(voteLoop(i));
-            // await voteLoop(i).then(console.log);
+            // proms.push(voteLoop(i));
+            await voteLoop(i).then(console.log);
         }
-        await Promise.all(proms).then(console.log);
+        // await Promise.all(proms).then(console.log);
+        console.log('how many instances', instances);
+    });
+
+    it('should find consensus on leadership (10 instances)', async function () {
+        this.timeout(10000);
+        await voteLoop(1, 6).then(console.log);
         console.log('how many instances', instances);
     });
 
@@ -167,7 +170,7 @@ describe('Leader Election', () => {
                 s2.once('leader', (m) => {
                     console.log('leader event on 2', m);
                     try {
-                        expect((m as any).leaderId).to.not.equal(originalLeader);
+                        expect((m as any).leaderId).to.not.equal(s3.getServiceId());
                         resolve();
                     } catch (e) {
                         reject(e);
