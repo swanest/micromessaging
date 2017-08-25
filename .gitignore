@@ -40,3 +40,5 @@ typings-tests/*.js.map
 ts-node-*
 .vscode*
 .nyc_output
+
+benchmark/*.js*

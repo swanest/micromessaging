@@ -8,7 +8,6 @@ import { isNull, isNullOrUndefined, isUndefined } from 'util';
 import { cloneDeep, omit, pull } from 'lodash';
 import {
     EmitOptions,
-    Exchange,
     ListenerOptions,
     MessageHandler,
     MessageHeaders,
@@ -37,7 +36,8 @@ import Deferred = When.Deferred;
 import { AMQPLatency } from './AMQPLatency';
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
-let ID = 0;
+
+// let ID = 0;
 
 export class Messaging {
 
@@ -47,7 +47,6 @@ export class Messaging {
     private _queues: Map<string, Queue> = new Map();
     private _channels: Map<string, Channel> = new Map();
     private _awaitingReply: Map<string, ReplyAwaiter> = new Map();
-    private _exchanges: Map<string, Exchange> = new Map();
     private _routes: Map<string, Route> = new Map();
     private _outgoingChannel: Channel;
     private _serviceOptions: ServiceOptions;
@@ -55,8 +54,8 @@ export class Messaging {
     private _uri: string;
     private _connection: Connection;
     private _qos: Qos;
-    // private _serviceId: string = uuid.v4();
-    private _serviceId: string = '' + (++ID);
+    private _serviceId: string = uuid.v4();
+    // private _serviceId: string = '' + (++ID);
     private _election: Election;
     private _peerStatus: PeerStatus;
     private _lastMessageDate: Date;
@@ -76,6 +75,7 @@ export class Messaging {
     private _isClosed: boolean = false;
     private _logger: Logger;
     private _amqpLatency: AMQPLatency;
+    private _bufferFull: Deferred<void>;
 
     /**
      * @param {string} _serviceName
@@ -260,6 +260,12 @@ export class Messaging {
         }
         this._logger.debug('Connection to RabbitMQ established.');
         this._outgoingChannel = await this._createChannel();
+        this._outgoingChannel.on('drain', () => {
+            if (!isNullOrUndefined(this._bufferFull)) {
+                this._bufferFull.resolve();
+                this._bufferFull = null;
+            }
+        });
 
         // Should be the last assertion so that every declared bit gets opened properly and that we avoid race conditions.
         await this._assertRoutes();
@@ -267,9 +273,19 @@ export class Messaging {
         this._isConnecting = false;
         this._isReady = true;
 
+        this._connection.on('close', () => {
+            this._isConnected = false;
+            if (this._eventEmitter.listenerCount('closed') === 0) {
+                this._eventEmitter.emit('error', new CustomError('There was no "closed" event listener but the connection has closed.'));
+                return;
+            }
+            this._eventEmitter.emit('closed');
+        });
+
         // Instance is now ready, process to vote
         this._peerStatus.start();
         this._benchmarkLatency();
+        this._eventEmitter.emit('connected');
     }
 
     /**
@@ -323,10 +339,14 @@ export class Messaging {
             throw new CustomError('__mms header property is reserved. Please use something else.');
         }
 
+        if (!isNullOrUndefined(this._bufferFull)) {
+            await this._bufferFull.promise;
+        }
+
         const _headers = cloneDeep(messageHeaders);
         (_headers as any).__mms = {};
 
-        await this._outgoingChannel.publish(
+        const ret = await this._outgoingChannel.publish(
             `x.pubSub`,
             `${target}.${route}`,
             Buffer.from(JSON.stringify(messageBody || '')),
@@ -335,6 +355,10 @@ export class Messaging {
                 headers: _headers
             }
         );
+
+        if (ret !== true && isNullOrUndefined(this._bufferFull)) {
+            this._bufferFull = when.defer<void>();
+        }
     }
 
     /**
@@ -366,6 +390,9 @@ export class Messaging {
         if (isNullOrUndefined(route)) {
             throw new CustomError('notConnected', 'You must specify a target route.');
         }
+        if (!isNullOrUndefined(this._bufferFull)) {
+            await this._bufferFull.promise;
+        }
         const preparedScopedError = new CustomError('timeout', `Request on ${targetService}.${route} timed out. Expecting response within ${timeout}ms`);
 
         await this._assertReplyQueue();
@@ -391,7 +418,7 @@ export class Messaging {
             this._awaitingReply.delete(correlationId);
         }
 
-        await this._outgoingChannel.sendToQueue(
+        const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             Buffer.from(JSON.stringify(messageBody)),
             {
@@ -406,6 +433,9 @@ export class Messaging {
                 }
             }
         );
+        if (ret !== true && isNullOrUndefined(this._bufferFull)) {
+            this._bufferFull = when.defer<void>();
+        }
         return def.promise;
     }
 
@@ -437,7 +467,11 @@ export class Messaging {
                 {timeout});
         }
 
-        await this._outgoingChannel.sendToQueue(
+        if (!isNullOrUndefined(this._bufferFull)) {
+            await this._bufferFull.promise;
+        }
+
+        const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             Buffer.from(JSON.stringify(messageBody)),
             {
@@ -453,7 +487,9 @@ export class Messaging {
                 }
             }
         );
-        this._logger.log('Task sent.');
+        if (ret !== true && isNullOrUndefined(this._bufferFull)) {
+            this._bufferFull = when.defer<void>();
+        }
         return;
     }
 
@@ -508,19 +544,20 @@ export class Messaging {
         return {
             stop: this._stopListen(routeAlias),
             stat: () => {
-                return this._queueReport({routeAlias: routeAlias});
+                return this._getQueueReport({routeAlias: routeAlias});
             }
         };
     }
 
     /**
      * Returns a report about the request queue of a target service
-     * @param {string} serviceName name of the service to get the report about
+     * @param serviceName name of the service to get the report about
+     * @param route name of the route for which the report needs to be generated.
      * @returns {Promise<void>}
      */
     public getRequestsReport(serviceName: string, route: string) {
         // Create a dedicated channel so that it can fail alone without annoying other channels
-        return this._queueReport({queueName: `q.requests.${serviceName}.${route}`});
+        return this._getQueueReport({queueName: `q.requests.${serviceName}.${route}`});
     }
 
     /**
@@ -548,17 +585,16 @@ export class Messaging {
         return {
             stop: this._stopListen(routeAlias),
             stat: () => {
-                return this._queueReport({routeAlias: routeAlias});
+                return this._getQueueReport({routeAlias: routeAlias});
             }
         };
     }
 
     /**
      * Ask for the status of a service
-     * @param {string} targetService
-     * @param {StatusOptions} options
+     * @param targetService the service name for which a status report needs to be generated
      */
-    public async getStatus(targetService: string = this._serviceName, options?: StatusOptions): Promise<Status> {
+    public async getStatus(targetService: string = this._serviceName): Promise<Status> {
         this._assertConnected();
         const members = await this._peerStatus.getStatus(targetService);
         const hasMaster = members.some(m => !isNullOrUndefined(m.leaderId));
@@ -633,6 +669,7 @@ export class Messaging {
             this._isConnected = false;
         }
         this._isClosed = true;
+        this._eventEmitter.emit('closed');
         this._logger.debug('Closing fully closed');
         this._logger = null;
         pull(Messaging.instances, this);
@@ -650,7 +687,7 @@ export class Messaging {
         this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
     }
 
-    private async _queueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
+    private async _getQueueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
         if (isNullOrUndefined(queueName)) {
             queueName = this._routes.get(routeAlias).queueName;
         }
@@ -837,7 +874,11 @@ export class Messaging {
     }
 
     private async _assertChannel(name: string, swallowErrors: boolean = false): Promise<Channel> {
+        if (this._channels.has(name)) {
+            return this._channels.get(name);
+        }
         const newChan = await this._createChannel();
+        console.log('created channel', name);
         newChan.on('close', () => {
             this._channels.delete(name);
         });

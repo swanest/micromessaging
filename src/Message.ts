@@ -1,11 +1,16 @@
-import { Channel, Message as AMessage } from 'amqplib';
+import { Message as AMessage } from 'amqplib';
 import { isNullOrUndefined, isUndefined } from 'util';
-import { defaults, cloneDeep } from 'lodash';
+import { cloneDeep, defaults, omit } from 'lodash';
 import { CustomError } from 'sw-logger';
 import { MessageHeaders, Route } from './Interfaces';
 
+/**
+ * TODO: Add check on reply/ack etc to see whether the connection is still open...
+ * TODO: Check for full/drain workflow when replying.
+ */
 export class Message<T = {}> {
     public body: T;
+    public headers: any;
     private _originalMessage: AMessage;
     private _isRequest: boolean = false;
     private _route: Route;
@@ -35,6 +40,7 @@ export class Message<T = {}> {
             default:
                 throw new CustomError('notImplemented', `contentType: ${originalMessage.properties.contentType} not yet supported.`);
         }
+        this.headers = omit(originalMessage.properties.headers, '__mms');
         if (!isNullOrUndefined(this.correlationId())) {
             this._isRequest = true;
         }
@@ -180,7 +186,6 @@ export class Message<T = {}> {
         }
 
         defaults(options, {isEnd: true, isRejection: false});
-        ``
 
         if (this._isAnswered) {
             throw new CustomError('forbidden', 'Message was already replied (you might want to have used .write(..) and .end(..)?).');
