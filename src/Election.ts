@@ -6,8 +6,8 @@ import { Logger } from 'sw-logger';
 import { PressureEvent } from './Qos';
 import { AMQPLatency } from './AMQPLatency';
 import { ReturnHandler } from './Interfaces';
-import { Status } from './HeavyEL';
 import { PeerStatus } from './PeerStatus';
+import { EventLoopStatus } from './HeavyEventLoop';
 
 export class Election {
 
@@ -50,7 +50,7 @@ export class Election {
         this._messaging.on('pressure', (pEvent: PressureEvent) => {
             if (pEvent.type === 'eventLoop') {
                 isUnderPressure = true;
-                this._latency += (pEvent.contents as Status).eventLoopDelayedByMS;
+                this._latency += (pEvent.contents as EventLoopStatus).eventLoopDelayedByMS;
                 if (this._selfElectionTimer) {
                     clearTimeout(this._selfElectionTimer);
                     this._selfElectionTimer = null;

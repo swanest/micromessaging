@@ -5,7 +5,7 @@ import { EventEmitter } from 'events';
 
 export type Events = 'pressure' | 'released';
 
-export class HeavyEL extends EventEmitter {
+export class HeavyEventLoop extends EventEmitter {
 
     private _config: Config;
     private _isStarted: boolean = false;
@@ -58,7 +58,7 @@ export class HeavyEL extends EventEmitter {
         loopSample();
     }
 
-    public on(event: Events, listener: (status: Status) => void) {
+    public on(event: Events, listener: (status: EventLoopStatus) => void) {
         return super.on(event, listener);
     }
 
@@ -68,12 +68,12 @@ export class HeavyEL extends EventEmitter {
         this.removeAllListeners();
     }
 
-    private _emit(event: Events, status: Status) {
+    private _emit(event: Events, status: EventLoopStatus) {
         super.emit(event, status);
     }
 }
 
-export interface Status {
+export interface EventLoopStatus {
     consecutive: number;
     threshold: number;
     eventLoopDelayedByMS: number;

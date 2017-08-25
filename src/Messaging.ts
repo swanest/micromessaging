@@ -892,7 +892,6 @@ export class Messaging {
             return this._channels.get(name);
         }
         const newChan = await this._createChannel();
-        console.log('created channel', name);
         newChan.on('close', () => {
             this._channels.delete(name);
         });

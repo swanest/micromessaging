@@ -9,8 +9,8 @@ import { pull } from 'lodash';
 import { Election } from './Election';
 import { AMQPLatency } from './AMQPLatency';
 import { PressureEvent } from './Qos';
-import { Status } from './HeavyEL';
 import { Utils } from './Utils';
+import { EventLoopStatus } from './HeavyEventLoop';
 
 export class PeerStatus {
 
@@ -44,7 +44,7 @@ export class PeerStatus {
         );
         this._messaging.on('pressure', (ev: PressureEvent) => {
             if (ev.type === 'eventLoop') {
-                const cont = ev.contents as Status;
+                const cont = ev.contents as EventLoopStatus;
                 cont.eventLoopDelayedByMS
             }
         });

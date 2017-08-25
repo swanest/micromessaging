@@ -1,17 +1,16 @@
 import { Messaging } from './Messaging';
-import * as memoryPressure from 'memory-pressure';
-import MemoryUsage = NodeJS.MemoryUsage;
-import { HeavyEL, Status } from './HeavyEL';
 import { Logger } from 'sw-logger';
-import { setInterval, setTimeout } from 'timers';
+import { setTimeout } from 'timers';
 import Timer = NodeJS.Timer;
 import { isNullOrUndefined } from 'util';
 import { Route } from './Interfaces';
+import { HeavyMemory, MemoryStatus } from './HeavyMemory';
+import { EventLoopStatus, HeavyEventLoop } from './HeavyEventLoop';
 
 export class Qos {
     private _client: Messaging;
-    private _mPressure: memoryPressure.MemoryPressure;
-    private _elMonitor: HeavyEL;
+    private _mMonitor: HeavyMemory;
+    private _elMonitor: HeavyEventLoop;
     private _isEnabled: boolean = false;
     private _disabled: boolean = false;
     private _config: QosOptions;
@@ -22,6 +21,7 @@ export class Qos {
     private _lastLoopFinished: boolean = true;
     private _lastUnderPressure: Date = new Date('2017-01-01T00:00:00.000Z');
     private _isUnderPressure: boolean = false;
+    private _shouldStopReceiving: boolean = false;
     private _maxParallelism: number = 1;
     private _lastDecreaseApplied: boolean = true;
     private _handledMessagesSinceLastMonitor: number = 0;
@@ -45,15 +45,16 @@ export class Qos {
             memoryHardLimit: serviceOptions.memoryHardLimit * Math.pow(2, 20),
             eventLoopThreshold: serviceOptions.qosThreshold * 100
         };
-        this._mPressure = memoryPressure.new(this._client.getServiceName(), {
-            memoryThreshold: this._config.memorySoftLimit,
-            interval: this._sampleInterval,
-            consecutiveGrowths: 3
-        });
-        this._mPressure.on(memoryPressure.EVENTS.UNDER_PRESSURE, this._memoryPressure.bind(this));
-        this._mPressure.on(memoryPressure.EVENTS.PRESSURE_RELEASED, this._memoryPressureReleased.bind(this));
+        this._mMonitor = new HeavyMemory({
+            softLimit: this._config.memorySoftLimit,
+            hardLimit: this._config.memoryHardLimit,
+            sampleInterval: this._sampleInterval
+        })
+        this._mMonitor.on('pressure', this._memoryPressure.bind(this));
+        this._mMonitor.on('released', this._memoryPressureReleased.bind(this));
+        this._mMonitor.start();
 
-        this._elMonitor = new HeavyEL({
+        this._elMonitor = new HeavyEventLoop({
             maxEventLoopDelay: this._config.eventLoopThreshold,
             sampleInterval: this._sampleInterval
         });
@@ -74,8 +75,8 @@ export class Qos {
             return;
         }
         clearTimeout(this._monitor);
-        this._mPressure.clear();
-        this._mPressure = null; // Allows GC
+        this._mMonitor.stop();
+        this._mMonitor = null; // Allows GC
         this._elMonitor.stop();
         this._elMonitor = null; // Allows GC
     }
@@ -110,6 +111,15 @@ export class Qos {
         if (!this._lastLoopFinished) {
             return;
         }
+        if (this._shouldStopReceiving) {
+            if (this._client.getMaxParallelism() > 0) {
+                this._client.setQosMaxParallelism(0);
+            }
+            this._lastLoop = new Date();
+            this._lastLoopFinished = true;
+            this._monitor = setTimeout(() => this._looper(), this._sampleInterval);
+            return;
+        }
         this._lastLoopFinished = false;
         if (this.isHandlingMessages()) {
             if (!this._isUnderPressure) {
@@ -140,7 +150,7 @@ export class Qos {
         this._monitor = setTimeout(() => this._looper(), this._sampleInterval);
     }
 
-    private _elPressure(status: Status) {
+    private _elPressure(status: EventLoopStatus) {
         this._logger.log(`Event loop is under pressure. Threshold set to ${this._config.eventLoopThreshold} but got ${status.eventLoopDelayedByMS}. Status attached`, status);
         this._lastUnderPressure = new Date();
         this._isUnderPressure = true;
@@ -151,7 +161,7 @@ export class Qos {
         });
     }
 
-    private _elReleased(status: Status) {
+    private _elReleased(status: EventLoopStatus) {
         this._logger.log(`Event loop is now ok. Threshold set to ${this._config.eventLoopThreshold} > ${status.eventLoopDelayedByMS}. Status attached`, status);
         this._isUnderPressure = false;
         this._client.getEventEmitter().emit('pressureReleased', {
@@ -160,21 +170,27 @@ export class Qos {
         });
     }
 
-    private _memoryPressure(args: MemoryPressureArgs) {
-        this._logger.log(`Memory is exceeding softLimit of ${this._config.memorySoftLimit / Math.pow(2, 20)}MB. History attached.`, args.memoryUsageHistory);
-        args.ack();
+    private _memoryPressure(status: MemoryStatus) {
+        this._logger.log(`Memory is exceeding softLimit of ${this._config.memorySoftLimit / Math.pow(2, 20)}MB. History attached.`, status);
+        if (status.heapUsed > this._config.memoryHardLimit) {
+            this._shouldStopReceiving = true;
+            this._client.setQosMaxParallelism(0);
+        } else {
+            this._isUnderPressure = true;
+        }
         this._client.getEventEmitter().emit('pressure', {
             type: 'memory',
-            contents: args
+            contents: status
         });
     }
 
-    private _memoryPressureReleased(args: MemoryPressureArgs) {
-        this._logger.log(`Memory went below softLimit of ${this._config.memorySoftLimit / Math.pow(2, 20)}MB. History attached.`, args.memoryUsageHistory);
-        args.ack();
+    private _memoryPressureReleased(status: MemoryStatus) {
+        this._logger.log(`Memory went below softLimit of ${this._config.memorySoftLimit / Math.pow(2, 20)}MB. History attached.`, status);
+        this._shouldStopReceiving = false;
+        this._isUnderPressure = false;
         this._client.getEventEmitter().emit('pressureReleased', {
             type: 'memory',
-            contents: args
+            contents: status
         });
     }
 }
@@ -183,17 +199,11 @@ export type PressureEventType = 'eventLoop' | 'memory';
 
 export interface PressureEvent {
     type: PressureEventType,
-    contents: MemoryPressureArgs | Status
+    contents: EventLoopStatus | MemoryStatus
 }
 
 interface QosOptions {
     memorySoftLimit: number;
     memoryHardLimit: number;
     eventLoopThreshold: number;
-}
-
-export interface MemoryPressureArgs {
-    memoryUsageHistory: MemoryUsage[];
-
-    ack(): void;
 }
