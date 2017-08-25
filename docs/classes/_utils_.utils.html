@@ -84,8 +84,10 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static"><a href="_utils_.utils.html#defer" class="tsd-kind-icon">defer</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_utils_.utils.html#compress" class="tsd-kind-icon">compress</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_utils_.utils.html#hrtimetoms" class="tsd-kind-icon">hrtime<wbr>ToMS</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_utils_.utils.html#streamtobuffer" class="tsd-kind-icon">stream<wbr>ToBuffer</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_utils_.utils.html#uncompress" class="tsd-kind-icon">uncompress</a></li>
 							</ul>
 						</section>
 					</div>
@@ -93,26 +95,26 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-					<a name="defer" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> defer</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">defer&lt;T&gt;<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_.deferred.html" class="tsd-signature-type">Deferred</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="compress" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> compress</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">compress<span class="tsd-signature-symbol">(</span>stream<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">stream.Readable</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Utils.ts#L2">Utils.ts:2</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/Utils.ts#L53">Utils.ts:53</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-type-parameters-title">Type parameters</h4>
-							<ul class="tsd-type-parameters">
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
 								<li>
-									<h4>T</h4>
+									<h5>stream: <span class="tsd-signature-type">stream.Readable</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_utils_.deferred.html" class="tsd-signature-type">Deferred</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -126,7 +128,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Utils.ts#L16">Utils.ts:16</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/Utils.ts#L8">Utils.ts:8</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -136,6 +138,52 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="streamtobuffer" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> stream<wbr>ToBuffer</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">stream<wbr>ToBuffer<span class="tsd-signature-symbol">(</span>stream<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">stream.Readable</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/Utils.ts#L12">Utils.ts:12</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>stream: <span class="tsd-signature-type">stream.Readable</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="uncompress" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> uncompress</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">uncompress<span class="tsd-signature-symbol">(</span>buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/Utils.ts#L59">Utils.ts:59</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>buffer: <span class="tsd-signature-type">Buffer</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -160,7 +208,10 @@
 						<a href="../modules/_events_.html">"<wbr>Events"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_heavyel_.html">"<wbr>HeavyEL"</a>
+						<a href="../modules/_heavyeventloop_.html">"<wbr>Heavy<wbr>Event<wbr>Loop"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_heavymemory_.html">"<wbr>Heavy<wbr>Memory"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_interfaces_.html">"<wbr>Interfaces"</a>
@@ -195,19 +246,22 @@
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_utils_.utils.html" class="tsd-kind-icon">Utils</a>
 						<ul>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-								<a href="_utils_.utils.html#defer" class="tsd-kind-icon">defer</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_utils_.utils.html#compress" class="tsd-kind-icon">compress</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
 								<a href="_utils_.utils.html#hrtimetoms" class="tsd-kind-icon">hrtime<wbr>ToMS</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_utils_.utils.html#streamtobuffer" class="tsd-kind-icon">stream<wbr>ToBuffer</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_utils_.utils.html#uncompress" class="tsd-kind-icon">uncompress</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="../interfaces/_utils_.deferred.html" class="tsd-kind-icon">Deferred</a>
-					</li>
 				</ul>
 			</nav>
 		</div>

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Status | micromessaging</title>
+	<title>ToBuffer | micromessaging</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,13 +56,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_heavyel_.html">&quot;HeavyEL&quot;</a>
+					<a href="../modules/_message_.html">&quot;Message&quot;</a>
 				</li>
 				<li>
-					<a href="_heavyel_.status.html">Status</a>
+					<a href="_message_.tobuffer.html">ToBuffer</a>
 				</li>
 			</ul>
-			<h1>Interface Status</h1>
+			<h1>Interface ToBuffer</h1>
 		</div>
 	</div>
 </header>
@@ -73,7 +73,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">Status</span>
+						<span class="target">ToBuffer</span>
 					</li>
 				</ul>
 			</section>
@@ -84,9 +84,8 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_heavyel_.status.html#consecutive" class="tsd-kind-icon">consecutive</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_heavyel_.status.html#eventloopdelayedbyms" class="tsd-kind-icon">event<wbr>Loop<wbr>Delayed<wbr>ByMS</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_heavyel_.status.html#threshold" class="tsd-kind-icon">threshold</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_message_.tobuffer.html#buffer" class="tsd-kind-icon">buffer</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_message_.tobuffer.html#compression" class="tsd-kind-icon">compression</a></li>
 							</ul>
 						</section>
 					</div>
@@ -95,32 +94,22 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="consecutive" class="tsd-anchor"></a>
-					<h3>consecutive</h3>
-					<div class="tsd-signature tsd-kind-icon">consecutive<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="buffer" class="tsd-anchor"></a>
+					<h3>buffer</h3>
+					<div class="tsd-signature tsd-kind-icon">buffer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/HeavyEL.ts#L77">HeavyEL.ts:77</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/Message.ts#L274">Message.ts:274</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="eventloopdelayedbyms" class="tsd-anchor"></a>
-					<h3>event<wbr>Loop<wbr>Delayed<wbr>ByMS</h3>
-					<div class="tsd-signature tsd-kind-icon">event<wbr>Loop<wbr>Delayed<wbr>ByMS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="compression" class="tsd-anchor"></a>
+					<h3>compression</h3>
+					<div class="tsd-signature tsd-kind-icon">compression<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/HeavyEL.ts#L79">HeavyEL.ts:79</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="threshold" class="tsd-anchor"></a>
-					<h3>threshold</h3>
-					<div class="tsd-signature tsd-kind-icon">threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/HeavyEL.ts#L78">HeavyEL.ts:78</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/Message.ts#L275">Message.ts:275</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -144,13 +133,16 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_events_.html">"<wbr>Events"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
-						<a href="../modules/_heavyel_.html">"<wbr>HeavyEL"</a>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_heavyeventloop_.html">"<wbr>Heavy<wbr>Event<wbr>Loop"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_heavymemory_.html">"<wbr>Heavy<wbr>Memory"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_interfaces_.html">"<wbr>Interfaces"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_message_.html">"<wbr>Message"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -175,36 +167,33 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_heavyel_.heavyel.html" class="tsd-kind-icon">HeavyEL</a>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="../classes/_message_.message.html" class="tsd-kind-icon">Message</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_heavyel_.config.html" class="tsd-kind-icon">Config</a>
+						<a href="_message_.incomingheaders.html" class="tsd-kind-icon">Incoming<wbr>Headers</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_heavyel_.load.html" class="tsd-kind-icon">Load</a>
+						<a href="_message_.incomingmessage.html" class="tsd-kind-icon">Incoming<wbr>Message</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_message_.internalreplyoptions.html" class="tsd-kind-icon">Internal<wbr>Reply<wbr>Options</a>
 					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_heavyel_.status.html" class="tsd-kind-icon">Status</a>
+						<a href="_message_.tobuffer.html" class="tsd-kind-icon">To<wbr>Buffer</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_heavyel_.status.html#consecutive" class="tsd-kind-icon">consecutive</a>
+								<a href="_message_.tobuffer.html#buffer" class="tsd-kind-icon">buffer</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_heavyel_.status.html#eventloopdelayedbyms" class="tsd-kind-icon">event<wbr>Loop<wbr>Delayed<wbr>ByMS</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_heavyel_.status.html#threshold" class="tsd-kind-icon">threshold</a>
+								<a href="_message_.tobuffer.html#compression" class="tsd-kind-icon">compression</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_heavyel_.html#events" class="tsd-kind-icon">Events</a>
-					</li>
 				</ul>
 			</nav>
 		</div>

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Deferred | micromessaging</title>
+	<title>Config | micromessaging</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,32 +56,24 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_utils_.html">&quot;Utils&quot;</a>
+					<a href="../modules/_heavymemory_.html">&quot;HeavyMemory&quot;</a>
 				</li>
 				<li>
-					<a href="_utils_.deferred.html">Deferred</a>
+					<a href="_heavymemory_.config.html">Config</a>
 				</li>
 			</ul>
-			<h1>Interface Deferred&lt;T&gt;</h1>
+			<h1>Interface Config</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-type-parameters">
-				<h3>Type parameters</h3>
-				<ul class="tsd-type-parameters">
-					<li>
-						<h4>T</h4>
-					</li>
-				</ul>
-			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">Deferred</span>
+						<span class="target">Config</span>
 					</li>
 				</ul>
 			</section>
@@ -92,9 +84,9 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_utils_.deferred.html#promise" class="tsd-kind-icon">promise</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_utils_.deferred.html#reject" class="tsd-kind-icon">reject</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_utils_.deferred.html#resolve" class="tsd-kind-icon">resolve</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_heavymemory_.config.html#hardlimit" class="tsd-kind-icon">hard<wbr>Limit</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_heavymemory_.config.html#sampleinterval" class="tsd-kind-icon">sample<wbr>Interval</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_heavymemory_.config.html#softlimit" class="tsd-kind-icon">soft<wbr>Limit</a></li>
 							</ul>
 						</section>
 					</div>
@@ -103,76 +95,34 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="promise" class="tsd-anchor"></a>
-					<h3>promise</h3>
-					<div class="tsd-signature tsd-kind-icon">promise<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<a name="hardlimit" class="tsd-anchor"></a>
+					<h3>hard<wbr>Limit</h3>
+					<div class="tsd-signature tsd-kind-icon">hard<wbr>Limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Utils.ts#L22">Utils.ts:22</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/HeavyMemory.ts#L99">HeavyMemory.ts:99</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="reject" class="tsd-anchor"></a>
-					<h3>reject</h3>
-					<div class="tsd-signature tsd-kind-icon">reject<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
+					<a name="sampleinterval" class="tsd-anchor"></a>
+					<h3>sample<wbr>Interval</h3>
+					<div class="tsd-signature tsd-kind-icon">sample<wbr>Interval<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Utils.ts#L24">Utils.ts:24</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/HeavyMemory.ts#L97">HeavyMemory.ts:97</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter-siganture">
-								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property tsd-is-not-exported">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>reason<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-								</ul>
-								<ul class="tsd-descriptions">
-									<li class="tsd-description">
-										<h4 class="tsd-parameters-title">Parameters</h4>
-										<ul class="tsd-parameters">
-											<li>
-												<h5><span class="tsd-flag ts-flagOptional">Optional</span> reason: <span class="tsd-signature-type">any</span></h5>
-											</li>
-										</ul>
-										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-									</li>
-								</ul>
-							</li>
-						</ul>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="resolve" class="tsd-anchor"></a>
-					<h3>resolve</h3>
-					<div class="tsd-signature tsd-kind-icon">resolve<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
+					<a name="softlimit" class="tsd-anchor"></a>
+					<h3>soft<wbr>Limit</h3>
+					<div class="tsd-signature tsd-kind-icon">soft<wbr>Limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/d27c82e/src/Utils.ts#L23">Utils.ts:23</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/2950973/src/HeavyMemory.ts#L98">HeavyMemory.ts:98</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter-siganture">
-								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property tsd-is-not-exported">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">PromiseLike</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-								</ul>
-								<ul class="tsd-descriptions">
-									<li class="tsd-description">
-										<h4 class="tsd-parameters-title">Parameters</h4>
-										<ul class="tsd-parameters">
-											<li>
-												<h5><span class="tsd-flag ts-flagOptional">Optional</span> value: <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">PromiseLike</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
-											</li>
-										</ul>
-										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-									</li>
-								</ul>
-							</li>
-						</ul>
-					</div>
 				</section>
 			</section>
 		</div>
@@ -195,7 +145,10 @@
 						<a href="../modules/_events_.html">"<wbr>Events"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_heavyel_.html">"<wbr>HeavyEL"</a>
+						<a href="../modules/_heavyeventloop_.html">"<wbr>Heavy<wbr>Event<wbr>Loop"</a>
+					</li>
+					<li class="current tsd-kind-external-module">
+						<a href="../modules/_heavymemory_.html">"<wbr>Heavy<wbr>Memory"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_interfaces_.html">"<wbr>Interfaces"</a>
@@ -215,7 +168,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_service_.html">"<wbr>Service"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_utils_.html">"<wbr>Utils"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -226,26 +179,35 @@
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_utils_.utils.html" class="tsd-kind-icon">Utils</a>
+						<a href="../classes/_heavymemory_.heavymemory.html" class="tsd-kind-icon">Heavy<wbr>Memory</a>
 					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="_utils_.deferred.html" class="tsd-kind-icon">Deferred</a>
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_heavymemory_.config.html" class="tsd-kind-icon">Config</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_utils_.deferred.html#promise" class="tsd-kind-icon">promise</a>
+								<a href="_heavymemory_.config.html#hardlimit" class="tsd-kind-icon">hard<wbr>Limit</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_utils_.deferred.html#reject" class="tsd-kind-icon">reject</a>
+								<a href="_heavymemory_.config.html#sampleinterval" class="tsd-kind-icon">sample<wbr>Interval</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_utils_.deferred.html#resolve" class="tsd-kind-icon">resolve</a>
+								<a href="_heavymemory_.config.html#softlimit" class="tsd-kind-icon">soft<wbr>Limit</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_heavymemory_.load.html" class="tsd-kind-icon">Load</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_heavymemory_.memorystatus.html" class="tsd-kind-icon">Memory<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
+						<a href="../modules/_heavymemory_.html#events" class="tsd-kind-icon">Events</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
