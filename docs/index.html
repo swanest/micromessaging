@@ -65,17 +65,37 @@
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
 				<h1 id="micromessaging-wip-3-0-0-">Micromessaging [WIP 3.0.0]</h1>
+				<p><a href="https://travis-ci.org/swanest/micromessaging"><img src="https://travis-ci.org/swanest/micromessaging.svg?branch=v3" alt="Build Status"></a></p>
 				<p>This module has been written for Swanest back-end. It eases the use of messaging between services.
 					We use RabbitMQ as the underlying broker service.
 				This library is using amqplib (0.9.1) as a core dependency but we do use some parameters that are only RabbitMQ related so it might not work with other AMQP 0.9.1 brokers. </p>
 				<hr>
 				<h2 id="installation">Installation</h2>
-				<p><code>npm install micromessaging --save</code></p>
+				<p><code>yarn add micromessaging</code>
+				<code>npm install micromessaging --save</code></p>
 				<h2 id="api">API</h2>
 				<p>Full API documentation is at: <a href="https://swanest.github.com/micromessaging">swanest.github.com/micromessaging</a></p>
 				<p>Special thanks to <a href="http://typedoc.org/">TypeDoc</a> that enabled it.</p>
 				<h2 id="dependencies">Dependencies</h2>
 				<p>Just install RabbitMQ locally to develop (version must be &gt; 3.3.0)</p>
+				<h2 id="usage">Usage</h2>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { Messaging } <span class="hljs-keyword">from</span> <span class="hljs-string">'micromessaging'</span>;
+
+<span class="hljs-comment">// Server</span>
+<span class="hljs-keyword">const</span> server = <span class="hljs-keyword">new</span> Messaging(<span class="hljs-string">'server'</span>);
+<span class="hljs-keyword">await</span> server.handle(<span class="hljs-string">'request-name'</span>, <span class="hljs-function">(<span class="hljs-params">message</span>) =&gt;</span> {
+    <span class="hljs-comment">// message.body = {how: {are: 'you?'}}</span>
+    message.reply({im: <span class="hljs-string">'fine'</span>});
+});
+<span class="hljs-keyword">await</span> server.connect(); <span class="hljs-comment">// Connect can be before or after the handlers it doesnt matter.</span>
+
+
+<span class="hljs-comment">// Client</span>
+<span class="hljs-keyword">const</span> client = <span class="hljs-keyword">new</span> Messaging(<span class="hljs-string">'client'</span>);
+<span class="hljs-keyword">await</span> client.connect(); <span class="hljs-comment">// Connection needs to be established before...</span>
+<span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> client.request(<span class="hljs-string">'server'</span>, <span class="hljs-string">'request1'</span>, {how: {are: <span class="hljs-string">'you?'</span>}});
+<span class="hljs-comment">// response = {im: 'fine'}</span>
+</code></pre>
 				<h2 id="notes">Notes</h2>
 				<p>v3.0 is going to have quite some breaking changes and CANT be used with an other module using an earlier version.</p>
 				<p>About what it does:</p>
@@ -91,13 +111,11 @@
 					</li>
 					<li>Has knowledge about the status of it&#39;s peers (through <code>PeerStatus.ts</code>)</li>
 				</ul>
-				<p>For the full API, <code>yarn docs</code> and open <code>docs/index.html</code> in your browser. The docs are not full yet.
-				The only API that should be exposed should rely on <code>Messaging.ts</code> class even though it might expose some underlying processes.</p>
 				<h2 id="todo">TODO</h2>
 				<ul>
 					<li>[x] Manage timeouts in requests.</li>
 					<li>[x] <code>getStatus</code> of a service (to know if the service is accepting workload)</li>
-					<li>[ ] Make API names consistent</li>
+					<li>[x] Make API names consistent</li>
 					<li>[x] Expose only Messaging so that other modules can do <code>new require(&#39;micromessaging&#39;).Messaging(...)</code> and <code>new require(&#39;micromessaging&#39;).Service(...)</code> (to ease backward compatibility but <code>Service</code> should log a warning to tell it&#39;s deprecated...)</li>
 					<li>[ ] Go to the old codebase (within the dir) and check we didn&#39;t forgot a working behaviour or features.</li>
 					<li>[ ] Quadruple check that everything works fine through some good testing!</li>
@@ -107,9 +125,6 @@
 					<li>[x] Publish a doc under GitHub pages =&gt; will be under swanest.github.com/micromessaging</li>
 					<li>[x] Implement <code>.stop()</code> on the return of <code>emit</code> and <code>handle</code> =&gt; see ReturnHandler.</li>
 				</ul>
-				<h2 id="useful-info">Useful info</h2>
-				<p>As we are transitioning to a new version, all relevant files will be under <code>src/</code> folder but
-				to ease work, we kept the old JS codebase so that we can easily sneak peak information in it about the old working procedures to not forget anything.</p>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
