@@ -1,7 +1,7 @@
-import {Bench} from 'hoek';
+import { Bench } from 'hoek';
 
 import Timer = NodeJS.Timer;
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 
 export type Events = 'pressure' | 'released';
 
@@ -62,14 +62,14 @@ export class HeavyEL extends EventEmitter {
         return super.on(event, listener);
     }
 
-    private _emit(event: Events, status: Status) {
-        super.emit(event, status);
-    }
-
     stop() {
         clearTimeout(this._eventLoopTimer);
         this._eventLoopTimer = null;
         this.removeAllListeners();
+    }
+
+    private _emit(event: Events, status: Status) {
+        super.emit(event, status);
     }
 }
 

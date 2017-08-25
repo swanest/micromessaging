@@ -1,6 +1,6 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {Message} from '../Message';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { Message } from '../Message';
 
 describe('Stream', () => {
 
@@ -21,8 +21,8 @@ describe('Stream', () => {
             undefined,
             undefined,
             (message: Message) => {
-            received++;
-        });
+                received++;
+            });
         received++;
         expect(received).to.equal(limit);
     });
@@ -54,7 +54,7 @@ describe('Stream', () => {
             undefined,
             undefined,
             (m: Message) => {
-        });
+            });
         await awaiter;
     });
 });

@@ -1,16 +1,16 @@
-import {Messaging} from './Messaging';
-import {Message} from './Message';
-import {CustomError, Logger} from 'sw-logger';
+import { Messaging } from './Messaging';
+import { Message } from './Message';
+import { CustomError, Logger } from 'sw-logger';
 import Timer = NodeJS.Timer;
-import {ReturnHandler, Uptime} from "./Interfaces";
+import { ReturnHandler, Uptime } from './Interfaces';
 import MemoryUsage = NodeJS.MemoryUsage;
-import {isNullOrUndefined} from 'util';
-import {pull} from 'lodash';
-import {Election} from './Election';
-import {AMQPLatency} from './AMQPLatency';
-import {PressureEvent} from './Qos';
-import {Status} from './HeavyEL';
-import {Utils} from './Utils';
+import { isNullOrUndefined } from 'util';
+import { pull } from 'lodash';
+import { Election } from './Election';
+import { AMQPLatency } from './AMQPLatency';
+import { PressureEvent } from './Qos';
+import { Status } from './HeavyEL';
+import { Utils } from './Utils';
 
 export class PeerStatus {
 
@@ -35,10 +35,10 @@ export class PeerStatus {
         this._logger = logger;
         this._peers = new Map();
         this._listenersBinding.push(
-            this._messaging.listen(this._messaging.internalExchangeName(), 'peer.alive', (m: Message<PeerStat>) => {
+            this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive', (m: Message<PeerStat>) => {
                 this._peerStatusHandler(m);
             }).catch(e => this._messaging.reportError(e)),
-            this._messaging.listen(this._messaging.internalExchangeName(), 'peer.alive.req', () => {
+            this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive.req', () => {
                 this._request();
             }).catch(e => this._messaging.reportError(e))
         );
@@ -90,7 +90,7 @@ export class PeerStatus {
                 }, Math.max(Math.ceil(latency * 2.5), 1000));
             });
 
-            if (targetService !== this._messaging.serviceName()) {
+            if (targetService !== this._messaging.getServiceName()) {
                 await this._messaging.listen(`${Messaging.internalExchangePrefix}.${targetService}`, 'peer.alive', messageHandler);
             } else {
                 this._proxies.push(messageHandler);
@@ -107,7 +107,7 @@ export class PeerStatus {
             return;
         }
         this._startedAt = process.hrtime();
-        this._logger.log(`${this._messaging.serviceId()} start peer alive`);
+        this._logger.log(`${this._messaging.getServiceId()} start peer alive`);
         this._isActive = true;
         this._amqpLatency.benchmark(true)
             .then(l => {
@@ -149,7 +149,7 @@ export class PeerStatus {
         if (!this._isActive) {
             return;
         }
-        this._logger.log(`${this._messaging.serviceId()} received a peer alive message`, message.body);
+        this._logger.log(`${this._messaging.getServiceId()} received a peer alive message`, message.body);
         if (message.body.id === this._election.leaderId()) {
             this._logger.log(`Leader seen ${message.body.id} at ${new Date().toISOString()}`);
             this._election.leaderSeen(new Date());
@@ -206,14 +206,14 @@ export class PeerStatus {
             return;
         }
         this._ongoingPublish = true;
-        await this._messaging.emit<PeerStat>(this._messaging.internalExchangeName(), 'peer.alive', {
-            id: this._messaging.serviceId(),
-            name: this._messaging.serviceName(),
+        await this._messaging.emit<PeerStat>(this._messaging.getInternalExchangeName(), 'peer.alive', {
+            id: this._messaging.getServiceId(),
+            name: this._messaging.getServiceName(),
             leaderId: this._election.leaderId() || null,
             isReady: this._messaging.isReady(),
-            isMaster: this._messaging.serviceId() === this._election.leaderId(),
-            elapsedMs: this._messaging.uptime().elapsedMs,
-            startedAt: this._messaging.uptime().startedAt,
+            isMaster: this._messaging.getServiceId() === this._election.leaderId(),
+            elapsedMs: this._messaging.getUptime().elapsedMs,
+            startedAt: this._messaging.getUptime().startedAt,
             memoryUsage: process.memoryUsage(),
             knownPeers: this._peers.size + (this._peers.size === 0 ? 1 : 0)
         }, undefined, {onlyIfConnected: true});

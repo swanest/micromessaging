@@ -1,11 +1,11 @@
-import {OwnEvents} from './Events';
-import {EventEmitter} from 'events';
+import { OwnEvents } from './Events';
+import { EventEmitter } from 'events';
 import * as logger from 'sw-logger';
-import {CustomError, Logger} from 'sw-logger';
+import { CustomError, Logger } from 'sw-logger';
 import * as amqp from 'amqplib';
-import {Channel, Connection, Message as AMessage} from 'amqplib';
-import {isNull, isNullOrUndefined, isUndefined} from 'util';
-import {cloneDeep, omit, pull} from 'lodash';
+import { Channel, Connection, Message as AMessage } from 'amqplib';
+import { isNull, isNullOrUndefined, isUndefined } from 'util';
+import { cloneDeep, omit, pull } from 'lodash';
 import {
     EmitOptions,
     Exchange,
@@ -24,18 +24,17 @@ import {
     StatusOptions,
     TaskOptions,
     Uptime,
-} from "./Interfaces";
-import {getHeapStatistics} from 'v8';
-import {Message} from './Message';
-import {PressureEvent, Qos} from './Qos';
-import {Election} from './Election';
-import {PeerStatus} from './PeerStatus';
+} from './Interfaces';
+import { getHeapStatistics } from 'v8';
+import { Message } from './Message';
+import { PressureEvent, Qos } from './Qos';
+import { Election } from './Election';
+import { PeerStatus } from './PeerStatus';
 import * as when from 'when';
-import {URL} from 'url';
+import { URL } from 'url';
 import uuid = require('uuid');
 import Deferred = When.Deferred;
-import Timer = NodeJS.Timer;
-import {AMQPLatency} from './AMQPLatency';
+import { AMQPLatency } from './AMQPLatency';
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 let ID = 0;
@@ -45,22 +44,19 @@ export class Messaging {
     public static internalExchangePrefix = 'internal';
     public static instances: Messaging[] = [];
     public latencyMS: number;
-    private _queues: Map<string, Queue>;
-    private _channels: Map<string, Channel>;
+    private _queues: Map<string, Queue> = new Map();
+    private _channels: Map<string, Channel> = new Map();
+    private _awaitingReply: Map<string, ReplyAwaiter> = new Map();
+    private _exchanges: Map<string, Exchange> = new Map();
+    private _routes: Map<string, Route> = new Map();
     private _outgoingChannel: Channel;
-    private _awaitingReply: Map<string, ReplyAwaiter>;
-    private _exchanges: Map<string, Exchange>;
     private _serviceOptions: ServiceOptions;
     private _eventEmitter: EventEmitter;
-    private _routes: Map<string, Route>;
     private _uri: string;
     private _connection: Connection;
-    private _serviceName: string;
     private _qos: Qos;
     // private _serviceId: string = uuid.v4();
     private _serviceId: string = '' + (++ID);
-    private _replyQueue: string;
-    private _internalExchangeName: string;
     private _election: Election;
     private _peerStatus: PeerStatus;
     private _lastMessageDate: Date;
@@ -82,10 +78,10 @@ export class Messaging {
     private _amqpLatency: AMQPLatency;
 
     /**
-     * @param {string} serviceName
+     * @param {string} _serviceName
      * @param options memorySoftLimit and memoryHardLimit respectively defaults to half and 3/5 of heap_size_limit. Expressed in MB.
      */
-    constructor(serviceName: string, {
+    constructor(private _serviceName: string, {
         readyOnConnected = true,
         enableQos = true,
         qosThreshold = 0.7,
@@ -94,16 +90,9 @@ export class Messaging {
         memoryHardLimit = Messaging.defaultMemoryLimit().hard
     }: ServiceOptions = {}) {
 
-        // Initiate some Maps
-        this._channels = new Map();
-        this._queues = new Map();
-        this._exchanges = new Map();
-        this._routes = new Map();
-        this._awaitingReply = new Map();
-
-        this._serviceName = serviceName;
         this._logger = tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}`);
         this._qos = new Qos(this, this._routes, this._logger.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:qos`));
+
         this._serviceOptions = {
             enableQos, // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
             qosThreshold, // Default: 0.7. [0.01; 1]
@@ -112,17 +101,12 @@ export class Messaging {
             memorySoftLimit, // Defaults to half heap_size_limit. Expressed in MB
             memoryHardLimit,  // Defaults to 3 fifth of heap_size_limit. Express in MB
         };
+
         this._eventEmitter = new EventEmitter();
         if (this._serviceOptions.enableQos) {
             this._logger.log('Enable QOS');
             this._qos.enable();
         }
-
-        // Initiate replyQueue name
-        this._replyQueue = `q.replyQueue.${serviceName}.${this._serviceId}`;
-
-        // Declare an internal queue
-        this._internalExchangeName = `${Messaging.internalExchangePrefix}.${serviceName}`;
 
         this._peerStatus = new PeerStatus(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:peer-status`));
         this._election = new Election(this, this._peerStatus, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
@@ -130,6 +114,14 @@ export class Messaging {
         this._amqpLatency = new AMQPLatency(this);
 
         Messaging.instances.push(this);
+    }
+
+    private get _replyQueue() {
+        return `q.replyQueue.${this._serviceName}.${this._serviceId}`;
+    }
+
+    private get _internalExchangeName() {
+        return `${Messaging.internalExchangePrefix}.${this._serviceName}`;
     }
 
     static defaultMemoryLimit() {
@@ -143,14 +135,14 @@ export class Messaging {
     /**
      * Get the last Date object where a message was received. Does not account for internal messages.
      */
-    public lastMessageDate(): Date {
+    public getLastMessageDate(): Date {
         return this._lastMessageDate;
     }
 
     /**
      * Returns the name of the service (name supplied while instantiating the service).
      */
-    public serviceName() {
+    public getServiceName() {
         this._assertNotClosed();
         return this._serviceName;
     }
@@ -158,7 +150,7 @@ export class Messaging {
     /**
      * Getter: options sat while instantiating the service with the corresponding default values.
      */
-    public serviceOptions() {
+    public getServiceOptions() {
         this._assertNotClosed();
         return this._serviceOptions;
     }
@@ -166,14 +158,14 @@ export class Messaging {
     /**
      * Access to the eventEmitter.
      */
-    public ee() {
+    public getEventEmitter() {
         return this._eventEmitter;
     }
 
     /**
      * Get the default name used for declaring internal listen queues.
      */
-    public internalExchangeName() {
+    public getInternalExchangeName() {
         this._assertNotClosed();
         return this._internalExchangeName;
     }
@@ -181,23 +173,11 @@ export class Messaging {
     /**
      * Get the UUID generated for this instance.
      */
-    public serviceId() {
+    public getServiceId() {
         return this._serviceId;
     }
 
-    /**
-     * Get the Election instance created
-     */
-    // private election() {
-    //     this._assertNotClosed();
-    //     return this._election;
-    // }
-
-    public getMaxParallelism() {
-        return this._maxParallelism;
-    }
-
-    public async qosMaxParallelism(value?: number) {
+    public async setQosMaxParallelism(value?: number) {
         this._assertNotClosed();
 
         this._maxParallelism = value;
@@ -214,7 +194,11 @@ export class Messaging {
         }
     }
 
-    public maxParallelism(value?: number) {
+    public getMaxParallelism() {
+        return this._maxParallelism;
+    }
+
+    public setMaxParallelism(value: number) {
         this._assertNotClosed();
 
         if (this._serviceOptions.enableQos) {
@@ -222,7 +206,7 @@ export class Messaging {
         }
 
         if (isNullOrUndefined(value)) {
-            return this._maxParallelism;
+            throw new CustomError('Please supply a value.');
         }
 
         this._maxParallelism = value;
@@ -243,7 +227,7 @@ export class Messaging {
         return this._isConnected;
     }
 
-    public uptime(): Uptime {
+    public getUptime(): Uptime {
         return {
             startedAt: this._startedAt,
             elapsedMs: new Date().getTime() - this._startedAt.getTime(),
@@ -251,7 +235,7 @@ export class Messaging {
     }
 
     /**
-     * Connects to a rabbit instance. Indempotent.
+     * Connects to a rabbit instance. Idempotent.
      * @param rabbitURI format: amqp://localhost?heartbeat=30 — If heartbeat is not supplied, will default to 30s
      * @returns Returns once the connection is properly initialized and that all listeners and handlers have been fully declared.
      */
@@ -263,9 +247,7 @@ export class Messaging {
         this._isConnecting = true;
         this._uri = rabbitURI || process.env.RABBIT_URI || 'amqp://localhost';
         const parsed = new URL(this._uri);
-        if (!parsed.searchParams.has('heartbeat')) {
-            parsed.searchParams.set('heartbeat', '30');
-        }
+        parsed.searchParams.set('heartbeat', parsed.searchParams.get('heartbeat') || '30');
         this._uri = parsed.toString();
         this._logger.debug(`Establishing connection to ${this._uri}`);
         try {
@@ -288,10 +270,6 @@ export class Messaging {
         // Instance is now ready, process to vote
         this._peerStatus.start();
         this._benchmarkLatency();
-    }
-
-    private _benchmarkLatency() {
-        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
     }
 
     /**
@@ -540,29 +518,9 @@ export class Messaging {
      * @param {string} serviceName name of the service to get the report about
      * @returns {Promise<void>}
      */
-    public async getRequestsReport(serviceName: string, route: string) {
+    public getRequestsReport(serviceName: string, route: string) {
         // Create a dedicated channel so that it can fail alone without annoying other channels
         return this._queueReport({queueName: `q.requests.${serviceName}.${route}`});
-    }
-
-    private async _queueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
-        if (isNullOrUndefined(queueName)) {
-            queueName = this._routes.get(routeAlias).queueName;
-        }
-        // Create a dedicated channel so that it can fail alone without annoying other channels
-        const channel = await this._assertChannel('__requestReport', true);
-        try {
-            const report = await channel.checkQueue(queueName);
-            return {
-                queueSize: report.messageCount,
-                queueName: report.queue,
-                consumers: report.consumerCount
-            };
-        } catch (e) {
-            if (/NOT_FOUND/.test(e.message)) {
-                throw new CustomError('notFound', `Queue named ${queueName} doesnt exist.`);
-            }
-        }
     }
 
     /**
@@ -600,11 +558,11 @@ export class Messaging {
      * @param {string} targetService
      * @param {StatusOptions} options
      */
-    public async getStatus(targetService: string = this.serviceName(), options?: StatusOptions): Promise<Status> {
+    public async getStatus(targetService: string = this._serviceName, options?: StatusOptions): Promise<Status> {
         this._assertConnected();
         const members = await this._peerStatus.getStatus(targetService);
-        const hasMaster = members.filter(m => !isNullOrUndefined(m.leaderId)).length > 0;
-        const hasReadyMembers = members.filter(m => !isNullOrUndefined(m.isReady)).length > 0;
+        const hasMaster = members.some(m => !isNullOrUndefined(m.leaderId));
+        const hasReadyMembers = members.some(m => !isNullOrUndefined(m.isReady));
         return {
             hasMaster,
             hasReadyMembers,
@@ -669,18 +627,12 @@ export class Messaging {
         }
 
         if (this._isConnected) {
-            const channelClosing: any[] = [];
             this._routes.forEach(r => r.isClosed = true);
-            this._channels.forEach(c => channelClosing.push(c.close()));
-            await Promise.all(channelClosing);
+            await Promise.all([...this._channels].map(c => c[1].close()));
             await this._connection.close();
             this._isConnected = false;
         }
         this._isClosed = true;
-        // this._channels = null;
-        // this._queues = null;
-        // this._outgoingChannel = null;
-        // this._connection = null;
         this._logger.debug('Closing fully closed');
         this._logger = null;
         pull(Messaging.instances, this);
@@ -691,7 +643,31 @@ export class Messaging {
             // Swallow errors while closing.
             return;
         }
-        this.ee().emit('error', e, m);
+        this._eventEmitter.emit('error', e, m);
+    }
+
+    private _benchmarkLatency() {
+        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
+    }
+
+    private async _queueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
+        if (isNullOrUndefined(queueName)) {
+            queueName = this._routes.get(routeAlias).queueName;
+        }
+        // Create a dedicated channel so that it can fail alone without annoying other channels
+        const channel = await this._assertChannel('__requestReport', true);
+        try {
+            const report = await channel.checkQueue(queueName);
+            return {
+                queueSize: report.messageCount,
+                queueName: report.queue,
+                consumers: report.consumerCount
+            };
+        } catch (e) {
+            if (/NOT_FOUND/.test(e.message)) {
+                throw new CustomError('notFound', `Queue named ${queueName} doesnt exist.`);
+            }
+        }
     }
 
     private async _assertParallelBoundaries() {
@@ -747,10 +723,10 @@ export class Messaging {
                 prefetchProms.push(route.consume());
             } else {
                 const e = new CustomError('inconsistency', `Negative prefetch (${maxParallelismPerConsumer}) are forbidden.`);
-                if (this.ee().listenerCount('error') < 1) {
+                if (this._eventEmitter.listenerCount('error') < 1) {
                     throw e;
                 } else {
-                    this.ee().emit('error', e);
+                    this._eventEmitter.emit('error', e);
                 }
             }
             route.maxParallelism = maxParallelismPerConsumer;
@@ -779,24 +755,18 @@ export class Messaging {
     private async _createChannel(): Promise<Channel> {
         this._assertConnected();
         const chan = await this._connection.createChannel();
-        chan.on('error', (e) => {
-            this.reportError(e);
-        });
-        chan.on('drain', () => {
-            this._logger.debug('Got a drain event on a channel.');
-        });
-        chan.on('return', (msg) => {
+        chan.on('error', this.reportError);
+        chan.on('drain', () => this._logger.debug('Got a drain event on a channel.'));
+        chan.on('return', msg => {
             const e = new CustomError('unroutable', `No route to "${msg.fields.routingKey}". Originally sent message attached.`);
-            if (isNullOrUndefined(e.info)) {
-                e.info = {};
-            }
+            e.info = isNullOrUndefined(e.info) ? {} : e.info;
             e.info.sentMessage = msg;
             if (this._awaitingReply.has(msg.properties.correlationId)) {
                 this._awaitingReply.get(msg.properties.correlationId).deferred.reject(e);
                 this._awaitingReply.delete(msg.properties.correlationId);
             } else {
-                if (this.ee().listenerCount('unroutableMessage') > 0) {
-                    this.ee().emit('unroutableMessage', e);
+                if (this._eventEmitter.listenerCount('unroutableMessage') > 0) {
+                    this._eventEmitter.emit('unroutableMessage', e);
                 } else {
                     throw e;
                 }
@@ -841,7 +811,7 @@ export class Messaging {
             }
             await route.channel.close();
 
-            if (!this.isConnected()) {
+            if (!this._isConnected) {
                 return;
             }
             // We do this separately because we could get PRECONDITION errors that we want to ignore.
@@ -855,7 +825,7 @@ export class Messaging {
                 });
                 await channelThatCanError.close();
             } catch (e) {
-                if (!this.isConnected()) {
+                if (!this._isConnected) {
                     return;
                 }
                 if (!/PRECONDITION/.test(e.message)) {
@@ -1083,7 +1053,7 @@ export class Messaging {
             if (!this._awaitingReply.has(m.correlationId())) {
                 // throw new CustomError('inconsistency', `No handler found for response with correlationId: ${m.correlationId()}`, m);
                 this._logger.debug('A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.');
-                this.ee().emit('unhandledMessage', new CustomError(`A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.`), m);
+                this._eventEmitter.emit('unhandledMessage', new CustomError(`A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.`), m);
                 return; // Means it probably timed out or there is a big issue...
             }
             const defMess = this._awaitingReply.get(m.correlationId());

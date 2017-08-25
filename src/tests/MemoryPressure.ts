@@ -1,6 +1,6 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {PressureEvent} from '../Qos';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { PressureEvent } from '../Qos';
 
 describe('MemoryPressure', () => {
     it('should notify when memory is under pressure', function (done) {

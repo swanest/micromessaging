@@ -1,9 +1,10 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {random} from 'lodash';
-import {Election} from '../Election';
-import {isNullOrUndefined} from 'util';
-import {CustomError} from 'sw-logger';
+import { PeerStatus } from './../PeerStatus';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { random } from 'lodash';
+import { Election } from '../Election';
+import { isNullOrUndefined } from 'util';
+import { CustomError, Logger } from 'sw-logger';
 
 describe('Leader Election', () => {
 
@@ -18,7 +19,7 @@ describe('Leader Election', () => {
             servers.push(new Messaging('server' + i))
         }
         await Promise.all(servers.map(s => s.connect()));
-        const ids = servers.map(s => s.serviceId());
+        const ids = servers.map(s => s.getServiceId());
         // ids.sort();
         // const winner = ids[ids.length - 1];
         const winners: Array<number> = [];
@@ -26,7 +27,7 @@ describe('Leader Election', () => {
             return new Promise((resolve, reject) => {
                 s.on('leader', o => {
                     try {
-                        console.log('leader on ' + s.serviceId() + ' is ' + (o as any).leaderId);
+                        console.log('leader on ' + s.getServiceId() + ' is ' + (o as any).leaderId);
                         winners.push((o as any).leaderId);
                         resolve();
                     } catch (e) {
@@ -97,7 +98,7 @@ describe('Leader Election', () => {
         await new Promise((resolve, reject) => {
             s.on('leader', (lM) => {
                 if (leaderKnown1) {
-                    reject(new Error('Leader was already known but we got the event again with a vote for '+(lM as any).leaderId));
+                    reject(new Error('Leader was already known but we got the event again with a vote for ' + (lM as any).leaderId));
                     rejected = true;
                     return;
                 }
@@ -107,7 +108,7 @@ describe('Leader Election', () => {
             s2.on('leader', (m) => {
                 console.log('leader event on 2', m);
                 if (leaderKnown2) {
-                    reject(new Error('Leader was already known but we got the event again with a vote for '+(m as any).leaderId));
+                    reject(new Error('Leader was already known but we got the event again with a vote for ' + (m as any).leaderId));
                     rejected = true;
                     return;
                 }
@@ -138,7 +139,7 @@ describe('Leader Election', () => {
                 s2.on('leader', (m) => {
                     console.log('leader event on 2', m);
                     try {
-                        expect((m as any).leaderId).to.equal(s.serviceId());
+                        expect((m as any).leaderId).to.equal(s.getServiceId());
                         resolve();
                     } catch (e) {
                         reject(e);

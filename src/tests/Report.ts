@@ -1,5 +1,5 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
 import uuid = require('uuid');
 
 describe('Requests Report', () => {

@@ -1,9 +1,9 @@
-import {expect} from "chai";
-import {Messaging} from '../Messaging';
-import {random} from 'lodash';
-import {Election} from '../Election';
-import {isNullOrUndefined} from 'util';
-import {CustomError} from 'sw-logger';
+import { expect } from 'chai';
+import { Messaging } from '../Messaging';
+import { random } from 'lodash';
+import { Election } from '../Election';
+import { isNullOrUndefined } from 'util';
+import { CustomError } from 'sw-logger';
 
 describe('Pressure Message Management', () => {
 
