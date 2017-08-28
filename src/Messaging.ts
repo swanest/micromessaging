@@ -30,9 +30,9 @@ import { Election } from './Election';
 import { PeerStatus } from './PeerStatus';
 import * as when from 'when';
 import { URL } from 'url';
+import { AMQPLatency } from './AMQPLatency';
 import uuid = require('uuid');
 import Deferred = When.Deferred;
-import { AMQPLatency } from './AMQPLatency';
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 
@@ -244,7 +244,7 @@ export class Messaging {
             return;
         }
         this._isConnecting = true;
-        this._uri = rabbitURI || process.env.RABBIT_URI || 'amqp://localhost';
+        this._uri = rabbitURI || process.env.RABBIT_URI || process.env.RABBITMQ_URI || 'amqp://localhost';
         const parsed = new URL(this._uri);
         parsed.searchParams.set('heartbeat', parsed.searchParams.get('heartbeat') || '30');
         this._uri = parsed.toString();
@@ -285,6 +285,13 @@ export class Messaging {
         this._peerStatus.start();
         this._benchmarkLatency();
         this._eventEmitter.emit('connected');
+    }
+
+    /**
+     * Retrieve the URI to which the instance is connected. undefined when not connected yet.
+     */
+    public getURI() {
+        return this._uri;
     }
 
     /**
@@ -844,7 +851,7 @@ export class Messaging {
     private _stopListen(routeName: string): () => Promise<void> {
         return async () => {
             if (!this._routes.has(routeName)) {
-                throw new CustomError('notFound', 'This route does not exist.');
+                throw new CustomError('notFound', `The route ${routeName} does not exist.`);
             }
             this._logger.log(`Stop handling ${routeName}`);
             const route = this._routes.get(routeName);

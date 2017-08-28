@@ -75,6 +75,7 @@ export class PeerStatus {
             };
 
             this._amqpLatency.benchmark(true).then((latency) => {
+                latency = Math.round(latency) * 6;
                 if (cancelTimer) {
                     return;
                 }
@@ -87,7 +88,7 @@ export class PeerStatus {
                     peers.size > 0 ?
                         resolve(Array.from(peers.values())) :
                         reject(new CustomError('notFound', `No peers found for service ${targetService} within benchmarkLatency (hence at least ${latency}ms)`));
-                }, Math.max(Math.ceil(latency * 2.5), 1000));
+                }, Math.max(latency, 1000));
             });
 
             if (targetService !== this._messaging.getServiceName()) {

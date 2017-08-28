@@ -77,7 +77,9 @@
 				<p>Full API documentation is at: <a href="https://swanest.github.com/micromessaging">swanest.github.com/micromessaging</a></p>
 				<p>Special thanks to <a href="http://typedoc.org/">TypeDoc</a> that enabled it.</p>
 				<h2 id="dependencies">Dependencies</h2>
-				<p>Just install RabbitMQ locally to develop (version must be &gt; 3.3.0)</p>
+				<ul>
+					<li>RabbitMQ &gt; 3.3.0</li>
+				</ul>
 				<h2 id="usage">Usage</h2>
 				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { Messaging } <span class="hljs-keyword">from</span> <span class="hljs-string">'micromessaging'</span>;
 
@@ -93,7 +95,7 @@
 <span class="hljs-comment">// Client</span>
 <span class="hljs-keyword">const</span> client = <span class="hljs-keyword">new</span> Messaging(<span class="hljs-string">'client'</span>);
 <span class="hljs-keyword">await</span> client.connect(); <span class="hljs-comment">// Connection needs to be established before...</span>
-<span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> client.request(<span class="hljs-string">'server'</span>, <span class="hljs-string">'request1'</span>, {how: {are: <span class="hljs-string">'you?'</span>}});
+<span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> client.request(<span class="hljs-string">'server'</span>, <span class="hljs-string">'request-name'</span>, {how: {are: <span class="hljs-string">'you?'</span>}});
 <span class="hljs-comment">// response = {im: 'fine'}</span>
 </code></pre>
 				<h2 id="notes">Notes</h2>

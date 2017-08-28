@@ -21,7 +21,7 @@ Special thanks to [TypeDoc](http://typedoc.org/) that enabled it.
 
 ## Dependencies
 
-Just install RabbitMQ locally to develop (version must be > 3.3.0)
+*  RabbitMQ > 3.3.0
 
 ## Usage
 
@@ -40,7 +40,7 @@ await server.connect(); // Connect can be before or after the handlers it doesnt
 // Client
 const client = new Messaging('client');
 await client.connect(); // Connection needs to be established before...
-const response = await client.request('server', 'request1', {how: {are: 'you?'}});
+const response = await client.request('server', 'request-name', {how: {are: 'you?'}});
 // response = {im: 'fine'}
 ```
 
