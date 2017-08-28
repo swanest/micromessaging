@@ -1,31 +1,55 @@
 {
   "name": "micromessaging",
-  "version": "2.2.7",
-  "description": "Easy-to-use interface for Rabbit MQ",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "scripts": {
-    "test": "DEBUG=micromessaging,memory-pressure,tests ./node_modules/.bin/mocha --bail --reporter spec"
+  "version": "3.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swanest/micromessaging"
   },
-  "repository": "https://github.com/swanest/micromessaging",
-  "author": "Cyri-l",
+  "description": "Easy-to-use interface for Rabbit MQ",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
+    "test:debug": "DEBUG=micromessaging mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
+    "watch": "nodemon -e ts,json --exec 'node --inspect=5858 node_modules/mocha/bin/mocha --compilers ts:ts-node/register \"src/tests/*.ts\"'",
+    "build": "rm -rf dist && tsc && rm -rf ./dist/tests",
+    "docs": "typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6",
+    "coverage": "nyc -e '.ts' --r html -r lcov -r text npm run test",
+    "prepublish": "yarn build",
+    "benchmark": "cd benchmark/ && ts-node Benchmark.ts"
+  },
+  "author": "Swanest",
+  "files": [
+    "dist/"
+  ],
   "license": "MIT",
   "homepage": "https://github.com/swanest/micromessaging#readme",
   "dependencies": {
-    "amqplib": "^0.4.1",
-    "lodash": "^4.13.1",
-    "memory-pressure": "^2.0.0",
-    "moment": "^2.14.1",
-    "object-sizeof": "^1.2.0",
-    "rabbot": "github:swanest/rabbot",
-    "sw-logger": "^1.2.0",
-    "uuid": "^3.0.0",
-    "when": "^3.7.7"
+    "amqplib": "^0.5.1",
+    "hoek": "^4.2.0",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
+    "source-map-support": "^0.4.15",
+    "sw-logger": "^1.2.3",
+    "uuid": "^3.1.0",
+    "when": "^3.7.8"
   },
   "devDependencies": {
-    "@types/node": "0.0.2",
-    "@types/when": "^2.4.28",
-    "chai": "^3.5.0",
-    "mocha": "^2.5.3"
+    "@types/amqplib": "^0.5.4",
+    "@types/chai": "^4.0.2",
+    "@types/hoek": "^4.1.3",
+    "@types/lodash": "^4.14.72",
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.19",
+    "@types/source-map-support": "^0.4.0",
+    "@types/uuid": "^3.4.0",
+    "@types/when": "^2.4.29",
+    "chai": "^4.1.1",
+    "mocha": "^3.5.0",
+    "mocha-clean": "^1.0.0",
+    "nyc": "^11.1.0",
+    "ts-node": "^3.3.0",
+    "typedoc": "^0.8.0",
+    "typescript": "^2.4.2"
   }
 }

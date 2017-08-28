@@ -1,0 +1,11 @@
+src
+node_modules
+.idea
+.travis.yml
+test
+typings-tests
+docker-compose.yml
+variables.env
+docker
+docs
+benchmark

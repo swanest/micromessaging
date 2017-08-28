@@ -1,3 +1,5 @@
+dist/
+#docs/
 ### Node template
 # Logs
 logs
@@ -35,3 +37,8 @@ gen
 
 typings-tests/*.js
 typings-tests/*.js.map
+ts-node-*
+.vscode*
+.nyc_output
+
+benchmark/*.js*

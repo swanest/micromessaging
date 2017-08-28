@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - "7.10.1"
+  - "8"
+cache:
+  yarn: true
+  directories:
+    - node_modules
+before_install:
+  - wget https://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v3_6_11/rabbitmq-server_3.6.11-1_all.deb
+  - sudo dpkg -i rabbitmq-server_3.6.11-1_all.deb
+install:
+  - yarn install
+script:
+  - yarn test

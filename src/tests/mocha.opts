@@ -1,0 +1,6 @@
+--compilers ts:ts-node/register
+--recursive
+--bail
+--require mocha-clean
+--reporter spec
+-gc
