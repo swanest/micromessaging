@@ -38,7 +38,8 @@ export class PeerStatus {
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive', (m: Message<PeerStat>) => {
                 this._peerStatusHandler(m);
             }).catch(e => this._messaging.reportError(e)),
-            this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive.req', () => {
+            this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive.req', (m) => {
+                this._logger.debug('Received peer.alive.req', m.originalMessage());
                 this._request();
             }).catch(e => this._messaging.reportError(e))
         );
@@ -64,6 +65,7 @@ export class PeerStatus {
                 message.body.lastSeen = new Date();
                 this._logger.debug('getStatus request got an answer', message.body);
                 peers.set(message.body.id, message.body);
+                this._logger.debug('peers.size', peers.size, message.body.knownPeers);
                 if (peers.size > 1 && peers.size === message.body.knownPeers) {
                     cancelTimer = true;
                     if (!isNullOrUndefined(localTimer)) {

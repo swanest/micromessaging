@@ -24,7 +24,7 @@ describe('Leader Election', () => {
             return new Promise((resolve, reject) => {
                 s.on('leader', o => {
                     try {
-                        console.log('leader on ' + s.getServiceId() + ' is ' + (o as any).leaderId);
+                        // console.log('leader on ' + s.getServiceId() + ' is ' + (o as any).leaderId);
                         winners.push((o as any).leaderId);
                         resolve();
                     } catch (e) {
@@ -39,12 +39,12 @@ describe('Leader Election', () => {
                 expect(id).to.equal(winner);
             } catch (e) {
                 ids.sort();
-                console.log({
-                    low: ids[0],
-                    high: ids[ids.length - 1],
-                    elected: winner,
-                    ids
-                });
+                // console.log({
+                //     low: ids[0],
+                //     high: ids[ids.length - 1],
+                //     elected: winner,
+                //     ids
+                // });
                 throw e;
             }
         });
@@ -63,21 +63,24 @@ describe('Leader Election', () => {
         const proms = [];
         for (let i = 0; i < 10; i++) {
             // proms.push(voteLoop(i));
-            await voteLoop(i).then(console.log);
+            await voteLoop(i);
+                // .then(console.log);
         }
         // await Promise.all(proms).then(console.log);
-        console.log('how many instances', instances);
+        // console.log('how many instances', instances);
     });
 
     it('should find consensus on leadership (10 instances)', async function () {
         this.timeout(10000);
-        await voteLoop(1, 6).then(console.log);
-        console.log('how many instances', instances);
+        await voteLoop(1, 6)
+            // .then(console.log);
+        // console.log('how many instances', instances);
     });
 
     it('should find consensus on leadership (2 instances)', async function () {
-        await voteLoop(1, 2).then(console.log);
-        console.log('how many instances', instances);
+        await voteLoop(1, 2)
+            // .then(console.log);
+        // console.log('how many instances', instances);
     });
 
     it('should be able to vote alone', async function () {
@@ -105,11 +108,11 @@ describe('Leader Election', () => {
                     rejected = true;
                     return;
                 }
-                console.log('leader event on 1', lM);
+                // console.log('leader event on 1', lM);
                 leaderKnown1 = true;
             });
             s2.on('leader', (m) => {
-                console.log('leader event on 2', m);
+                // console.log('leader event on 2', m);
                 if (leaderKnown2) {
                     reject(new Error('Leader was already known but we got the event again with a vote for ' + (m as any).leaderId));
                     rejected = true;
@@ -138,9 +141,9 @@ describe('Leader Election', () => {
         await s.connect();
         await new Promise((resolve, reject) => {
             s.on('leader', (lM) => {
-                console.log('leader event on 1', lM);
+                // console.log('leader event on 1', lM);
                 s2.on('leader', (m) => {
-                    console.log('leader event on 2', m);
+                    // console.log('leader event on 2', m);
                     try {
                         expect((m as any).leaderId).to.equal(s.getServiceId());
                         resolve();
@@ -165,10 +168,10 @@ describe('Leader Election', () => {
         await Promise.all([s3.connect(), s.connect()]);
         await new Promise((resolve, reject) => {
             s.once('leader', (lM) => {
-                console.log('leader event on 1', lM);
+                // console.log('leader event on 1', lM);
                 const originalLeader = (lM as any).leaderId;
                 s2.once('leader', (m) => {
-                    console.log('leader event on 2', m);
+                    // console.log('leader event on 2', m);
                     try {
                         expect((m as any).leaderId).to.not.equal(s3.getServiceId());
                         resolve();
@@ -177,19 +180,19 @@ describe('Leader Election', () => {
                     }
                 });
                 s3.close().then(() => new Promise((res, rej) => {
-                    console.log('wait 1000');
+                    // console.log('wait 1000');
                     setTimeout(() => {
                         res();
-                        console.log('resolve');
+                        // console.log('resolve');
                     }, 2000);
                 })).then(() => {
-                    console.log('going to connect s2');
+                    // console.log('going to connect s2');
                     return s2.connect()
                 });
             });
 
             s3.once('leader', (m) => {
-                console.log('leader event on 3', m);
+                // console.log('leader event on 3', m);
             });
         });
         // await Promise.all(Messaging.instances.map(i => i.close(true)));
