@@ -1,4 +1,4 @@
-# Micromessaging [WIP 3.0.0]
+# Micromessaging
 [![Build Status](https://travis-ci.org/swanest/micromessaging.svg?branch=v3)](https://travis-ci.org/swanest/micromessaging)
 
 This module has been written for Swanest back-end. It eases the use of messaging between services.
@@ -15,7 +15,7 @@ This library is using amqplib (0.9.1) as a core dependency but we do use some pa
 
 ## API
 
-Full API documentation is at: [swanest.github.com/micromessaging](https://swanest.github.com/micromessaging)
+Full API documentation is at: [swanest.github.io/micromessaging](https://swanest.github.io/micromessaging)
 
 Special thanks to [TypeDoc](http://typedoc.org/) that enabled it.
 
@@ -46,7 +46,7 @@ const response = await client.request('server', 'request-name', {how: {are: 'you
 
 ## Notes
 
-v3.0 is going to have quite some breaking changes and CANT be used with an other module using an earlier version.
+v3.0 is a full breaking changes and CANT be used with an other modules using an earlier version.
 
 About what it does:
 *  RPC model (`.request` / `.handle`)
@@ -69,5 +69,5 @@ About what it does:
 * [ ] Delete old JS codebase
 * [ ] Add more comments so that `typedoc` generates a cool and easy doc.
 * [x] Travis auto tests
-* [x] Publish a doc under GitHub pages => will be under swanest.github.com/micromessaging
+* [x] Publish a doc under GitHub pages => will be under swanest.github.io/micromessaging
 * [x] Implement `.stop()` on the return of `emit` and `handle` => see ReturnHandler.

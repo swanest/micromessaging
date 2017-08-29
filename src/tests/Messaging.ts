@@ -124,26 +124,25 @@ describe('Messaging', () => {
         await c.task('server', 'task2', {how: {are: 'task2?'}}, undefined, {noAck: false})
         await p;
     });
-    it('should emit/receive', function (done) {
+    it('should emit/receive', async function () {
         const s = new Messaging('server');
-        s.listen('routingKey1', (message) => {
-            try {
-                expect(message.isEvent(), 'Task should be an event.').to.be.true;
-                expect(message.isRequest(), 'Task should be an event.').to.be.false;
-                expect(message.isTask(), 'Task should be an event.').to.be.false;
-                message.ack();
-                done();
-            } catch (e) {
-                done(e);
-            }
+        const p = new Promise((resolve, reject) => {
+            s.listen('routingKey1', (message) => {
+                try {
+                    expect(message.isEvent(), 'Task should be an event.').to.be.true;
+                    expect(message.isRequest(), 'Task should be an event.').to.be.false;
+                    expect(message.isTask(), 'Task should be an event.').to.be.false;
+                    message.ack();
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            }).catch(reject);
         });
         const c = new Messaging('client');
-        Promise.all([
-            c.connect(),
-            s.connect()
-        ]).then(() => {
-            c.emit('server', 'routingKey1', {how: {are: 'pubSub1?'}})
-        });
+        await Promise.all(Messaging.instances.map(i => i.connect()));
+        await c.emit('server', 'routingKey1', {how: {are: 'pubSub1?'}});
+        await p;
     });
     it('should multiple emit/receive', async function () {
         const s = new Messaging('server');

@@ -1,6 +1,6 @@
 {
   "name": "micromessaging",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/swanest/micromessaging"
@@ -13,7 +13,7 @@
     "test:debug": "DEBUG=micromessaging mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
     "watch": "nodemon -e ts,json --exec 'node --inspect=5858 node_modules/mocha/bin/mocha --compilers ts:ts-node/register \"src/tests/*.ts\"'",
     "build": "rm -rf dist && tsc && rm -rf ./dist/tests",
-    "docs": "typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6",
+    "docs": "rm -rf docs && typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6 && touch docs/.nojekyll",
     "coverage": "nyc -e '.ts' --r html -r lcov -r text npm run test",
     "prepublish": "yarn build",
     "benchmark": "cd benchmark/ && ts-node Benchmark.ts"

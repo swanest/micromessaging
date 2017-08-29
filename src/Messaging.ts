@@ -553,9 +553,10 @@ export class Messaging {
             isClosed: false,
             isReady: false,
             isDeclaring: false,
+            noAck: target.indexOf(Messaging.internalExchangePrefix) === 0,
             type: 'pubSub',
             handler: listener,
-            subjectToQuota: !(target === this._internalExchangeName)
+            subjectToQuota: target.indexOf(Messaging.internalExchangePrefix) !== 0
         });
         this._logger.debug('Asserting route', routeAlias);
         await this._assertRoute(routeAlias);
@@ -595,6 +596,7 @@ export class Messaging {
             route,
             isClosed: false,
             isReady: false,
+            noAck: false,
             isDeclaring: false,
             type: 'rpc',
             handler: listener
@@ -971,9 +973,10 @@ export class Messaging {
                 }
                 if (isNullOrUndefined(route.consumerTag)) {
                     route.consumerTag = 'pending';
+                    this._logger.debug(`Consume options on ${route.route}`, {exclusive: route.type !== 'rpc', noAck: route.noAck});
                     route.consumerWaiter = channel.consume(route.queueName, (message: AMessage) => {
                         this._messageHandler(message, route);
-                    }, {exclusive: route.type !== 'rpc'});
+                    }, {exclusive: route.type !== 'rpc', noAck: route.noAck});
                     route.consumerWaiter;
                     route.consumerTag = (await route.consumerWaiter).consumerTag;
                     this._logger.debug(`Consuming queue: ${route.queueName} (${route.route})`);
@@ -1070,6 +1073,7 @@ export class Messaging {
                 handler: null,
                 options: null,
                 isClosed: false,
+                noAck: true,
                 isReady: false,
                 isDeclaring: false,
                 subjectToQuota: false,
@@ -1151,6 +1155,9 @@ export class Messaging {
             return;
         }
         route.handler.call(this, m);
+        if (route.type === 'pubSub' && route.noAck === false) {
+            m.ack();
+        }
     }
 
     /**

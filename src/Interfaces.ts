@@ -60,6 +60,7 @@ export interface Route {
     isDeclaring: boolean;
     isReady: boolean;
     isClosed: boolean;
+    noAck: boolean;
 
     queueName?: string;
 }

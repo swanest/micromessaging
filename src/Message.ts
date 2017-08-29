@@ -14,8 +14,8 @@ export class Message<T = {}> {
     private _originalMessage: AMessage;
     private _isRequest: boolean = false;
     private _route: Route;
-    private _isAcked: boolean;
-    private _isAnswered: boolean;
+    private _isAcked: boolean = false;
+    private _isAnswered: boolean = false;
     private _messaging: Messaging;
 
     constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
@@ -110,14 +110,14 @@ export class Message<T = {}> {
     }
 
     public nativeReject() {
-        if (!this._isAcked) {
+        if (!this._isAcked && this._route.noAck === false) {
             this._route.channel.nack(this._originalMessage, false, false);
         }
     }
 
     public ack(): void {
         this._assertOpen();
-        if (!this._isAcked) {
+        if (!this._isAcked && this._route.noAck === false) {
             this._route.ongoingMessages--;
             this._route.channel.ack(this._originalMessage);
             this._isAcked = true;
@@ -126,7 +126,7 @@ export class Message<T = {}> {
 
     public nack(): void {
         this._assertOpen();
-        if (!this._isAcked) {
+        if (!this._isAcked && this._route.noAck === false) {
             this._route.ongoingMessages--;
             this._route.channel.nack(this._originalMessage);
             this._isAcked = true;
