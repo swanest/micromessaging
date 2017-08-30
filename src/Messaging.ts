@@ -965,9 +965,6 @@ export class Messaging {
             const channel = await this._createChannel();
             route.channel = channel;
             route.cancel = async () => {
-                if (route.isClosed) {
-                    return;
-                }
                 if (!route.isReady) {
                     throw new CustomError('Cannot cancel while not being ready for consumption');
                 }
