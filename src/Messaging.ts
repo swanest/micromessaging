@@ -5,7 +5,7 @@ import { CustomError, Logger } from 'sw-logger';
 import * as amqp from 'amqplib';
 import { Channel, Connection, Message as AMessage } from 'amqplib';
 import { isNull, isNullOrUndefined, isUndefined } from 'util';
-import { cloneDeep, omit, pull } from 'lodash';
+import { cloneDeep, omit, pull, find } from 'lodash';
 import {
     EmitOptions,
     ListenerOptions,
@@ -815,7 +815,23 @@ export class Messaging {
     private async _createChannel(): Promise<Channel> {
         this._assertConnected();
         const chan = await this._connection.createChannel();
-        chan.on('error', this.reportError);
+        chan.on('error', e => {
+            const f = find(Array.from(this._routes.values()), {channel: chan});
+            if (!(e instanceof CustomError)) {
+                e = new CustomError(e);
+            }
+            if (f) {
+                this._logger.debug('Attached route to arising error', f);
+                if (!e.info) {
+                    e.info = {};
+                }
+                e.info._affectedRoute = omit(f, 'channel');
+                f.isClosed = true;
+            } else {
+                this._logger.debug('Did not find route attached to this channel');
+            }
+            this.reportError(e);
+        });
         chan.on('drain', () => this._logger.debug('Got a drain event on a channel.'));
         chan.on('return', msg => {
             const e = new CustomError('unroutable', `No route to "${msg.fields.routingKey}". Originally sent message attached.`);
@@ -962,7 +978,7 @@ export class Messaging {
                 }
             };
             route.consume = async () => {
-                if (this._isClosing) {
+                if (this._isClosing || route.isClosed) {
                     return;
                 }
                 if (!route.isReady) {
@@ -971,14 +987,17 @@ export class Messaging {
                 if (!route.queueName) {
                     throw new CustomError('inconsistency', 'No queue name to consume on.');
                 }
-                if (isNullOrUndefined(route.consumerTag)) {
+                if (isNullOrUndefined(route.consumerTag) && isNullOrUndefined(route.consumerWaiter)) {
                     route.consumerTag = 'pending';
-                    this._logger.debug(`Consume options on ${route.route}`, {exclusive: route.type !== 'rpc', noAck: route.noAck});
+                    this._logger.debug(`Consume options on ${route.route}`, {
+                        exclusive: route.type !== 'rpc',
+                        noAck: route.noAck
+                    });
                     route.consumerWaiter = channel.consume(route.queueName, (message: AMessage) => {
                         this._messageHandler(message, route);
                     }, {exclusive: route.type !== 'rpc', noAck: route.noAck});
-                    route.consumerWaiter;
                     route.consumerTag = (await route.consumerWaiter).consumerTag;
+                    route.consumerWaiter = null;
                     this._logger.debug(`Consuming queue: ${route.queueName} (${route.route})`);
                     if (route.subjectToQuota && route.maxParallelism > 0) {
                         this._logger.debug(`Setting // to ${route.maxParallelism} on ${route.queueName} (${route.route})`);
@@ -1013,7 +1032,7 @@ export class Messaging {
                 case 'pubSub':
                     await channel.assertExchange('x.pubSub', 'topic');
                     queueOptions.exclusive = true;
-                    queueOptions.autoDelete = true;
+                    // queueOptions.autoDelete = true;
                     route.queueName = `q.pubSub.${this._serviceName}.${uuid.v4()}`;
                     this._logger.log(`Asserting ${route.queueName} into existence.`);
                     await channel.assertQueue(route.queueName, {
@@ -1036,7 +1055,7 @@ export class Messaging {
                 case 'rpcReply':
                     this._logger.log('Asserting reply queue, should be waiting');
                     queueOptions.exclusive = true;
-                    queueOptions.autoDelete = true;
+                    // queueOptions.autoDelete = true;
                     await channel.assertQueue(
                         this._replyQueue,
                         {
@@ -1147,7 +1166,8 @@ export class Messaging {
             }
             return;
         }
-        if (!this._routes.has(routeAlias)) {
+        const routeExists = this._routes.has(routeAlias);
+        if (!routeExists && !m.isEvent()) {
             m.nativeReject();
             if (this._eventEmitter.listenerCount('unhandledMessage') > 0) {
                 this._eventEmitter.emit('unhandledMessage', new CustomError(`Handler for ${m.destinationRoute()} missing.`), m);
@@ -1155,7 +1175,7 @@ export class Messaging {
             return;
         }
         route.handler.call(this, m);
-        if (route.type === 'pubSub' && route.noAck === false) {
+        if (m.isEvent()) {
             m.ack();
         }
     }

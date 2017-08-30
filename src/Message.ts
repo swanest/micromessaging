@@ -162,10 +162,6 @@ export class Message<T = {}> {
      */
     public error() {
         const e = new CustomError(this.body as any);
-        if (isNullOrUndefined(e.info)) {
-            e.info = {};
-        }
-        e.info._receivedMessage = this;
         return e;
     }
 
