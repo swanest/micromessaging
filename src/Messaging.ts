@@ -526,7 +526,7 @@ export class Messaging {
      * @param listener The callback function that will be called each time a message arrives on that route
      * @return resolves when listeners are fully asserted and returns an object which has a "stop" function.
      */
-    public async listen(target: string, route: string, listener: MessageHandler): Promise<ReturnHandler>;
+    public async listen(target: string, route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler>;
 
     /**
      * PUB/SUB creates an event listener
@@ -534,19 +534,22 @@ export class Messaging {
      * @param listener The callback function that will be called each time a message arrives on that route
      * @return resolves when listeners are fully asserted and returns an object which has a "stop" function.
      */
-    public async listen(route: string, listener: MessageHandler): Promise<ReturnHandler>;
+    public async listen(route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler>;
 
     /**
      * See the docs of the two other overloaded methods. This is the implementation of them.
      */
-    public async listen(routeOrTarget: string, routeOrListener: any, listener?: MessageHandler): Promise<ReturnHandler> {
+    public async listen(routeOrTarget: string, routeOrListener: any, listenerOrOptions?: any, opt?: ListenerOptions): Promise<ReturnHandler> {
         this._assertNotClosed();
         let target = routeOrTarget,
-            route = routeOrListener;
+            route = routeOrListener,
+            options = opt,
+            listener = listenerOrOptions;
         if (typeof routeOrListener === 'function') {
             listener = routeOrListener;
             target = this._serviceName;
             route = routeOrTarget;
+            options = listenerOrOptions;
         }
 
         const routeAlias = `listen.${target}.${route}`;
@@ -555,7 +558,7 @@ export class Messaging {
             throw new CustomError(`A listener for ${isNull(target) ? '' : target + ':'}${route} is already defined.`);
         }
         this._routes.set(routeAlias, {
-            options: null, // Not implemented yet.
+            options: options, // Not implemented yet.
             route,
             target,
             isClosed: false,
@@ -776,28 +779,32 @@ export class Messaging {
             if (route.subjectToQuota === false || !route.isReady) {
                 return;
             }
-            this._logger.debug(`Applying maxParallelism of ${maxParallelismPerConsumer} on queue: ${name}.`);
-            route.maxParallelism = maxParallelismPerConsumer;
-            if (maxParallelismPerConsumer === 0) {
+            let parallelismToApply = maxParallelismPerConsumer;
+            if (route.options && !isNaN(route.options.maxParallel)) {
+                parallelismToApply = route.options.maxParallel;
+            }
+            this._logger.debug(`Applying maxParallelism of ${parallelismToApply} on queue: ${name}.`);
+            route.maxParallelism = parallelismToApply;
+            if (parallelismToApply === 0) {
                 if (!isNullOrUndefined(route.consumerTag)) {
                     prefetchProms.push(route.cancel());
                 }
-            } else if (maxParallelismPerConsumer > 0) {
-                prefetchProms.push(route.channel.prefetch(maxParallelismPerConsumer, true));
+            } else if (parallelismToApply > 0) {
+                prefetchProms.push(route.channel.prefetch(parallelismToApply, true));
                 if (isNullOrUndefined(route.consumerTag)) {
                     prefetchProms.push(route.consume());
                 }
-            } else if (maxParallelismPerConsumer === -1) {
+            } else if (parallelismToApply === -1) {
                 prefetchProms.push(route.consume());
             } else {
-                const e = new CustomError('inconsistency', `Negative prefetch (${maxParallelismPerConsumer}) are forbidden.`);
+                const e = new CustomError('inconsistency', `Negative prefetch (${parallelismToApply}) are forbidden.`);
                 if (this._eventEmitter.listenerCount('error') < 1) {
                     throw e;
                 } else {
                     this._eventEmitter.emit('error', e);
                 }
             }
-            route.maxParallelism = maxParallelismPerConsumer;
+            route.maxParallelism = parallelismToApply;
         });
         this._waitParallelismAsserted = when.defer<void>();
         const cacheAppliedParams = {
