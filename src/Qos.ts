@@ -29,7 +29,7 @@ export class Qos {
 
     constructor(instance: Messaging, routes: Map<string, Route>, logger: Logger) {
         this._client = instance;
-        this._logger = logger;
+        this._logger = logger.disable();
         this._mRoutes = routes;
     }
 

@@ -163,8 +163,8 @@ export class Election {
 
         this._logger.log(`${this._messaging.getServiceId()} received a vote message`, message.body, this._leaderId, this._lastLeaderSync, this.TIMEOUT, this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime());
         // Something arrives but vote is already done & lastLeaderSeen < 2/3 TIMEOUT, publish that the elected instance is the previously elected one
-        if (message.body.id !== this._messaging.getServiceId() && !isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
-            this._logger.debug('%i Someone trying to make a new vote but we saw the leader %ims ago, announce the leader!', this._messaging.getServiceId(), new Date().getTime() - this._lastLeaderSync.getTime());
+        if (!isNullOrUndefined(this._leaderId) && this._lastLeaderSync && new Date().getTime() - this._lastLeaderSync.getTime() < 2 / 3 * this.TIMEOUT) {
+            this._logger.debug('%i is trying to make a new vote but we saw the leader %ims ago, announce the leader!', message.body.id, new Date().getTime() - this._lastLeaderSync.getTime());
             this._emitKnownLeader().catch(e => this._messaging.reportError(e));
             return;
         }

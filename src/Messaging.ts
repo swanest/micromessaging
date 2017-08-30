@@ -365,6 +365,14 @@ export class Messaging {
                 headers: _headers
             }
         );
+        this._logger.debug('Sent event', `x.pubSub`,
+            `${target}.${route}`,
+            content.buffer.toString(),
+            {
+                contentType: 'application/json',
+                contentEncoding: content.compression,
+                headers: _headers
+            });
 
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
             this._bufferFull = when.defer<void>();

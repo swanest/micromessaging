@@ -32,7 +32,7 @@ export class PeerStatus {
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
         this._amqpLatency = new AMQPLatency(this._messaging);
-        this._logger = logger.disable();
+        this._logger = logger;
         this._peers = new Map();
         this._listenersBinding.push(
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive', (m: Message<PeerStat>) => {
@@ -226,7 +226,7 @@ export class PeerStatus {
 
     private async _keepAlive() {
         if (this._election.TIMEOUT / 3 < 10) {
-            this._logger.warn('electionTimeoutTooSmall', 'Election timeout should be at least 10s');
+            this._logger.warn('electionTimeoutTooSmall', 'Election timeout should be at least 10ms');
         }
         if (!isNullOrUndefined(this._timer)) {
             clearTimeout(this._timer);
