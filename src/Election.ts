@@ -34,7 +34,7 @@ export class Election {
         this._messaging = messaging;
         this._peers = peerStatus;
         this._amqpLatency = new AMQPLatency(this._messaging);
-        this._logger = logger;
+        this._logger = logger.disable();
 
         this._listenersBinding.push(
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'leader.vote', this._electionListener.bind(this)),

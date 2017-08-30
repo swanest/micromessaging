@@ -32,7 +32,7 @@ export class PeerStatus {
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
         this._amqpLatency = new AMQPLatency(this._messaging);
-        this._logger = logger;
+        this._logger = logger.disable();
         this._peers = new Map();
         this._listenersBinding.push(
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive', (m: Message<PeerStat>) => {

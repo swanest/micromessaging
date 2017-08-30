@@ -89,10 +89,13 @@ export class Qos {
     }
 
     private isLimited() {
-        let max = 0, ongoing = 0;
+        let max = 0, ongoing = 0, isOneLimited = false;
         this._mRoutes.forEach(route => {
             if (!route.subjectToQuota) {
                 return;
+            }
+            if (route.maxParallelism <= route.ongoingMessages) {
+                isOneLimited = true;
             }
             max += route.maxParallelism;
             ongoing += route.ongoingMessages;
@@ -103,8 +106,8 @@ export class Qos {
             return true;
         }
         this._handledMessagesSinceLastMonitor = 0;
-        this._logger.debug(`Limits are: ${ongoing}/${max} isLimited? ${max - 10 < ongoing}`);
-        return max === ongoing;
+        this._logger.debug(`Limits are: ${ongoing}/${max} isLimited? ${max < ongoing || isOneLimited}`);
+        return max <= ongoing || isOneLimited;
     }
 
     private async _looper() {
