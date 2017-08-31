@@ -395,7 +395,7 @@ export class Messaging {
                                  route: string,
                                  messageBody: any = '',
                                  {idRequest = uuid.v4(), ...remainingHeaders}: MessageHeaders = {},
-                                 {timeout = 3000}: RequestOptions = {},
+                                 {timeout = 120000}: RequestOptions = {},
                                  streamHandler: (message: Message) => void = null): Promise<Message<T>> {
 
         this._assertNotClosed();
@@ -473,7 +473,7 @@ export class Messaging {
                       route: string,
                       messageBody: any = '',
                       {idRequest = uuid.v4(), ...remainingHeaders}: MessageHeaders = {},
-                      {timeout = 3000, noAck = true}: TaskOptions = {}): Promise<void | Message> {
+                      {timeout = 120000, noAck = true}: TaskOptions = {}): Promise<void | Message> {
 
         this._assertNotClosed();
         if (!this._isConnected) {
