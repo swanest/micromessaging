@@ -17,6 +17,7 @@ export class Message<T = {}> {
     private _isAcked: boolean = false;
     private _isAnswered: boolean = false;
     private _messaging: Messaging;
+    private _sequence: number = 0;
 
     constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
         this._messaging = messaging;
@@ -182,6 +183,10 @@ export class Message<T = {}> {
         };
     }
 
+    public getSequence() {
+        return this._originalMessage.properties.headers.__mms.sequence;
+    }
+
     private _assertOpen() {
         if (!this._messaging.isConnected()) {
             throw new CustomError('closed', 'Connection has been cleanly closed, hence you cannot reply to this message. If it is a task or a request, it will be redelivered.');
@@ -225,6 +230,7 @@ export class Message<T = {}> {
         (_headers as any).__mms = {
             isError: options.isRejection,
             isEnd: options.isEnd,
+            sequence: this._sequence++
         };
         if (isNullOrUndefined(_headers.idRequest) && !isNullOrUndefined(this._originalMessage.properties.headers.idRequest)) {
             _headers.idRequest = this._originalMessage.properties.headers.idRequest;

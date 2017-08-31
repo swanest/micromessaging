@@ -142,7 +142,6 @@ export class Messaging {
      * Returns the name of the service (name supplied while instantiating the service).
      */
     public getServiceName() {
-        this._assertNotClosed();
         return this._serviceName;
     }
 
@@ -419,6 +418,7 @@ export class Messaging {
         const awaitingReplyObj: ReplyAwaiter = {
             deferred: def,
             streamHandler: streamHandler,
+            sequence: 0,
             timer: null
         };
 
@@ -1162,14 +1162,44 @@ export class Messaging {
                 this._awaitingReply.delete(m.correlationId());
                 return;
             }
-            if (m.isStream()) {
+            if (m.isStream() || defMess.accumulator instanceof Array) {
+                if (isNullOrUndefined(defMess.accumulator)) {
+                    defMess.accumulator = [];
+                }
                 if (typeof defMess.streamHandler !== 'function') {
-                    if (isNullOrUndefined(defMess.accumulator)) {
-                        defMess.accumulator = [];
-                    }
                     defMess.accumulator.push(m);
                 } else {
-                    defMess.streamHandler(m);
+                    if (m.getSequence() !== defMess.sequence) {
+                        for (let seqIt = 0; seqIt < defMess.sequence; seqIt++) {
+                            const expectedSequentialMessage = find(defMess.accumulator, (currentMessage) => {
+                                return currentMessage.getSequence() === seqIt;
+                            });
+                            if (expectedSequentialMessage) {
+                                if (!m.isStream()) {
+                                    // This is the last message
+                                    defMess.deferred.resolve(m);
+                                    this._awaitingReply.delete(m.correlationId());
+
+                                } else {
+                                    defMess.streamHandler(m);
+                                    defMess.sequence++;
+                                }
+                            }
+                        }
+                        if (m.getSequence() !== defMess.sequence) {
+                            defMess.accumulator.push(m);
+                        }
+                    } else {
+                        if (!m.isStream()) {
+                            // This is the last message
+                            defMess.deferred.resolve(m);
+                            this._awaitingReply.delete(m.correlationId());
+
+                        } else {
+                            defMess.streamHandler(m);
+                            defMess.sequence++;
+                        }
+                    }
                 }
             } else {
                 if (!isNullOrUndefined(defMess.accumulator)) {
