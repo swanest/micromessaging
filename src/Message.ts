@@ -18,6 +18,7 @@ export class Message<T = {}> {
     private _isAnswered: boolean = false;
     private _messaging: Messaging;
     private _sequence: number = 0;
+    private _isStreaming: boolean = false;
 
     constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
         this._messaging = messaging;
@@ -99,11 +100,11 @@ export class Message<T = {}> {
     }
 
     public async write(body?: any, headers?: MessageHeaders): Promise<void> {
-        return this._replyReject(body, headers, {isEnd: false});
+        return this._replyReject(body, headers, {isStream: true, isEnd: false});
     }
 
     public async end(body?: any, headers?: MessageHeaders): Promise<void> {
-        return this._replyReject(body, headers);
+        return this._replyReject(body, headers, {isStream: true, isEnd: true});
     }
 
     public async reject(error: CustomError | object, headers?: MessageHeaders) {
@@ -135,7 +136,11 @@ export class Message<T = {}> {
     }
 
     public isStream() {
-        return this._originalMessage.properties.headers.__mms.isEnd === false;
+        return this._originalMessage.properties.headers.__mms.isStream === true;
+    }
+
+    public isStreamEnd() {
+        return this._originalMessage.properties.headers.__mms.isEnd === true;
     }
 
     public isAnswer() {
@@ -199,6 +204,9 @@ export class Message<T = {}> {
     private async _replyReject(bodyOrError?: any | CustomError,
                                headers: MessageHeaders = {idRequest: this._originalMessage.properties.headers.idRequest},
                                options?: InternalReplyOptions) {
+        if (this._isStreaming && options.isStream !== true) {
+            throw new CustomError('You were previously streaming, to finish the message please use .end()');
+        }
         if (this.isTask()) { // Tasks do not need to be replied just acked.
             this.ack();
             return;
@@ -230,6 +238,7 @@ export class Message<T = {}> {
         (_headers as any).__mms = {
             isError: options.isRejection,
             isEnd: options.isEnd,
+            isStream: options.isStream,
             sequence: this._sequence++
         };
         if (isNullOrUndefined(_headers.idRequest) && !isNullOrUndefined(this._originalMessage.properties.headers.idRequest)) {
@@ -266,6 +275,7 @@ export interface IncomingHeaders {
 interface InternalReplyOptions {
     isRejection?: boolean;
     isEnd?: boolean;
+    isStream?: boolean;
 }
 
 export interface ToBuffer {
