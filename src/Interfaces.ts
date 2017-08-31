@@ -149,6 +149,7 @@ export interface ReplyAwaiter {
     streamHandler: (m: Message) => void;
     deferred: Deferred<Message | Message[]>;
     accumulator?: Array<Message>;
+    sequence: number;
     timer: Timer;
 }
 

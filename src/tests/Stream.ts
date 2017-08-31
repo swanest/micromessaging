@@ -27,6 +27,33 @@ describe('Stream', () => {
         expect(received).to.equal(limit);
     });
 
+    it('messages shall always arrive in the correct sequential order', async function () {
+        const s = new Messaging('aService');
+        const c = new Messaging('client');
+        const limit = 100;
+        s.handle('something', async (m) => {
+            for (let i = 0; i < limit; i++) {
+                m.write({num: i});
+            }
+            m.end({num: limit});
+        });
+        await Promise.all([s.connect(), c.connect()]);
+        let received = 0;
+        const response = await c.request('aService', 'something',
+            undefined,
+            undefined,
+            undefined,
+            (message: Message) => {
+                expect((message.body as any).num).to.equal(received);
+                expect(message.getSequence()).to.equal(received);
+                received++;
+            });
+        expect((response.body as any).num).to.equal(received);
+        expect(response.getSequence()).to.equal(received);
+        received++;
+        expect(received).to.equal(limit + 1);
+    });
+
     it('should not accept writing multiple messages on a replied message', async function () {
         const s = new Messaging('aService');
         const c = new Messaging('client');
