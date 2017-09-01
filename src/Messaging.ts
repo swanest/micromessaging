@@ -1127,6 +1127,7 @@ export class Messaging {
      */
     private _messageHandler(originalMessage: AMessage, route: Route) {
         // this._logger.debug(`Received a message in _messageHandler isClosed? ${this._isClosed}, isConnected: ${this._isConnected}, isClosing: ${this._isClosing}`, Message.toJSON(originalMessage));
+        // console.log(`Received a message in _messageHandler isClosed? ${this._isClosed}, isConnected: ${this._isConnected}, isClosing: ${this._isClosing}`, Message.toJSON(originalMessage));
         if (this._isClosed || !this._isConnected || this._isClosing) {
             // We dont handle messages in those cases. They will auto-nack because the channels and connection will die soon so there is no need to nack them all first.
             return;
@@ -1162,51 +1163,40 @@ export class Messaging {
                 this._awaitingReply.delete(m.correlationId());
                 return;
             }
-            if (m.isStream() || defMess.accumulator instanceof Array) {
+            if (m.isStream()) {
                 if (isNullOrUndefined(defMess.accumulator)) {
                     defMess.accumulator = [];
                 }
                 if (typeof defMess.streamHandler !== 'function') {
                     defMess.accumulator.push(m);
+                    if (m.isStreamEnd()) {
+                        (defMess.accumulator as Array<Message>).sort((a, b) => {
+                            return a.getSequence() - b.getSequence();
+                        });
+                        defMess.deferred.resolve(defMess.accumulator);
+                        this._awaitingReply.delete(m.correlationId());
+                    }
                 } else {
-                    if (m.getSequence() !== defMess.sequence) {
-                        for (let seqIt = 0; seqIt < defMess.sequence; seqIt++) {
-                            const expectedSequentialMessage = find(defMess.accumulator, (currentMessage) => {
-                                return currentMessage.getSequence() === seqIt;
-                            });
-                            if (expectedSequentialMessage) {
-                                if (!m.isStream()) {
-                                    // This is the last message
-                                    defMess.deferred.resolve(m);
-                                    this._awaitingReply.delete(m.correlationId());
-
-                                } else {
-                                    defMess.streamHandler(m);
-                                    defMess.sequence++;
-                                }
-                            }
+                    defMess.accumulator.push(m);
+                    (defMess.accumulator as Array<Message>).sort((a, b) => {
+                        return a.getSequence() - b.getSequence();
+                    });
+                    defMess.accumulator.forEach((currentAccMessage) => {
+                        if (currentAccMessage.getSequence() !== defMess.sequence) {
+                            return;
                         }
-                        if (m.getSequence() !== defMess.sequence) {
-                            defMess.accumulator.push(m);
-                        }
-                    } else {
-                        if (!m.isStream()) {
+                        if (currentAccMessage.isStreamEnd()) {
                             // This is the last message
-                            defMess.deferred.resolve(m);
-                            this._awaitingReply.delete(m.correlationId());
-
+                            defMess.deferred.resolve(currentAccMessage);
+                            this._awaitingReply.delete(currentAccMessage.correlationId());
                         } else {
-                            defMess.streamHandler(m);
+                            defMess.streamHandler(currentAccMessage);
                             defMess.sequence++;
                         }
-                    }
+                    });
                 }
             } else {
-                if (!isNullOrUndefined(defMess.accumulator)) {
-                    defMess.deferred.resolve(defMess.accumulator);
-                } else {
-                    defMess.deferred.resolve(m);
-                }
+                defMess.deferred.resolve(m);
                 this._awaitingReply.delete(m.correlationId());
             }
             return;
