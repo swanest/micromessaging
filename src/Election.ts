@@ -8,6 +8,7 @@ import { AMQPLatency } from './AMQPLatency';
 import { ReturnHandler } from './Interfaces';
 import { PeerStatus } from './PeerStatus';
 import { EventLoopStatus } from './HeavyEventLoop';
+import { pull } from 'lodash';
 
 export class Election {
 
@@ -84,6 +85,15 @@ export class Election {
         }
     }
 
+    public removeDeadPeer(id: string) {
+        if (this._candidates instanceof Array) {
+            pull(this._candidates, id);
+        }
+        if (this._playersVote instanceof Map && this._playersVote.has(id)) {
+            this._playersVote.delete(id);
+        }
+    }
+
     /**
      * Get the leader ID
      */
@@ -122,6 +132,7 @@ export class Election {
     private _leaderConsensusHandler(m: Message<ConsensusMessage>) {
         if (m.body.id === this._messaging.getServiceId()) {
             // If I'm receiving the message I just emitted it means I know who the leader is... Skipping the message.
+            this._playersVote.set(m.body.id, m.body.leaderId);
             return;
         }
         if (!isNullOrUndefined(this._leaderId) && this._leaderId !== m.body.leaderId) {
@@ -140,6 +151,7 @@ export class Election {
         this._leaderId = m.body.leaderId;
         this._lastLeaderSync = new Date();
         this._candidates = [];
+        this._playersVote.set(m.body.id, m.body.leaderId);
         if (newLeader) {
             this._notifyLeader();
         }

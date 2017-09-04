@@ -24,7 +24,7 @@ export class Qos {
     private _shouldStopReceiving: boolean = false;
     private _maxParallelism: number = 1;
     private _lastDecreaseApplied: boolean = true;
-    private _handledMessagesSinceLastMonitor: number = 0;
+    private _handledMessagesSinceLastMonitor: MessageHandled = {};
     private _mRoutes: Map<string, Route>;
 
     constructor(instance: Messaging, routes: Map<string, Route>, logger: Logger) {
@@ -65,8 +65,11 @@ export class Qos {
         this._looper();
     }
 
-    public handledMessage() {
-        this._handledMessagesSinceLastMonitor++;
+    public handledMessage(routeName: string) {
+        if (isNullOrUndefined(this._handledMessagesSinceLastMonitor[routeName])) {
+            this._handledMessagesSinceLastMonitor[routeName] = 0;
+        }
+        this._handledMessagesSinceLastMonitor[routeName]++;
     }
 
     public disable() {
@@ -89,24 +92,34 @@ export class Qos {
     }
 
     private isLimited() {
-        let max = 0, ongoing = 0, isOneLimited = false;
+        let max = 0, ongoing = 0, isOneLimited = false, handledMessagesSinceLastMonitor = 0, subjectsCount = 0;
+        this._logger.log(this._handledMessagesSinceLastMonitor);
+        for (let k in this._handledMessagesSinceLastMonitor) {
+            handledMessagesSinceLastMonitor += this._handledMessagesSinceLastMonitor[k];
+        }
         this._mRoutes.forEach(route => {
-            if (!route.subjectToQuota) {
+            if (!route.subjectToQuota || (!isNullOrUndefined(route.options) && !isNullOrUndefined(route.options.maxParallel))) {
+                // Route with a specified quota are subject to quota but are per say limited, hence we can't optimise the flow on them so we don't take them into account.
                 return;
             }
-            if (route.maxParallelism <= route.ongoingMessages) {
+            subjectsCount++;
+            if (route.maxParallelism <= route.ongoingMessages || route.maxParallelism <= this._handledMessagesSinceLastMonitor[route.route]) {
                 isOneLimited = true;
             }
+            this._logger.log(`Counting ${route.route} in quota limitation. isAlreadyLimited? ${(route.maxParallelism <= route.ongoingMessages || route.maxParallelism <= this._handledMessagesSinceLastMonitor[route.route])}`);
             max += route.maxParallelism;
             ongoing += route.ongoingMessages;
         });
-        if (ongoing < max && this._handledMessagesSinceLastMonitor > max) {
-            this._logger.debug(`Limits are: ${ongoing}/${max} but received ${this._handledMessagesSinceLastMonitor} messages. So yes it's limited`);
-            this._handledMessagesSinceLastMonitor = 0;
+        this._handledMessagesSinceLastMonitor = {};
+        if (subjectsCount === 0) {
+            return false;
+        }
+        this._logger.debug(`Handled messages since last monitoring ${handledMessagesSinceLastMonitor}`);
+        if (ongoing < max && handledMessagesSinceLastMonitor > max) {
+            this._logger.debug(`Limits are: ${ongoing}/${max} but received ${handledMessagesSinceLastMonitor} messages. So yes it's limited`);
             return true;
         }
-        this._handledMessagesSinceLastMonitor = 0;
-        this._logger.debug(`Limits are: ${ongoing}/${max} isLimited? ${max < ongoing || isOneLimited}`);
+        this._logger.debug(`Limits are: ${ongoing}/${max} isLimited? ${max <= ongoing}, isOneLimited? ${isOneLimited}`);
         return max <= ongoing || isOneLimited;
     }
 
@@ -209,4 +222,8 @@ interface QosOptions {
     memorySoftLimit: number;
     memoryHardLimit: number;
     eventLoopThreshold: number;
+}
+
+interface MessageHandled {
+    [name: string]: number;
 }

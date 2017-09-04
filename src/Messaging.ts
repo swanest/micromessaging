@@ -1132,8 +1132,8 @@ export class Messaging {
             // We dont handle messages in those cases. They will auto-nack because the channels and connection will die soon so there is no need to nack them all first.
             return;
         }
-        if (this._serviceOptions.enableQos && route.subjectToQuota) {
-            this._qos.handledMessage(); // This enables to keep track of synchronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
+        if (this._serviceOptions.enableQos && route.subjectToQuota && (isNullOrUndefined(route.options) || isNullOrUndefined(route.options.maxParallel))) {
+            this._qos.handledMessage(route.route); // This enables to keep track of synchronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
         }
         const m = new Message(this, route, originalMessage);
         const routeAlias = `${m.isRequest() || m.isTask() ? 'handle' : 'listen'}.${m.destinationRoute()}`;

@@ -10,25 +10,27 @@ console.log(`\nMaster ${process.pid} is running`);
 // Fork workers.
 async function execTest() {
     const results = []
-    results.push(await launch('Simple test with no treatment on the counterpart', 'basic', 'req', 'ITEM', 10000));
-    results.push(await launch('Simple message with 2ms event-loop delay behind', 'elDelay', 'req', 'ITEM', 10000));
-    results.push(await launch('Simple message with I/O behind', 'io', 'req', 'ITEM', 10000));
-    results.push(await launch('Simple message with filled memory', 'memory', 'req', 'ITEM', 10000));
-
-    results.push(await launch('Medium message test with no treatment on the counterpart', 'basic', 'req', 'MEDIUM_MESSAGE', 10000));
-    results.push(await launch('Medium message with 2ms event-loop delay behind', 'elDelay', 'req', 'ITEM', 10000));
-    results.push(await launch('Medium message with I/O behind', 'io', 'req', 'ITEM', 10000));
-    results.push(await launch('Medium message with filled memory', 'memory', 'req', 'ITEM', 10000));
-
-    results.push(await launch('Big message test with no treatment on the counterpart', 'basic', 'req', 'BIG_MESSAGE', 100));
-    results.push(await launch('Big message with 2ms event-loop delay behind', 'elDelay', 'req', 'ITEM', 100));
-    results.push(await launch('Big message with I/O behind', 'io', 'req', 'ITEM', 100));
-    results.push(await launch('Big message with filled memory', 'memory', 'req', 'ITEM', 100));
+    await launch('Election hell', 'election-hell', 'req', 'ITEM', 0)
+    // results.push(await launch('Simple test with no treatment on the counterpart', 'basic', 'req', 'ITEM', 10000));
+    // results.push(await launch('Simple message with 2ms event-loop delay behind', 'elDelay', 'req', 'ITEM', 10000));
+    // results.push(await launch('Simple message with I/O behind', 'io', 'req', 'ITEM', 10000));
+    // results.push(await launch('Simple message with filled memory', 'memory', 'req', 'ITEM', 10000));
+    //
+    // results.push(await launch('Medium message test with no treatment on the counterpart', 'basic', 'req', 'MEDIUM_MESSAGE', 10000));
+    // results.push(await launch('Medium message with 2ms event-loop delay behind', 'elDelay', 'req', 'ITEM', 10000));
+    // results.push(await launch('Medium message with I/O behind', 'io', 'req', 'ITEM', 10000));
+    // results.push(await launch('Medium message with filled memory', 'memory', 'req', 'ITEM', 10000));
+    //
+    // results.push(await launch('Big message test with no treatment on the counterpart', 'basic', 'req', 'BIG_MESSAGE', 100));
+    // results.push(await launch('Big message with 2ms event-loop delay behind', 'elDelay', 'req', 'ITEM', 100));
+    // results.push(await launch('Big message with I/O behind', 'io', 'req', 'ITEM', 100));
+    // results.push(await launch('Big message with filled memory', 'memory', 'req', 'ITEM', 100));
     console.log();
     console.log(results);
 }
 
 execTest();
+let hellLaunches = 0;
 
 async function launch(testName: string, serverName: string, queueName: string, messageRef: string, count: number) {
     console.log(`\nLaunching test: ${testName}. Filling queue.`);
@@ -48,6 +50,12 @@ async function launch(testName: string, serverName: string, queueName: string, m
                 messageHandler(msg, id);
             });
             w.on('exit', () => {
+                if (serverName === 'election-hell') {
+                    if (++hellLaunches < 4) {
+                        launch(testName, serverName, queueName, messageRef, count);
+                    }
+                    return;
+                }
                 exited++;
                 if (exited === numCPUs) {
                     resolve({

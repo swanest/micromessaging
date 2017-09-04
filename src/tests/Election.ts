@@ -64,7 +64,7 @@ describe('Leader Election', () => {
         for (let i = 0; i < 10; i++) {
             // proms.push(voteLoop(i));
             await voteLoop(i);
-                // .then(console.log);
+            // .then(console.log);
         }
         // await Promise.all(proms).then(console.log);
         // console.log('how many instances', instances);
@@ -73,13 +73,13 @@ describe('Leader Election', () => {
     it('should find consensus on leadership (10 instances)', async function () {
         this.timeout(10000);
         await voteLoop(1, 6)
-            // .then(console.log);
+        // .then(console.log);
         // console.log('how many instances', instances);
     });
 
     it('should find consensus on leadership (2 instances)', async function () {
         await voteLoop(1, 2)
-            // .then(console.log);
+        // .then(console.log);
         // console.log('how many instances', instances);
     });
 
