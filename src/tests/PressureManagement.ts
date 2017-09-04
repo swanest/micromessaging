@@ -8,7 +8,7 @@ import { CustomError } from 'sw-logger';
 describe('Pressure Message Management', () => {
 
     it('should not increase the parallelism', async function () {
-        this.timeout(20000);
+        this.timeout(60000);
         const s = new Messaging('server');
         const s2 = new Messaging('server');
         const c = new Messaging('client');
@@ -37,7 +37,7 @@ describe('Pressure Message Management', () => {
     });
 
     it('should increase the parallelism', async function () {
-        this.timeout(20000);
+        this.timeout(60000);
         const s = new Messaging('server');
         const s2 = new Messaging('server');
         const c = new Messaging('client');
@@ -84,7 +84,7 @@ describe('Pressure Message Management', () => {
     });
 
     it('should stabilise parallelism', async function () {
-        this.timeout(20000);
+        this.timeout(60000);
         const s = new Messaging('server');
         const s2 = new Messaging('server');
         const c = new Messaging('client');
