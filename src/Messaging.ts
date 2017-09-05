@@ -298,6 +298,11 @@ export class Messaging {
     public on(event: 'leader.stepDown', listener: (leader: Leader) => void): this;
     public on(event: 'pressure', listener: (pressure: PressureEvent) => void): this;
     public on(event: 'pressureReleased', listener: (pressure: PressureEvent) => void): this;
+    public on(event: 'closed', listener: () => void): this;
+    public on(event: 'connected', listener: () => void): this;
+    public on(event: 'unhandledMessage', listener: (error: CustomError, message: Message) => void): this;
+    public on(event: 'error', listener: (error: CustomError) => void): this;
+    public on(event: 'unroutableMessage', listener: (error: CustomError) => void): this;
 
     /**
      * Listen to a specific event. See {{OwnEvents}} to know what events exist.
@@ -305,7 +310,7 @@ export class Messaging {
      * @param {(error: CustomError, message: Message) => void} listener
      * @returns
      */
-    public on(event: OwnEvents, listener: (errorOrEvent: CustomError | PressureEvent | Leader, message?: Message) => void): this {
+    public on(event: string, listener: (s: any, m: any) => void): this {
         this._assertNotClosed();
         this._eventEmitter.on(event, listener.bind(this));
         return this;
