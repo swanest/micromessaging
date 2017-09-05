@@ -115,8 +115,8 @@ describe('Pressure Message Management', () => {
             }
         }
         await Promise.all(proms);
-        expect(latestBP1).to.equal(21);
-        expect(latestBP2).to.equal(21);
+        expect(latestBP1).to.be.above(20).and.to.be.below(40);
+        expect(latestBP2).to.be.above(21).and.to.be.below(40);
     });
 
     it('should stop receiving messages when under pressure', async function () {

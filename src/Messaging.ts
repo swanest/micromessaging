@@ -686,6 +686,7 @@ export class Messaging {
                 const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
                 await channel.consume(leaderReplyQueue, msg => {
                     resolve(msg.content.toString());
+                    channel.close().catch(e => this.reportError(e));
                 }, {exclusive: true, noAck: true});
 
                 const queueName = `${this._internalExchangeName}.arbiter`;
@@ -699,6 +700,7 @@ export class Messaging {
                         mandatory: true,
                     }
                 );
+
             } catch (e) {
                 reject(e);
             }
@@ -780,7 +782,9 @@ export class Messaging {
 
         if (this._isConnected) {
             this._routes.forEach(r => r.isClosed = true);
-            await Promise.all([...this._channels].map(c => c[1].close()));
+            try {
+                await Promise.all([...this._channels].map(c => c[1].close()));
+            } catch (e) {}
             await this._connection.close();
             this._isConnected = false;
         }
