@@ -9,5 +9,7 @@ export type OwnEvents =
     'pressure' |
     'pressureReleased' |
     'leader' |
+    'leader.stepUp' |
+    'leader.stepDown' |
     'unroutableMessage' // Message couldn't be routed and there is no catch
     ;

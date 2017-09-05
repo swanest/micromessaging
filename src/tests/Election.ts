@@ -64,7 +64,7 @@ describe('Leader Election', () => {
         for (let i = 0; i < 10; i++) {
             // proms.push(voteLoop(i));
             await voteLoop(i);
-                // .then(console.log);
+            // .then(console.log);
         }
         // await Promise.all(proms).then(console.log);
         // console.log('how many instances', instances);
@@ -73,13 +73,13 @@ describe('Leader Election', () => {
     it('should find consensus on leadership (10 instances)', async function () {
         this.timeout(10000);
         await voteLoop(1, 6)
-            // .then(console.log);
+        // .then(console.log);
         // console.log('how many instances', instances);
     });
 
     it('should find consensus on leadership (2 instances)', async function () {
         await voteLoop(1, 2)
-            // .then(console.log);
+        // .then(console.log);
         // console.log('how many instances', instances);
     });
 
@@ -88,7 +88,12 @@ describe('Leader Election', () => {
         await s.connect();
         await new Promise((resolve, reject) => {
             s.on('leader', (lM) => {
-                resolve();
+                try {
+                    expect((lM as any).leaderId).to.equal(s.getServiceId());
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
             });
         });
     });
@@ -165,9 +170,11 @@ describe('Leader Election', () => {
         const s = new Messaging('server1');
         const s2 = new Messaging('server1');
         const s3 = new Messaging('server1');
-        await Promise.all([s3.connect(), s.connect()]);
+        await s3.connect();
+        await s.connect();
         await new Promise((resolve, reject) => {
             s.once('leader', (lM) => {
+                expect(lM).to.deep.equal({leaderId: s3.getServiceId()});
                 // console.log('leader event on 1', lM);
                 const originalLeader = (lM as any).leaderId;
                 s2.once('leader', (m) => {
@@ -193,8 +200,8 @@ describe('Leader Election', () => {
 
             s3.once('leader', (m) => {
                 // console.log('leader event on 3', m);
+                expect(m).to.deep.equal({leaderId: s3.getServiceId()});
             });
         });
-        // await Promise.all(Messaging.instances.map(i => i.close(true)));
     });
 });

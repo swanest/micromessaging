@@ -7,7 +7,7 @@ import { Channel, Connection, Message as AMessage } from 'amqplib';
 import { isNull, isNullOrUndefined, isUndefined } from 'util';
 import { cloneDeep, omit, pull, find } from 'lodash';
 import {
-    EmitOptions,
+    EmitOptions, Leader,
     ListenerOptions,
     MessageHandler,
     MessageHeaders,
@@ -108,7 +108,7 @@ export class Messaging {
         }
 
         this._peerStatus = new PeerStatus(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:peer-status`));
-        this._election = new Election(this, this._peerStatus, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
+        this._election = new Election(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
         this._peerStatus.setElection(this._election);
         this._amqpLatency = new AMQPLatency(this);
 
@@ -293,13 +293,24 @@ export class Messaging {
         return this._uri;
     }
 
+    public on(event: 'leader', listener: (leader: Leader) => void): this;
+    public on(event: 'leader.stepUp', listener: (leader: Leader) => void): this;
+    public on(event: 'leader.stepDown', listener: (leader: Leader) => void): this;
+    public on(event: 'pressure', listener: (pressure: PressureEvent) => void): this;
+    public on(event: 'pressureReleased', listener: (pressure: PressureEvent) => void): this;
+    public on(event: 'closed', listener: () => void): this;
+    public on(event: 'connected', listener: () => void): this;
+    public on(event: 'unhandledMessage', listener: (error: CustomError, message: Message) => void): this;
+    public on(event: 'error', listener: (error: CustomError) => void): this;
+    public on(event: 'unroutableMessage', listener: (error: CustomError) => void): this;
+
     /**
      * Listen to a specific event. See {{OwnEvents}} to know what events exist.
      * @param {OwnEvents} event
      * @param {(error: CustomError, message: Message) => void} listener
      * @returns
      */
-    public on(event: OwnEvents, listener: (errorOrEvent: CustomError | PressureEvent, message?: Message) => void): this {
+    public on(event: string, listener: (s: any, m: any) => void): this {
         this._assertNotClosed();
         this._eventEmitter.on(event, listener.bind(this));
         return this;
@@ -621,6 +632,81 @@ export class Messaging {
         };
     }
 
+    public async assertLeader(noQueue = false): Promise<string> {
+        this._assertConnected();
+        let channel = await this._assertChannel('__arbiter', true);
+        const queueName = `${this._internalExchangeName}.arbiter`;
+        try {
+            if (noQueue === true) {
+                channel = await this._assertChannel('__arbiter', true);
+                await channel.assertQueue(queueName, {exclusive: true});
+                await channel.consume(queueName, msg => {
+                    if (!msg.properties.replyTo) {
+                        return;
+                    }
+                    this._outgoingChannel.sendToQueue(
+                        msg.properties.replyTo,
+                        Buffer.from(this.getServiceId()),
+                        {
+                            contentType: 'application/json',
+                            contentEncoding: undefined,
+                            mandatory: true,
+                        }
+                    );
+                }, {noAck: true, exclusive: true});
+                return this.getServiceId();
+            } else {
+                const report = await channel.checkQueue(queueName);
+                if (report.consumerCount > 0) {
+                    return this.whoLeads();
+                } else if (!noQueue) {
+                    return this.assertLeader(true);
+                }
+            }
+        } catch (e) {
+            if (!this.isConnected()) {
+                return '';
+            }
+            if (/RESOURCE_LOCKED/.test(e.message)) {
+                return this.whoLeads();
+            }
+            return this.assertLeader(true);
+        }
+    }
+
+    private _ongoingLeaderDiscovery: Promise<string>;
+
+    private async whoLeads(): Promise<string> {
+        if (!isNullOrUndefined(this._ongoingLeaderDiscovery)) {
+            return this._ongoingLeaderDiscovery;
+        }
+        return this._ongoingLeaderDiscovery = new Promise<string>(async (resolve, reject) => {
+            try {
+                const channel = await this._assertChannel('__leaderReply');
+                const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
+                await channel.consume(leaderReplyQueue, msg => {
+                    resolve(msg.content.toString());
+                    channel.close().catch(e => this.reportError(e));
+                }, {exclusive: true, noAck: true});
+
+                const queueName = `${this._internalExchangeName}.arbiter`;
+                this._outgoingChannel.sendToQueue(
+                    queueName,
+                    Buffer.from(''),
+                    {
+                        contentType: 'application/json',
+                        contentEncoding: undefined,
+                        replyTo: leaderReplyQueue,
+                        mandatory: true,
+                    }
+                );
+
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
     /**
      * Ask for the status of a service
      * @param targetService the service name for which a status report needs to be generated
@@ -689,13 +775,16 @@ export class Messaging {
             };
             if (force) {
                 opts.ifEmpty = false;
+                opts.ifUnused = false;
             }
             await Promise.all(proms.map(name => this._outgoingChannel.deleteQueue(name, opts)));
         }
 
         if (this._isConnected) {
             this._routes.forEach(r => r.isClosed = true);
-            await Promise.all([...this._channels].map(c => c[1].close()));
+            try {
+                await Promise.all([...this._channels].map(c => c[1].close()));
+            } catch (e) {}
             await this._connection.close();
             this._isConnected = false;
         }
@@ -1132,8 +1221,8 @@ export class Messaging {
             // We dont handle messages in those cases. They will auto-nack because the channels and connection will die soon so there is no need to nack them all first.
             return;
         }
-        if (this._serviceOptions.enableQos && route.subjectToQuota) {
-            this._qos.handledMessage(); // This enables to keep track of synchronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
+        if (this._serviceOptions.enableQos && route.subjectToQuota && (isNullOrUndefined(route.options) || isNullOrUndefined(route.options.maxParallel))) {
+            this._qos.handledMessage(route.route); // This enables to keep track of synchronous messages that pass by and that wouldn't be counted between two monitors of the E.L.
         }
         const m = new Message(this, route, originalMessage);
         const routeAlias = `${m.isRequest() || m.isTask() ? 'handle' : 'listen'}.${m.destinationRoute()}`;

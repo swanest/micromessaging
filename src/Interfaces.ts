@@ -163,3 +163,7 @@ export interface Uptime {
     startedAt: Date;
     elapsedMs: number;
 }
+
+export interface Leader {
+    leaderId: string;
+}
