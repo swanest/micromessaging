@@ -12,6 +12,7 @@ export class Election {
     private _leaderId: string;
     private _lastLeaderSync: Date;
     private _logger: Logger;
+    private _wasLeader = false;
 
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
@@ -54,5 +55,13 @@ export class Election {
             return;
         }
         this._messaging.getEventEmitter().emit('leader', {leaderId: this._leaderId});
+        if (this._leaderId === this._messaging.getServiceId() && !this._wasLeader) {
+            this._wasLeader = true;
+            this._messaging.getEventEmitter().emit('leader.stepUp', {leaderId: this._leaderId});
+        }
+        if (this._leaderId !== this._messaging.getServiceId() && this._wasLeader) {
+            this._wasLeader = false;
+            this._messaging.getEventEmitter().emit('leader.stepDown', {leaderId: this._leaderId});
+        }
     }
 }

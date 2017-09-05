@@ -7,7 +7,7 @@ import { Channel, Connection, Message as AMessage } from 'amqplib';
 import { isNull, isNullOrUndefined, isUndefined } from 'util';
 import { cloneDeep, omit, pull, find } from 'lodash';
 import {
-    EmitOptions,
+    EmitOptions, Leader,
     ListenerOptions,
     MessageHandler,
     MessageHeaders,
@@ -293,13 +293,19 @@ export class Messaging {
         return this._uri;
     }
 
+    public on(event: 'leader', listener: (leader: Leader) => void): this;
+    public on(event: 'leader.stepUp', listener: (leader: Leader) => void): this;
+    public on(event: 'leader.stepDown', listener: (leader: Leader) => void): this;
+    public on(event: 'pressure', listener: (pressure: PressureEvent) => void): this;
+    public on(event: 'pressureReleased', listener: (pressure: PressureEvent) => void): this;
+
     /**
      * Listen to a specific event. See {{OwnEvents}} to know what events exist.
      * @param {OwnEvents} event
      * @param {(error: CustomError, message: Message) => void} listener
      * @returns
      */
-    public on(event: OwnEvents, listener: (errorOrEvent: CustomError | PressureEvent, message?: Message) => void): this {
+    public on(event: OwnEvents, listener: (errorOrEvent: CustomError | PressureEvent | Leader, message?: Message) => void): this {
         this._assertNotClosed();
         this._eventEmitter.on(event, listener.bind(this));
         return this;
@@ -675,7 +681,7 @@ export class Messaging {
                 const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
                 await channel.consume(leaderReplyQueue, msg => {
                     resolve(msg.content.toString());
-                }, {exclusive: true});
+                }, {exclusive: true, noAck: true});
 
                 const queueName = `${this._internalExchangeName}.arbiter`;
                 this._outgoingChannel.sendToQueue(
