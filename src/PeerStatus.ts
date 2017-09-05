@@ -32,7 +32,7 @@ export class PeerStatus {
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
         this._amqpLatency = new AMQPLatency(this._messaging);
-        this._logger = logger.disable();
+        this._logger = logger;
         this._peers = new Map();
         this._listenersBinding.push(
             this._messaging.listen(this._messaging.getInternalExchangeName(), 'peer.alive', (m: Message<PeerStat>) => {
@@ -98,6 +98,7 @@ export class PeerStatus {
             } else {
                 this._proxies.push(messageHandler);
             }
+
             await this._messaging.emit(`${Messaging.internalExchangePrefix}.${targetService}`, 'peer.alive.req', undefined, undefined, {onlyIfConnected: true});
         });
     }
@@ -132,13 +133,6 @@ export class PeerStatus {
         this._isActive = false;
         clearTimeout(this._timer);
         clearTimeout(this._topologyTimer);
-    }
-
-    /**
-     * Get the actual peers list
-     */
-    public getPeers() {
-        return this._peers;
     }
 
     private _request() {
@@ -195,7 +189,6 @@ export class PeerStatus {
         if (diff < this._election.TIMEOUT) {
             return;
         }
-        this._election.removeDeadPeer(peerId);
         this._peers.delete(peerId);
         this._logger.log(`Deleting peer ${peerId} because not seen since ${diff}ms (isLeader? ${stat.id} === ${this._election.leaderId()})`);
         if (stat.id === this._election.leaderId()) {

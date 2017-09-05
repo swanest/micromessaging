@@ -108,7 +108,7 @@ export class Messaging {
         }
 
         this._peerStatus = new PeerStatus(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:peer-status`));
-        this._election = new Election(this, this._peerStatus, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
+        this._election = new Election(this, tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:election`));
         this._peerStatus.setElection(this._election);
         this._amqpLatency = new AMQPLatency(this);
 
@@ -621,6 +621,79 @@ export class Messaging {
         };
     }
 
+    public async assertLeader(noQueue = false): Promise<string> {
+        this._assertConnected();
+        let channel = await this._assertChannel('__arbiter', true);
+        const queueName = `${this._internalExchangeName}.arbiter`;
+        try {
+            if (noQueue === true) {
+                channel = await this._assertChannel('__arbiter', true);
+                await channel.assertQueue(queueName, {exclusive: true});
+                await channel.consume(queueName, msg => {
+                    if (!msg.properties.replyTo) {
+                        return;
+                    }
+                    this._outgoingChannel.sendToQueue(
+                        msg.properties.replyTo,
+                        Buffer.from(this.getServiceId()),
+                        {
+                            contentType: 'application/json',
+                            contentEncoding: undefined,
+                            mandatory: true,
+                        }
+                    );
+                }, {noAck: true, exclusive: true});
+                return this.getServiceId();
+            } else {
+                const report = await channel.checkQueue(queueName);
+                if (report.consumerCount > 0) {
+                    return this.whoLeads();
+                } else if (!noQueue) {
+                    return this.assertLeader(true);
+                }
+            }
+        } catch (e) {
+            if (!this.isConnected()) {
+                return '';
+            }
+            if (/RESOURCE_LOCKED/.test(e.message)) {
+                return this.whoLeads();
+            }
+            return this.assertLeader(true);
+        }
+    }
+
+    private _ongoingLeaderDiscovery: Promise<string>;
+
+    private async whoLeads(): Promise<string> {
+        if (!isNullOrUndefined(this._ongoingLeaderDiscovery)) {
+            return this._ongoingLeaderDiscovery;
+        }
+        return this._ongoingLeaderDiscovery = new Promise<string>(async (resolve, reject) => {
+            try {
+                const channel = await this._assertChannel('__leaderReply');
+                const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
+                await channel.consume(leaderReplyQueue, msg => {
+                    resolve(msg.content.toString());
+                }, {exclusive: true});
+
+                const queueName = `${this._internalExchangeName}.arbiter`;
+                this._outgoingChannel.sendToQueue(
+                    queueName,
+                    Buffer.from(''),
+                    {
+                        contentType: 'application/json',
+                        contentEncoding: undefined,
+                        replyTo: leaderReplyQueue,
+                        mandatory: true,
+                    }
+                );
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
     /**
      * Ask for the status of a service
      * @param targetService the service name for which a status report needs to be generated
@@ -689,6 +762,7 @@ export class Messaging {
             };
             if (force) {
                 opts.ifEmpty = false;
+                opts.ifUnused = false;
             }
             await Promise.all(proms.map(name => this._outgoingChannel.deleteQueue(name, opts)));
         }

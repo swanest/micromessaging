@@ -4,7 +4,7 @@ import * as os from 'os';
 import { Utils } from '../src/Utils';
 import * as Messages from './Messages';
 
-const numCPUs = os.cpus().length;
+const numCPUs = 16;
 console.log(`\nMaster ${process.pid} is running`);
 
 // Fork workers.
@@ -70,12 +70,12 @@ async function launch(testName: string, serverName: string, queueName: string, m
             w.send({serverName, queueName});
         });
 
-        const reporter = setInterval(() => {
-            const stdout: any = process.stdout;
-            stdout.clearLine();  // clear current text
-            stdout.cursorTo(0);  // move cursor to beginning of line
-            process.stdout.write(`[${testName}]: numReqs = ${totalReqs}, rate = ${Math.round(totalReqs / (Utils.hrtimeToMS(process.hrtime(ts)) / 1000) / (numCPUs - 1))}/s/instance`);
-        }, 1000);
+        // const reporter = setInterval(() => {
+        //     const stdout: any = process.stdout;
+        //     stdout.clearLine();  // clear current text
+        //     stdout.cursorTo(0);  // move cursor to beginning of line
+        //     process.stdout.write(`[${testName}]: numReqs = ${totalReqs}, rate = ${Math.round(totalReqs / (Utils.hrtimeToMS(process.hrtime(ts)) / 1000) / (numCPUs - 1))}/s/instance`);
+        // }, 1000);
 
         function messageHandler(msg, id) {
             if (msg.cmd && msg.cmd === 'notifyTotal') {
@@ -89,7 +89,7 @@ async function launch(testName: string, serverName: string, queueName: string, m
                 if (totalReqs >= count) {
                     elapsed = Utils.hrtimeToMS(process.hrtime(ts));
                     console.log('\nTest finished, killing children.');
-                    clearInterval(reporter);
+                    // clearInterval(reporter);
                     workers.forEach((w) => {
                         w.kill();
                     });
