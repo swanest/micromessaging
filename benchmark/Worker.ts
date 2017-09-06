@@ -3,6 +3,7 @@ import { Utils } from '../src/Utils';
 import { Message } from '../src/Message';
 import * as Messages from './Messages';
 import { getHeapStatistics } from 'v8';
+import { random } from 'lodash';
 
 process.on('message', async ({type, serverName, queueName, messageRef, count}) => {
     if (type === 'fill') {
@@ -12,9 +13,17 @@ process.on('message', async ({type, serverName, queueName, messageRef, count}) =
         // server.on('pressure', (e) => console.log('pressure', e));
         // server.on('pressureReleased', (e) => console.log('pressureReleased', e));
         let counter = 0;
-        setInterval(() => {
-            process.send({cmd: 'notifyTotal', value: counter});
-        }, 100);
+        if (serverName !== 'election-hell') {
+            setInterval(() => {
+                process.send({cmd: 'notifyTotal', value: counter});
+            }, 100);
+        } else {
+            console.log('\nelection hell process ' + serverName);
+            setTimeout(() => {
+                console.log(`\n${process.pid} exiting.`);
+                process.exit(1)
+            }, random(5000, 50000));
+        }
 
         if (serverName === 'memory') {
             const {heap_size_limit} = getHeapStatistics();

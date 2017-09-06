@@ -10,7 +10,8 @@ export {
     Status,
     StatusOptions,
     TaskOptions,
-    MessageHeaders
+    MessageHeaders,
+    Leader
 } from './Interfaces';
 export { Message } from './Message';
 export { PressureEvent } from './Qos';

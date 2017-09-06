@@ -98,6 +98,7 @@ export class PeerStatus {
             } else {
                 this._proxies.push(messageHandler);
             }
+
             await this._messaging.emit(`${Messaging.internalExchangePrefix}.${targetService}`, 'peer.alive.req', undefined, undefined, {onlyIfConnected: true});
         });
     }
@@ -132,13 +133,6 @@ export class PeerStatus {
         this._isActive = false;
         clearTimeout(this._timer);
         clearTimeout(this._topologyTimer);
-    }
-
-    /**
-     * Get the actual peers list
-     */
-    public getPeers() {
-        return this._peers;
     }
 
     private _request() {

@@ -27,6 +27,60 @@ describe('Messaging', () => {
         expect(response.body).to.deep.equal({hello: 'world'});
     });
 
+    // it.only('should handle loads of requests', async function () {
+    //     this.timeout(120000);
+    //     const hep = require('heapdump');
+    //     console.log(process.memoryUsage());
+    //     const s = new Messaging('server');
+    //     s.handle('request1', (message) => {
+    //         message.reply({hello: 'world'});
+    //     });
+    //     const c = new Messaging('client');
+    //     await Promise.all([
+    //         c.connect(),
+    //         s.connect()
+    //     ]);
+    //     let ps: Promise<Message>[] = [];
+    //     hep.writeSnapshot('/Users/Youri/Downloads/Temp/micro-' + Date.now() + '.heapsnapshot');
+    //     global.gc();
+    //     for (let i = 0; i < 10; i++) {
+    //         await new Promise(resolve => {
+    //             setImmediate(() => {
+    //                 for (let j = 0; j < 1000; j++) {
+    //                     ps.push(c.request('server', 'request1', {how: {are: 'you?'}}, undefined, {timeout: 60 * 60 * 1000}));
+    //                 }
+    //                 resolve();
+    //             });
+    //         });
+    //     }
+    //     await Promise.all(ps);
+    //     ps = null;
+    //     console.log(process.memoryUsage());
+    //     hep.writeSnapshot('/Users/Youri/Downloads/Temp/micro-' + Date.now() + '.heapsnapshot');
+    //     global.gc();
+    //     console.log(process.memoryUsage());
+    //     hep.writeSnapshot('/Users/Youri/Downloads/Temp/micro-' + Date.now() + '.heapsnapshot');
+    //     ps = [];
+    //     global.gc();
+    //     for (let i = 0; i < 10; i++) {
+    //         await new Promise(resolve => {
+    //             setImmediate(() => {
+    //                 for (let j = 0; j < 1000; j++) {
+    //                     ps.push(c.request('server', 'request1', {how: {are: 'you?'}}, undefined, {timeout: 60 * 60 * 1000}));
+    //                 }
+    //                 resolve();
+    //             });
+    //         });
+    //     }
+    //     await Promise.all(ps);
+    //     ps = null;
+    //     console.log(process.memoryUsage());
+    //     hep.writeSnapshot('/Users/Youri/Downloads/Temp/micro-' + Date.now() + '.heapsnapshot');
+    //     global.gc();
+    //     console.log(process.memoryUsage());
+    //     hep.writeSnapshot('/Users/Youri/Downloads/Temp/micro-' + Date.now() + '.heapsnapshot');
+    // });
+
     it('should properly compress requests', async () => {
         const s = new Messaging('server');
         let textThatWillCompress = '';
