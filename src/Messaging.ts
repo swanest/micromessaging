@@ -421,7 +421,6 @@ export class Messaging {
         if (!isNullOrUndefined(this._bufferFull)) {
             await this._bufferFull.promise;
         }
-        const preparedScopedError = new CustomError('timeout', `Request on ${targetService}.${route} timed out. Expecting response within ${timeout}ms`);
 
         await this._assertReplyQueue();
         const correlationId = uuid.v4();
@@ -435,16 +434,16 @@ export class Messaging {
 
         if (timeout > -1) {
             awaitingReplyObj.timer = setTimeout(() => {
-                def.reject(preparedScopedError);
-                this._awaitingReply.delete(correlationId);
+                def.reject(new CustomError('timeout', `Request on ${targetService}.${route} timed out. Expecting response within ${timeout}ms`));
+                this.unregisterResponseAwait(correlationId);
             }, timeout);
         }
 
         this._awaitingReply.set(correlationId, awaitingReplyObj);
 
         if (timeout === 0) {
-            def.reject(preparedScopedError);
-            this._awaitingReply.delete(correlationId);
+            def.reject(new CustomError('timeout', `Request on ${targetService}.${route} timed out. Expecting response within ${timeout}ms`));
+            this.unregisterResponseAwait(correlationId);
         }
 
         const content = await Message.toBuffer(messageBody);
@@ -784,7 +783,8 @@ export class Messaging {
             this._routes.forEach(r => r.isClosed = true);
             try {
                 await Promise.all([...this._channels].map(c => c[1].close()));
-            } catch (e) {}
+            } catch (e) {
+            }
             await this._connection.close();
             this._isConnected = false;
         }
@@ -943,7 +943,7 @@ export class Messaging {
             e.info.sentMessage = msg;
             if (this._awaitingReply.has(msg.properties.correlationId)) {
                 this._awaitingReply.get(msg.properties.correlationId).deferred.reject(e);
-                this._awaitingReply.delete(msg.properties.correlationId);
+                this.unregisterResponseAwait(msg.properties.correlationId);
             } else {
                 if (this._eventEmitter.listenerCount('unroutableMessage') > 0) {
                     this._eventEmitter.emit('unroutableMessage', e);
@@ -1209,6 +1209,17 @@ export class Messaging {
         }
     }
 
+    private unregisterResponseAwait(correlationId: string) {
+        if (this._awaitingReply.has(correlationId)) {
+            const corr = this._awaitingReply.get(correlationId);
+            if (corr.timer) {
+                clearTimeout(corr.timer);
+                corr.timer = null;
+            }
+            this._awaitingReply.delete(correlationId);
+        }
+    }
+
     /**
      * Main message handler; Every incoming message goes through this handler.
      * @param originalMessage The raw AMQP message received.
@@ -1249,7 +1260,7 @@ export class Messaging {
             if (m.isError()) {
                 this._logger.log('Found a rejection...');
                 defMess.deferred.reject(m.error());
-                this._awaitingReply.delete(m.correlationId());
+                this.unregisterResponseAwait(m.correlationId());
                 return;
             }
             if (m.isStream()) {
@@ -1263,7 +1274,7 @@ export class Messaging {
                             return a.getSequence() - b.getSequence();
                         });
                         defMess.deferred.resolve(defMess.accumulator);
-                        this._awaitingReply.delete(m.correlationId());
+                        this.unregisterResponseAwait(m.correlationId());
                     }
                 } else {
                     defMess.accumulator.push(m);
@@ -1277,7 +1288,7 @@ export class Messaging {
                         if (currentAccMessage.isStreamEnd()) {
                             // This is the last message
                             defMess.deferred.resolve(currentAccMessage);
-                            this._awaitingReply.delete(currentAccMessage.correlationId());
+                            this.unregisterResponseAwait(currentAccMessage.correlationId());
                         } else {
                             defMess.streamHandler(currentAccMessage);
                             defMess.sequence++;
@@ -1286,7 +1297,7 @@ export class Messaging {
                 }
             } else {
                 defMess.deferred.resolve(m);
-                this._awaitingReply.delete(m.correlationId());
+                this.unregisterResponseAwait(m.correlationId());
             }
             return;
         }

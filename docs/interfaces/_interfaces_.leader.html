@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Qos | micromessaging</title>
+	<title>Leader | micromessaging</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,13 +56,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_qos_.html">&quot;Qos&quot;</a>
+					<a href="../modules/_interfaces_.html">&quot;Interfaces&quot;</a>
 				</li>
 				<li>
-					<a href="_qos_.qos.html">Qos</a>
+					<a href="_interfaces_.leader.html">Leader</a>
 				</li>
 			</ul>
-			<h1>Class Qos</h1>
+			<h1>Interface Leader</h1>
 		</div>
 	</div>
 </header>
@@ -73,7 +73,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">Qos</span>
+						<span class="target">Leader</span>
 					</li>
 				</ul>
 			</section>
@@ -82,112 +82,25 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Constructors</h3>
+							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_qos_.qos.html#constructor" class="tsd-kind-icon">constructor</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
-							<h3>Methods</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_qos_.qos.html#disable" class="tsd-kind-icon">disable</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_qos_.qos.html#enable" class="tsd-kind-icon">enable</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_qos_.qos.html#handledmessage" class="tsd-kind-icon">handled<wbr>Message</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.leader.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
-					<a name="constructor" class="tsd-anchor"></a>
-					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Qos<span class="tsd-signature-symbol">(</span>instance<span class="tsd-signature-symbol">: </span><a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a>, routes<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_interfaces_.route.html" class="tsd-signature-type">Route</a><span class="tsd-signature-symbol">&gt;</span>, logger<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Logger</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_qos_.qos.html" class="tsd-signature-type">Qos</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e210d15/src/Qos.ts#L28">Qos.ts:28</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>instance: <a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a></h5>
-								</li>
-								<li>
-									<h5>routes: <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_interfaces_.route.html" class="tsd-signature-type">Route</a><span class="tsd-signature-symbol">&gt;</span></h5>
-								</li>
-								<li>
-									<h5>logger: <span class="tsd-signature-type">Logger</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_qos_.qos.html" class="tsd-signature-type">Qos</a></h4>
-						</li>
-					</ul>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="disable" class="tsd-anchor"></a>
-					<h3>disable</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">disable<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e210d15/src/Qos.ts#L75">Qos.ts:75</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="enable" class="tsd-anchor"></a>
-					<h3>enable</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">enable<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e210d15/src/Qos.ts#L36">Qos.ts:36</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="handledmessage" class="tsd-anchor"></a>
-					<h3>handled<wbr>Message</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">handled<wbr>Message<span class="tsd-signature-symbol">(</span>routeName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e210d15/src/Qos.ts#L68">Qos.ts:68</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>routeName: <span class="tsd-signature-type">string</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="leaderid" class="tsd-anchor"></a>
+					<h3>leader<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">leader<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e210d15/src/Interfaces.ts#L168">Interfaces.ts:168</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -215,7 +128,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_heavymemory_.html">"<wbr>Heavy<wbr>Memory"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_interfaces_.html">"<wbr>Interfaces"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -227,7 +140,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_peerstatus_.html">"<wbr>Peer<wbr>Status"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_qos_.html">"<wbr>Qos"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -240,38 +153,77 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.emitoptions.html" class="tsd-kind-icon">Emit<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.exchange.html" class="tsd-kind-icon">Exchange</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.exchangeoptions.html" class="tsd-kind-icon">Exchange<wbr>Options</a>
+					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_qos_.qos.html" class="tsd-kind-icon">Qos</a>
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.leader.html" class="tsd-kind-icon">Leader</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="_qos_.qos.html#constructor" class="tsd-kind-icon">constructor</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_qos_.qos.html#disable" class="tsd-kind-icon">disable</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_qos_.qos.html#enable" class="tsd-kind-icon">enable</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_qos_.qos.html#handledmessage" class="tsd-kind-icon">handled<wbr>Message</a>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.leader.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../interfaces/_qos_.messagehandled.html" class="tsd-kind-icon">Message<wbr>Handled</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.listeneroptions.html" class="tsd-kind-icon">Listener<wbr>Options</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_qos_.pressureevent.html" class="tsd-kind-icon">Pressure<wbr>Event</a>
+						<a href="_interfaces_.messagehandler.html" class="tsd-kind-icon">Message<wbr>Handler</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../interfaces/_qos_.qosoptions.html" class="tsd-kind-icon">Qos<wbr>Options</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.messageheaders.html" class="tsd-kind-icon">Message<wbr>Headers</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.queue.html" class="tsd-kind-icon">Queue</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.queueoptions.html" class="tsd-kind-icon">Queue<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.replyawaiter.html" class="tsd-kind-icon">Reply<wbr>Awaiter</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.requestoptions.html" class="tsd-kind-icon">Request<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.requestreport.html" class="tsd-kind-icon">Request<wbr>Report</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.returnhandler.html" class="tsd-kind-icon">Return<wbr>Handler</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.route.html" class="tsd-kind-icon">Route</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.serviceoptions.html" class="tsd-kind-icon">Service<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.status.html" class="tsd-kind-icon">Status</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.statusoptions.html" class="tsd-kind-icon">Status<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.taskoptions.html" class="tsd-kind-icon">Task<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_interfaces_.uptime.html" class="tsd-kind-icon">Uptime</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_qos_.html#pressureeventtype" class="tsd-kind-icon">Pressure<wbr>Event<wbr>Type</a>
+						<a href="../modules/_interfaces_.html#exchangetype" class="tsd-kind-icon">Exchange<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
+						<a href="../modules/_interfaces_.html#routetype" class="tsd-kind-icon">Route<wbr>Type</a>
 					</li>
 				</ul>
 			</nav>
