@@ -126,8 +126,8 @@ export class Messaging {
     static defaultMemoryLimit() {
         const {heap_size_limit} = getHeapStatistics();
         return {
-            soft: ~~(heap_size_limit / Math.pow(2, 20) * 0.75),
-            hard: ~~(heap_size_limit / Math.pow(2, 20) * 0.90)
+            soft: ~~(heap_size_limit / Math.pow(2, 20) * 0.65),
+            hard: ~~(heap_size_limit / Math.pow(2, 20) * 0.80)
         };
     }
 
