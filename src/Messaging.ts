@@ -292,10 +292,11 @@ export class Messaging {
 
     private _assertParallelCron() {
         if (new Date().getTime() - this._lastAssertParallel < 10000) {
-            this._assertParallelChecker = setTimeout(this._assertParallelCron, 60 * 1000);
+            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
+            return;
         }
         this._assertParallelBoundaries().catch(e => this.reportError(e)).then(() => {
-            this._assertParallelChecker = setTimeout(this._assertParallelCron, 60 * 1000);
+            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
         });
     }
 
