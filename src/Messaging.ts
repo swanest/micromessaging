@@ -33,6 +33,7 @@ import { URL } from 'url';
 import { AMQPLatency } from './AMQPLatency';
 import uuid = require('uuid');
 import Deferred = When.Deferred;
+import Timer = NodeJS.Timer;
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 
@@ -66,6 +67,8 @@ export class Messaging {
         value: -1,
         qSubjectToQuota: 0
     };
+    private _assertParallelChecker: Timer;
+    private _lastAssertParallel: number = 0;
     private _ongoingQAssertion: Deferred<void>[] = [];
     private _replyQueueAssertionPromise: Promise<any> = null;
     private _isConnected: boolean = false;
@@ -284,6 +287,16 @@ export class Messaging {
         this._peerStatus.start();
         this._benchmarkLatency();
         this._eventEmitter.emit('connected');
+        this._assertParallelChecker = setTimeout(this._assertParallelCron, 60 * 1000);
+    }
+
+    private _assertParallelCron() {
+        if (new Date().getTime() - this._lastAssertParallel < 10000) {
+            this._assertParallelChecker = setTimeout(this._assertParallelCron, 60 * 1000);
+        }
+        this._assertParallelBoundaries().catch(e => this.reportError(e)).then(() => {
+            this._assertParallelChecker = setTimeout(this._assertParallelCron, 60 * 1000);
+        });
     }
 
     /**
@@ -743,6 +756,8 @@ export class Messaging {
         }
         this._logger.debug('Closing connection');
 
+        clearTimeout(this._assertParallelChecker);
+
         this._isClosing = true;
         await Promise.all<any>(this._ongoingQAssertion.map(p => p.promise)); // Wait that assertions still ongoing are finished before closing.
 
@@ -831,6 +846,7 @@ export class Messaging {
     }
 
     private async _assertParallelBoundaries() {
+        this._lastAssertParallel = new Date().getTime();
         if (!this._isConnected || this._isClosing) {
             return;
         }
