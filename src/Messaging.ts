@@ -287,7 +287,7 @@ export class Messaging {
         this._peerStatus.start();
         this._benchmarkLatency();
         this._eventEmitter.emit('connected');
-        this._assertParallelChecker = setTimeout(this._assertParallelCron, 60 * 1000);
+        this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
     }
 
     private _assertParallelCron() {
