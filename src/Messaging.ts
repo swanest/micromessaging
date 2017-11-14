@@ -256,6 +256,8 @@ export class Messaging {
             this._isConnected = true;
         } catch (e) {
             const customError = new CustomError('unableToConnect', 'Service was unable to connect to RabbitMQ', e);
+            this._isConnected = false;
+            this._isConnecting = false;
             this._eventEmitter.emit('error', customError);
             throw customError;
         }
