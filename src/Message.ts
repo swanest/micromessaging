@@ -7,6 +7,7 @@ import { Messaging } from './Messaging';
 import * as stream from 'stream';
 import { PassThrough } from 'stream';
 import { Utils } from './Utils';
+import Timer = NodeJS.Timer;
 
 export class Message<T = {}> {
     public body: T;
@@ -15,10 +16,14 @@ export class Message<T = {}> {
     private _isRequest: boolean = false;
     private _route: Route;
     private _isAcked: boolean = false;
+    private _isExpired: boolean = false;
     private _isAnswered: boolean = false;
     private _messaging: Messaging;
     private _sequence: number = 0;
     private _isStreaming: boolean = false;
+    private _issuedAt: Date;
+    private _expiresAt: Date;
+    private _expireTimer: Timer = null;
 
     constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
         this._messaging = messaging;
@@ -46,6 +51,17 @@ export class Message<T = {}> {
                 throw new CustomError('notImplemented', `contentType: ${originalMessage.properties.contentType} not yet supported.`);
         }
         this.headers = omit(originalMessage.properties.headers, '__mms');
+        if (originalMessage.properties.headers.__mms) {
+            if (originalMessage.properties.headers.__mms.iat > 0) {
+                this._issuedAt = new Date(originalMessage.properties.headers.__mms.iat);
+            }
+            if (originalMessage.properties.headers.__mms.eat > 0) {
+                this._expiresAt = new Date(originalMessage.properties.headers.__mms.eat);
+            }
+            if (this._issuedAt && this._expiresAt) {
+                this._autoExpire();
+            }
+        }
         if (!isNullOrUndefined(this.correlationId())) {
             this._isRequest = true;
         }
@@ -201,11 +217,22 @@ export class Message<T = {}> {
         }
     }
 
+    private _autoExpire() {
+        this._expireTimer = setTimeout(() => {
+            this._assertOpen();
+            this.ack();
+            this._isExpired = true;
+        }, this._expiresAt.getTime() - this._issuedAt.getTime());
+    }
+
     private async _replyReject(bodyOrError?: any | CustomError,
                                headers: MessageHeaders = {idRequest: this._originalMessage.properties.headers.idRequest},
                                options?: InternalReplyOptions) {
         if (this._isStreaming && options.isStream !== true) {
             throw new CustomError('You were previously streaming, to finish the message please use .end()');
+        }
+        if (this._isExpired) { // Silently ignore.
+            return;
         }
         if (this.isTask()) { // Tasks do not need to be replied just acked.
             this.ack();
@@ -257,6 +284,10 @@ export class Message<T = {}> {
                 headers: _headers
             }
         );
+        if (this._expireTimer !== null) {
+            clearTimeout(this._expireTimer);
+            this._expireTimer = null;
+        }
         this.ack();
         if (options.isEnd) {
             this._isAnswered = true;

@@ -27,6 +27,39 @@ describe('Messaging', () => {
         expect(response.body).to.deep.equal({hello: 'world'});
     });
 
+    it('should discard requests that expired', async function () {
+        this.timeout(120000);
+        const s = new Messaging('server');
+        const p = new Promise((resolve, reject) => {
+            s.handle('request1', (message) => {
+                try {
+                    expect((message as any)._isExpired).to.be.false;
+                } catch (e) {
+                    reject(e);
+                }
+                setTimeout(() => {
+                    try {
+                        expect((message as any)._isExpired).to.be.true;
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
+                }, 100);
+            });
+        });
+        const c = new Messaging('client');
+        await Promise.all([
+            c.connect(),
+            s.connect()
+        ]);
+        try {
+            await c.request('server', 'request1', {how: {are: 'you?'}}, undefined, {timeout: 50});
+        } catch (e) {
+            expect(e.codeString).to.equal('timeout');
+            await p;
+        }
+    });
+
     // it.only('should handle loads of requests', async function () {
     //     this.timeout(120000);
     //     const hep = require('heapdump');
@@ -277,31 +310,32 @@ describe('Messaging', () => {
         }
         expect(true, 'This line should not be reached.').to.be.false;
     });
-    it('should timeout getting a reply and not crash because the response arrived later', async () => {
-        const c = new Messaging('client');
-        const s = new Messaging('server');
-        const p = new Promise((resolve, reject) => {
-            s.handle('bla', (m: Message) => {
-                // Do not answer
-                setTimeout(() => {
-                    m.reply();
-                }, 100);
-            });
-            c.on('unhandledMessage', (m) => {
-                resolve();
-            })
-        });
-        await Promise.all(Messaging.instances.map(i => i.connect()));
-        try {
-            await c.request('server', 'bla', undefined, undefined, {timeout: 100});
-        } catch (e) {
-            expect(e).to.have.property('codeString');
-            expect(e.codeString).to.equal('timeout');
-            await p;
-            return;
-        }
-        expect(true, 'This line should not be reached.').to.be.false;
-    });
+    // This test can't work anymore as we introduced discard of timed out requests.
+    // it('should timeout getting a reply and not crash because the response arrived later', async () => {
+    //     const c = new Messaging('client');
+    //     const s = new Messaging('server');
+    //     const p = new Promise((resolve, reject) => {
+    //         s.handle('bla', (m: Message) => {
+    //             // Do not answer
+    //             setTimeout(() => {
+    //                 m.reply();
+    //             }, 100);
+    //         });
+    //         c.on('unhandledMessage', (m) => {
+    //             resolve();
+    //         })
+    //     });
+    //     await Promise.all(Messaging.instances.map(i => i.connect()));
+    //     try {
+    //         await c.request('server', 'bla', undefined, undefined, {timeout: 100});
+    //     } catch (e) {
+    //         expect(e).to.have.property('codeString');
+    //         expect(e.codeString).to.equal('timeout');
+    //         await p;
+    //         return;
+    //     }
+    //     expect(true, 'This line should not be reached.').to.be.false;
+    // });
     it('should not error when replying to a task', async () => {
         const c = new Messaging('client');
         const s = new Messaging('server');
