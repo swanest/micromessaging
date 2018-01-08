@@ -465,6 +465,8 @@ export class Messaging {
         const content = await Message.toBuffer(messageBody);
         this._assertNotClosed();
 
+        const _now = new Date().getTime();
+
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             content.buffer,
@@ -475,7 +477,12 @@ export class Messaging {
                 contentType: 'application/json',
                 contentEncoding: content.compression,
                 headers: {
-                    __mms: {route},
+                    __mms: {
+                        route,
+                        iat: _now, // Issued at in MS
+                        eat: _now + timeout // Expires at in MS
+                    },
+                    expiration: timeout,
                     idRequest,
                     ...remainingHeaders
                 }
@@ -522,6 +529,8 @@ export class Messaging {
         const content = await Message.toBuffer(messageBody);
         this._assertNotClosed();
 
+        const _now = new Date().getTime();
+
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             content.buffer,
@@ -532,7 +541,8 @@ export class Messaging {
                 headers: {
                     __mms: {
                         route,
-                        isTask: true
+                        isTask: true,
+                        iat: _now, // Issued at in MS
                     },
                     idRequest,
                     ...remainingHeaders
