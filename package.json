@@ -1,6 +1,9 @@
 {
   "name": "micromessaging",
   "version": "3.0.24",
+  "engines": {
+    "node": ">8"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/swanest/micromessaging"
