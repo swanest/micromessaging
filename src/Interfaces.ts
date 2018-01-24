@@ -2,8 +2,8 @@ import { Channel } from 'amqplib';
 import { Message } from './Message';
 import { Message as AMessage } from 'amqplib';
 import Deferred = When.Deferred;
-import Timer = NodeJS.Timer;
 import { PeerStat } from './PeerStatus';
+import Timer = NodeJS.Timer;
 
 export type ExchangeType = 'topic' | 'direct' | 'fanout';
 
@@ -63,6 +63,8 @@ export interface Route {
     noAck: boolean;
 
     queueName?: string;
+
+    _answerTimers?: Timer[];
 }
 
 export type RouteType = 'rpc' | 'pubSub' | 'rpcReply';

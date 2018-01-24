@@ -27,6 +27,34 @@ describe('Messaging', () => {
         expect(response.body).to.deep.equal({hello: 'world'});
     });
 
+    it('should raise a message.timeout event when a message was not answered within 100ms', async () => {
+        const s = new Messaging('server');
+        s.handle('request1', (message) => {
+        });
+        const c = new Messaging('client');
+        await Promise.all([
+            c.connect(),
+            s.connect()
+        ]);
+        c.request('server', 'request1',
+            {how: {are: 'you?'}},
+            undefined,
+            {timeout: 100}
+        ).catch(() => {
+        });
+        await new Promise((resolve, reject) => {
+            s.on('message.timeout', (e, m) => {
+                try {
+                    expect(e).to.be.instanceof(CustomError);
+                    expect(m).to.be.instanceof(Message);
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+    });
+
     it('should discard requests that expired', async function () {
         this.timeout(120000);
         const s = new Messaging('server');
