@@ -1,6 +1,6 @@
 import { Message as AMessage } from 'amqplib';
 import { isNullOrUndefined, isUndefined } from 'util';
-import { cloneDeep, defaults, omit } from 'lodash';
+import { cloneDeep, defaults, omit, pull } from 'lodash';
 import { CustomError } from 'sw-logger';
 import { MessageHeaders, Route } from './Interfaces';
 import { Messaging } from './Messaging';
@@ -39,7 +39,7 @@ export class Message<T = {}> {
                 body = Utils.uncompress(originalMessage.content).toString();
                 break;
             case 'deflate':
-                throw new CustomError('notImplemented', 'contentEncoding: deflate not yet supported.'); // TODO: implement
+                throw new CustomError('notImplemented', 'contentEncoding: deflate not yet supported.');
             default:
                 throw new CustomError('notImplemented', `contentEncoding: ${originalMessage.properties.contentEncoding} not yet supported.`);
         }
@@ -55,7 +55,9 @@ export class Message<T = {}> {
             if (originalMessage.properties.headers.__mms.iat > 0) {
                 this._issuedAt = new Date(originalMessage.properties.headers.__mms.iat);
             }
-            if (originalMessage.properties.headers.__mms.eat > 0) {
+            if (originalMessage.properties.headers.__mms.eat > 0 &&
+                originalMessage.properties.headers.__mms.eat > originalMessage.properties.headers.__mms.iat
+            ) {
                 this._expiresAt = new Date(originalMessage.properties.headers.__mms.eat);
             }
             if (this._issuedAt && this._expiresAt) {
@@ -218,11 +220,19 @@ export class Message<T = {}> {
     }
 
     private _autoExpire() {
+        const ttl = this._expiresAt.getTime() - this._issuedAt.getTime();
         this._expireTimer = setTimeout(() => {
             this._assertOpen();
             this.ack();
             this._isExpired = true;
-        }, this._expiresAt.getTime() - this._issuedAt.getTime());
+            if (!isNullOrUndefined(this._route._answerTimers)) {
+                pull(this._route._answerTimers, this._expireTimer);
+            }
+            this._messaging.getEventEmitter().emit('message.timeout', new CustomError(`Expected an answer within ${ttl}ms`), this);
+        }, ttl);
+        if (!isNullOrUndefined(this._route._answerTimers)) {
+            this._route._answerTimers.push(this._expireTimer);
+        }
     }
 
     private async _replyReject(bodyOrError?: any | CustomError,

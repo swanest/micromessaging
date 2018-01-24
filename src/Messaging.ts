@@ -309,16 +309,84 @@ export class Messaging {
         return this._uri;
     }
 
+    /**
+     * Raised each time the leader is changing
+     * @param {"leader"} event
+     * @param {(leader: Leader) => void} listener
+     * @returns {this}
+     */
     public on(event: 'leader', listener: (leader: Leader) => void): this;
+    /**
+     * The process receiving this message was not the master and became master
+     * @param {"leader.stepUp"} event
+     * @param {(leader: Leader) => void} listener
+     * @returns {this}
+     */
     public on(event: 'leader.stepUp', listener: (leader: Leader) => void): this;
+    /**
+     * The process receiving this message was previously the master process and is not enymore
+     * @param {"leader.stepDown"} event
+     * @param {(leader: Leader) => void} listener
+     * @returns {this}
+     */
     public on(event: 'leader.stepDown', listener: (leader: Leader) => void): this;
+    /**
+     * We detected that the event loop or the memory is becoming unresponsive, if QOS is enabled, messages flowing in will
+     * be dramatically reduced
+     * @param {"pressure"} event
+     * @param {(pressure: PressureEvent) => void} listener
+     * @returns {this}
+     */
     public on(event: 'pressure', listener: (pressure: PressureEvent) => void): this;
+    /**
+     * The memory or event loop pressure has been released
+     * @param {"pressureReleased"} event
+     * @param {(pressure: PressureEvent) => void} listener
+     * @returns {this}
+     */
     public on(event: 'pressureReleased', listener: (pressure: PressureEvent) => void): this;
+    /**
+     * The connection to rabbit has been closed
+     * @param {"closed"} event
+     * @param {() => void} listener
+     * @returns {this}
+     */
     public on(event: 'closed', listener: () => void): this;
+    /**
+     * Conncetion to rabbit successfully established
+     * @param {"connected"} event
+     * @param {() => void} listener
+     * @returns {this}
+     */
     public on(event: 'connected', listener: () => void): this;
+    /**
+     * Raised when receiving a message for which there is no handler
+     * @param {"unhandledMessage"} event
+     * @param {(error: CustomError, message: Message) => void} listener
+     * @returns {this}
+     */
     public on(event: 'unhandledMessage', listener: (error: CustomError, message: Message) => void): this;
+    /**
+     * An error happened
+     * @param {"error"} event
+     * @param {(error: CustomError) => void} listener
+     * @returns {this}
+     */
     public on(event: 'error', listener: (error: CustomError) => void): this;
+    /**
+     * The request or event you sent could not be delivered because the target queue doesn't exists
+     * @param {"unroutableMessage"} event
+     * @param {(error: CustomError) => void} listener
+     * @returns {this}
+     */
     public on(event: 'unroutableMessage', listener: (error: CustomError) => void): this;
+    /**
+     * Get notified of received requests where an answer was expected within a timeout for which no answer was given on time.
+     * @param {"message.timeout"} event
+     * @param {(message: Message) => void} listener
+     * @returns {this}
+     */
+    public on(event: 'message.timeout', listener: (error: CustomError, message: Message) => void): this;
 
     /**
      * Listen to a specific event. See {{OwnEvents}} to know what events exist.
@@ -467,6 +535,19 @@ export class Messaging {
 
         const _now = new Date().getTime();
 
+        const _headers: any = {
+            __mms: {
+                route,
+                iat: _now, // Issued at in MS
+            },
+            idRequest,
+            ...remainingHeaders
+        };
+        if (timeout > -1) {
+            _headers.expiration = timeout;
+            _headers.__mms.eat = _now + timeout; // Expires at in MS
+        }
+
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             content.buffer,
@@ -476,16 +557,7 @@ export class Messaging {
                 replyTo: this._replyQueue,
                 contentType: 'application/json',
                 contentEncoding: content.compression,
-                headers: {
-                    __mms: {
-                        route,
-                        iat: _now, // Issued at in MS
-                        eat: _now + timeout // Expires at in MS
-                    },
-                    expiration: timeout,
-                    idRequest,
-                    ...remainingHeaders
-                }
+                headers: _headers
             }
         );
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
@@ -603,7 +675,7 @@ export class Messaging {
             noAck: target.indexOf(Messaging.internalExchangePrefix) === 0,
             type: 'pubSub',
             handler: listener,
-            subjectToQuota: target.indexOf(Messaging.internalExchangePrefix) !== 0
+            subjectToQuota: target.indexOf(Messaging.internalExchangePrefix) !== 0,
         });
         this._logger.debug('Asserting route', routeAlias);
         await this._assertRoute(routeAlias);
@@ -646,7 +718,8 @@ export class Messaging {
             noAck: false,
             isDeclaring: false,
             type: 'rpc',
-            handler: listener
+            handler: listener,
+            _answerTimers: []
         });
         await this._assertRoute(routeAlias);
         return {
@@ -792,6 +865,11 @@ export class Messaging {
             }
         });
         await Promise.all(cancelConsuming); // Until we get acks for each, we can still receive messages.
+        this._routes.forEach(route => {
+            if (route._answerTimers instanceof Array) {
+                route._answerTimers.forEach(i => clearTimeout(i));
+            }
+        });
 
         if (deleteAllQueues) {
             const proms: Array<string> = [];

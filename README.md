@@ -3,7 +3,9 @@
 
 This module has been written for Swanest back-end. It eases the use of messaging between services.
 We use RabbitMQ as the underlying broker service.
-This library is using amqplib (0.9.1) as a core dependency but we do use some parameters that are only RabbitMQ related so it might not work with other AMQP 0.9.1 brokers. 
+This library is using amqplib (0.9.1) as a core dependency but we do use some parameters that are only RabbitMQ related so it might not work with other AMQP 0.9.1 brokers.
+
+**Supported version of NodeJS 8+** 
 
 ----------
 
