@@ -55,6 +55,45 @@ describe('Messaging', () => {
         });
     });
 
+    it('should discard messages that are in ready state for too long', async function () {
+        this.timeout(20000);
+        const s = new Messaging('server');
+        s.handle('auto-discard-request', (message) => {
+        });
+        const c = new Messaging('client');
+        await Promise.all([
+            c.connect(),
+            s.connect()
+        ]);
+        await s.close();
+        c.request('server', 'auto-discard-request',
+            {how: {are: 'you?'}},
+            undefined,
+            {timeout: 500}
+        ).catch((e) => {
+            expect(e.codeString).to.equal('timeout');
+            // Swallow error because it's not going to be answered on time
+        });
+
+
+        await new Promise(resolve => {
+            let met1 = false;
+            function report() {
+                c.getRequestsReport('server', 'auto-discard-request').then(r => {
+                    if (r.queueSize === 1) {
+                        met1 = true;
+                    }
+                    if (met1 && r.queueSize === 0) {
+                        return resolve();
+                    }
+                    setTimeout(report, 100);
+                });
+            }
+
+            report();
+        });
+    });
+
     it('should discard requests that expired', async function () {
         this.timeout(120000);
         const s = new Messaging('server');
