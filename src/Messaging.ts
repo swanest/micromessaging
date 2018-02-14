@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import * as logger from 'sw-logger';
 import { CustomError, Logger } from 'sw-logger';
 import * as amqp from 'amqplib';
-import { Channel, Connection, Message as AMessage } from 'amqplib';
+import { Channel, Connection, Message as AMessage, Options } from 'amqplib';
 import { isNull, isNullOrUndefined, isUndefined } from 'util';
 import { cloneDeep, omit, pull, find } from 'lodash';
 import {
@@ -543,22 +543,30 @@ export class Messaging {
             idRequest,
             ...remainingHeaders
         };
+
+        let _expiration = null;
         if (timeout > -1) {
-            _headers.expiration = timeout;
+            _expiration = timeout;
             _headers.__mms.eat = _now + timeout; // Expires at in MS
+        }
+
+        const _options: Options.Publish = {
+            correlationId,
+            mandatory: true,
+            replyTo: this._replyQueue,
+            contentType: 'application/json',
+            contentEncoding: content.compression,
+            headers: _headers
+        };
+
+        if (_expiration) {
+            _options.expiration = _expiration;
         }
 
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             content.buffer,
-            {
-                correlationId,
-                mandatory: true,
-                replyTo: this._replyQueue,
-                contentType: 'application/json',
-                contentEncoding: content.compression,
-                headers: _headers
-            }
+            _options
         );
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
             this._bufferFull = when.defer<void>();
