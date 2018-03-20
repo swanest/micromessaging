@@ -53,6 +53,7 @@ export interface Route {
     ongoingMessages?: number;
     maxParallelism?: number;
 
+    isCancelling?: any;
     cancel?: () => Promise<void>;
     consume?: () => Promise<void>;
     consumerWaiter?: any;

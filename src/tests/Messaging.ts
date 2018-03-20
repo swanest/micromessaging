@@ -8,6 +8,11 @@ process.on('unhandledRejection', (reason) => {
     console.error('unhandledRejection', reason);
 });
 describe('Messaging', () => {
+    it('expect to have a getURI method returning a string', async () => {
+        const c = new Messaging('client');
+        await c.connect();
+        expect(c.getURI()).to.be.a('string');
+    });
     it('should connect to Rabbit', async () => {
         const c = new Messaging('client');
         await c.connect();
@@ -78,6 +83,7 @@ describe('Messaging', () => {
 
         await new Promise(resolve => {
             let met1 = false;
+
             function report() {
                 c.getRequestsReport('server', 'auto-discard-request').then(r => {
                     if (r.queueSize === 1) {
@@ -261,22 +267,15 @@ describe('Messaging', () => {
         ]).then(() => c.task('server', 'task1', {how: {are: 'task1?'}})).catch(done);
     });
     it('should handle tasks with ack (interpreted as requests.)', async () => {
-        const s = new Messaging('server');
-        const p = new Promise((resolve, reject) => {
-            s.handle('task2', (message) => {
-                try {
-                    expect(message.isRequest(), 'Task should have been interpreted like a request.').to.be.true;
-                    message.reply();
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
-            });
-        });
         const c = new Messaging('client');
         await Promise.all(Messaging.instances.map(i => i.connect()));
-        await c.task('server', 'task2', {how: {are: 'task2?'}}, undefined, {noAck: false})
-        await p;
+        try {
+            await c.task('server', 'task2', {how: {are: 'task2?'}}, undefined, {noAck: false})
+        } catch (e) {
+            expect(1).to.equal(1);
+            return;
+        }
+        expect(1).to.equal(2, 'Expected task to throw');
     });
     it('should emit/receive', async function () {
         const s = new Messaging('server');
