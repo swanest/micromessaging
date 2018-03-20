@@ -5,9 +5,10 @@ import { CustomError, Logger } from 'sw-logger';
 import * as amqp from 'amqplib';
 import { Channel, Connection, Message as AMessage, Options } from 'amqplib';
 import { isNull, isNullOrUndefined, isUndefined } from 'util';
-import { cloneDeep, omit, pull, find } from 'lodash';
+import { cloneDeep, find, omit, pull } from 'lodash';
 import {
-    EmitOptions, Leader,
+    EmitOptions,
+    Leader,
     ListenerOptions,
     MessageHandler,
     MessageHeaders,
@@ -78,6 +79,7 @@ export class Messaging {
     private _logger: Logger;
     private _amqpLatency: AMQPLatency;
     private _bufferFull: Deferred<void>;
+    private _ongoingLeaderDiscovery: Promise<string>;
 
     /**
      * @param {string} _serviceName
@@ -278,6 +280,7 @@ export class Messaging {
 
         this._connection.on('close', () => {
             this._isConnected = false;
+            this._connection = null;
             if (this._eventEmitter.listenerCount('closed') === 0) {
                 this._eventEmitter.emit('error', new CustomError('There was no "closed" event listener but the connection has closed.'));
                 return;
@@ -290,16 +293,6 @@ export class Messaging {
         this._benchmarkLatency();
         this._eventEmitter.emit('connected');
         this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
-    }
-
-    private _assertParallelCron() {
-        if (new Date().getTime() - this._lastAssertParallel < 10000) {
-            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
-            return;
-        }
-        this._assertParallelBoundaries().catch(e => this.reportError(e)).then(() => {
-            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
-        });
     }
 
     /**
@@ -316,6 +309,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'leader', listener: (leader: Leader) => void): this;
+
     /**
      * The process receiving this message was not the master and became master
      * @param {"leader.stepUp"} event
@@ -323,6 +317,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'leader.stepUp', listener: (leader: Leader) => void): this;
+
     /**
      * The process receiving this message was previously the master process and is not enymore
      * @param {"leader.stepDown"} event
@@ -330,6 +325,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'leader.stepDown', listener: (leader: Leader) => void): this;
+
     /**
      * We detected that the event loop or the memory is becoming unresponsive, if QOS is enabled, messages flowing in will
      * be dramatically reduced
@@ -338,6 +334,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'pressure', listener: (pressure: PressureEvent) => void): this;
+
     /**
      * The memory or event loop pressure has been released
      * @param {"pressureReleased"} event
@@ -345,6 +342,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'pressureReleased', listener: (pressure: PressureEvent) => void): this;
+
     /**
      * The connection to rabbit has been closed
      * @param {"closed"} event
@@ -352,6 +350,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'closed', listener: () => void): this;
+
     /**
      * Conncetion to rabbit successfully established
      * @param {"connected"} event
@@ -359,6 +358,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'connected', listener: () => void): this;
+
     /**
      * Raised when receiving a message for which there is no handler
      * @param {"unhandledMessage"} event
@@ -366,6 +366,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'unhandledMessage', listener: (error: CustomError, message: Message) => void): this;
+
     /**
      * An error happened
      * @param {"error"} event
@@ -373,6 +374,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'error', listener: (error: CustomError) => void): this;
+
     /**
      * The request or event you sent could not be delivered because the target queue doesn't exists
      * @param {"unroutableMessage"} event
@@ -380,6 +382,7 @@ export class Messaging {
      * @returns {this}
      */
     public on(event: 'unroutableMessage', listener: (error: CustomError) => void): this;
+
     /**
      * Get notified of received requests where an answer was expected within a timeout for which no answer was given on time.
      * @param {"message.timeout"} event
@@ -483,6 +486,7 @@ export class Messaging {
      * @param messageBody The message to send
      * @param messageHeaders Additional headers. If idRequest is not provided, will auto-generate one.
      * @param streamHandler callback that will be called when the reply is a stream
+     * @param timeout how long max before giving up on getting an answer to the request
      * @returns The final response message to the request
      */
     public async request<T = {}>(targetService: string,
@@ -594,12 +598,7 @@ export class Messaging {
         }
 
         if (noAck === false) {
-            console.warn('Using task(..) to dispatch requests is deprecated. Use request(..) instead.');
-            return this.request(targetService,
-                route,
-                messageBody,
-                {idRequest, ...remainingHeaders},
-                {timeout});
+            throw new CustomError('Using task(..) to dispatch requests has been removed. Use request(..) instead.');
         }
 
         if (!isNullOrUndefined(this._bufferFull)) {
@@ -780,39 +779,6 @@ export class Messaging {
         }
     }
 
-    private _ongoingLeaderDiscovery: Promise<string>;
-
-    private async whoLeads(): Promise<string> {
-        if (!isNullOrUndefined(this._ongoingLeaderDiscovery)) {
-            return this._ongoingLeaderDiscovery;
-        }
-        return this._ongoingLeaderDiscovery = new Promise<string>(async (resolve, reject) => {
-            try {
-                const channel = await this._assertChannel('__leaderReply');
-                const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
-                await channel.consume(leaderReplyQueue, msg => {
-                    resolve(msg.content.toString());
-                    channel.close().catch(e => this.reportError(e));
-                }, {exclusive: true, noAck: true});
-
-                const queueName = `${this._internalExchangeName}.arbiter`;
-                this._outgoingChannel.sendToQueue(
-                    queueName,
-                    Buffer.from(''),
-                    {
-                        contentType: 'application/json',
-                        contentEncoding: undefined,
-                        replyTo: leaderReplyQueue,
-                        mandatory: true,
-                    }
-                );
-
-            } catch (e) {
-                reject(e);
-            }
-        });
-    }
-
     /**
      * Ask for the status of a service
      * @param targetService the service name for which a status report needs to be generated
@@ -918,6 +884,47 @@ export class Messaging {
             throw e;
         }
         this._eventEmitter.emit('error', e, m);
+    }
+
+    private _assertParallelCron() {
+        if (new Date().getTime() - this._lastAssertParallel < 10000) {
+            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
+            return;
+        }
+        this._assertParallelBoundaries().catch(e => this.reportError(e)).then(() => {
+            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
+        });
+    }
+
+    private async whoLeads(): Promise<string> {
+        if (!isNullOrUndefined(this._ongoingLeaderDiscovery)) {
+            return this._ongoingLeaderDiscovery;
+        }
+        return this._ongoingLeaderDiscovery = new Promise<string>(async (resolve, reject) => {
+            try {
+                const channel = await this._assertChannel('__leaderReply');
+                const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
+                await channel.consume(leaderReplyQueue, msg => {
+                    resolve(msg.content.toString());
+                    channel.close().catch(e => this.reportError(e));
+                }, {exclusive: true, noAck: true});
+
+                const queueName = `${this._internalExchangeName}.arbiter`;
+                this._outgoingChannel.sendToQueue(
+                    queueName,
+                    Buffer.from(''),
+                    {
+                        contentType: 'application/json',
+                        contentEncoding: undefined,
+                        replyTo: leaderReplyQueue,
+                        mandatory: true,
+                    }
+                );
+
+            } catch (e) {
+                reject(e);
+            }
+        });
     }
 
     private _benchmarkLatency() {
@@ -1067,9 +1074,9 @@ export class Messaging {
                 }
             }
         });
-        chan.on('close', () => {
-            // this._logger.log('Channel closed');
-        });
+        // chan.on('close', () => {
+        //     // this._logger.log('Channel closed');
+        // });
         return chan;
     }
 
@@ -1104,16 +1111,19 @@ export class Messaging {
             if (route.type === 'pubSub') {
                 await route.channel.unbindQueue(route.queueName, 'x.pubSub', `${route.target}.${route.route}`);
             }
+            if (!isNullOrUndefined(route.isCancelling)) {
+                await route.isCancelling;
+            }
             await route.channel.close();
 
             if (!this._isConnected) {
                 return;
             }
             // We do this separately because we could get PRECONDITION errors that we want to ignore.
-            const channelThatCanError = await this._connection.createChannel();
-            channelThatCanError.on('error', () => {
-            });
             try {
+                const channelThatCanError = await this._connection.createChannel();
+                channelThatCanError.on('error', () => {
+                });
                 await channelThatCanError.deleteQueue(route.queueName, {
                     ifEmpty: true,
                     ifUnused: true
@@ -1193,7 +1203,8 @@ export class Messaging {
                 if (!isNullOrUndefined(route.consumerTag) && route.isReady) {
                     const consumerTag = route.consumerTag;
                     route.consumerTag = null;
-                    await route.channel.cancel(consumerTag);
+                    await (route.isCancelling = route.channel.cancel(consumerTag));
+                    route.isCancelling = null;
                 }
             };
             route.consume = async () => {
