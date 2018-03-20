@@ -8,8 +8,9 @@ process.on('unhandledRejection', (reason) => {
     console.error('unhandledRejection', reason);
 });
 describe('Messaging', () => {
-    it('expect to have a getURI method returning a string', () => {
+    it('expect to have a getURI method returning a string', async () => {
         const c = new Messaging('client');
+        await c.connect();
         expect(c.getURI()).to.be.a('string');
     });
     it('should connect to Rabbit', async () => {
