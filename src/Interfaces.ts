@@ -1,23 +1,22 @@
 import { Channel } from 'amqplib';
 import { Message } from './Message';
-import { Message as AMessage } from 'amqplib';
-import Deferred = When.Deferred;
 import { PeerStat } from './PeerStatus';
 import Timer = NodeJS.Timer;
+import Deferred = When.Deferred;
 
 export type ExchangeType = 'topic' | 'direct' | 'fanout';
 
 export interface Exchange {
     name: string;
-    type: ExchangeType;
     options?: ExchangeOptions;
+    type: ExchangeType;
 }
 
 export interface ExchangeOptions {
+    alternateExchange: string;
+    autoDelete: boolean;
     durable: boolean;
     internal: boolean;
-    autoDelete: boolean;
-    alternateExchange: string;
 }
 
 export interface Queue {
@@ -26,14 +25,14 @@ export interface Queue {
 }
 
 export interface QueueOptions {
-    exclusive?: boolean;
-    durable?: boolean;
     autoDelete?: boolean;
-    messageTtl?: number;
-    expires?: number;
     deadLetterExchange?: string;
+    durable?: boolean;
+    exclusive?: boolean;
+    expires?: number;
     maxLength?: number;
     maxPriority?: number;
+    messageTtl?: number;
 }
 
 export interface MessageHandler {
@@ -41,31 +40,26 @@ export interface MessageHandler {
 }
 
 export interface Route {
-    route: string;
-    type: RouteType;
-    handler: MessageHandler;
-    options: ListenerOptions;
-    consumerTag?: string;
-    target?: string;
-    channel?: Channel;
-
-    subjectToQuota?: boolean;
-    ongoingMessages?: number;
-    maxParallelism?: number;
-
-    isCancelling?: any;
+    _answerTimers?: Timer[];
     cancel?: () => Promise<void>;
+    channel?: Channel;
     consume?: () => Promise<void>;
+    consumerTag?: string;
     consumerWaiter?: any;
-
+    handler: MessageHandler;
+    isCancelling?: any;
+    isClosed: boolean;
     isDeclaring: boolean;
     isReady: boolean;
-    isClosed: boolean;
+    maxParallelism?: number;
     noAck: boolean;
-
+    ongoingMessages?: number;
+    options: ListenerOptions;
     queueName?: string;
-
-    _answerTimers?: Timer[];
+    route: string;
+    subjectToQuota?: boolean;
+    target?: string;
+    type: RouteType;
 }
 
 export type RouteType = 'rpc' | 'pubSub' | 'rpcReply';
@@ -96,31 +90,30 @@ export interface RequestOptions {
 }
 
 export interface TaskOptions {
-    timeout?: number; // expressed in milliseconds. Timeout to transmit the message to rabbit
-    // expiresIn?: number; // expressed in milliseconds. Listeners to the event/message must read it within this interval
     // replyTimeout?: number; // express in milliseconds. Maximum time to receive an answer
     noAck?: boolean; // defaults to false. Used to say we don't expect to get an ACK for the sent task.
+    // expiresIn?: number; // expressed in milliseconds. Listeners to the event/message must read it within this interval
+    timeout?: number; // expressed in milliseconds. Timeout to transmit the message to rabbit
     // maxParallel?: number; // defaults to unlimited. Limits the number of parallel requests for this route at the same time
     // onlyMaster?: boolean; // defaults to false. Task will only arrive on the master node.
     // hasPriority?: boolean; // defaults to false.
 }
 
 export interface EmitOptions {
-    timeout?: number; // expressed in milliseconds. Timeout to transmit the message to rabbit
+    expiresAfter?: number; // deprecated, use expiresIn instead
     expiresIn?: number; // expressed in milliseconds. Listeners to the event/message must read it within this interval
-    private?: boolean; // .privately.emit(..) and .privately.emit(.., {private: true}) are the same.
     hasPriority?: boolean; // defaults to false.
     onlyIfConnected?: boolean;
-
-    expiresAfter?: number; // deprecated, use expiresIn instead
+    private?: boolean; // .privately.emit(..) and .privately.emit(.., {private: true}) are the same.
+    timeout?: number; // expressed in milliseconds. Timeout to transmit the message to rabbit
 }
 
 export interface ServiceOptions {
-    enableQos?: boolean; // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
-    qosThreshold?: number; // Default: 0.7. [0.01; 1]
     enableMemoryQos?: boolean; // Defaults: true. When activated, tries to keep memory < memorySoftLimit and enforces keeping memory < memoryHardLimit
-    memorySoftLimit?: number; // Defaults to half heap_size_limit. Expressed in MB
+    enableQos?: boolean; // Default: true. Quality of service will check event-loop delays to keep CPU usage under QosThreshold
     memoryHardLimit?: number; // Defaults to 3 fifth of heap_size_limit. Express in MB
+    memorySoftLimit?: number; // Defaults to half heap_size_limit. Expressed in MB
+    qosThreshold?: number; // Default: 0.7. [0.01; 1]
     readyOnConnected?: boolean;
     // parallelism?: ParallelismOptions;
 }
@@ -135,24 +128,31 @@ export interface ListenerOptions {
 }
 
 export interface RequestReport {
-    queueSize: number;
-    queueName: string;
     consumers: number;
+    queueName: string;
+    queueSize: number;
 }
 
 export interface ReturnHandler {
+    stat: () => Promise<RequestReport>;
     /**
      * Make that the listener stops consuming messages.
      */
-    stop: () => Promise<void>;
-    stat: () => Promise<RequestReport>;
+    stop: (options?: ReturnHandlerStopOpts) => Promise<void>;
+}
+
+/**
+ * @param deletedQueue defaults to true
+ */
+export interface ReturnHandlerStopOpts {
+    deleteQueue?: boolean;
 }
 
 export interface ReplyAwaiter {
-    streamHandler: (m: Message) => void;
-    deferred: Deferred<Message | Message[]>;
     accumulator?: Array<Message>;
+    deferred: Deferred<Message | Message[]>;
     sequence: number;
+    streamHandler: (m: Message) => void;
     timer: Timer;
 }
 
@@ -163,8 +163,8 @@ export interface MessageHeaders {
 }
 
 export interface Uptime {
-    startedAt: Date;
     elapsedMs: number;
+    startedAt: Date;
 }
 
 export interface Leader {
