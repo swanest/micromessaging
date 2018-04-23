@@ -17,7 +17,7 @@ import {
     ReplyAwaiter,
     RequestOptions,
     RequestReport,
-    ReturnHandler,
+    ReturnHandler, ReturnHandlerStopOpts,
     Route,
     ServiceOptions,
     Status,
@@ -1092,8 +1092,8 @@ export class Messaging {
         }
     }
 
-    private _stopListen(routeName: string): () => Promise<void> {
-        return async () => {
+    private _stopListen(routeName: string): (options?: ReturnHandlerStopOpts) => Promise<void> {
+        return async ({deleteQueue = true}: ReturnHandlerStopOpts = {}) => {
             if (!this._routes.has(routeName)) {
                 throw new CustomError('notFound', `The route ${routeName} does not exist.`);
             }
@@ -1120,6 +1120,9 @@ export class Messaging {
                 return;
             }
             // We do this separately because we could get PRECONDITION errors that we want to ignore.
+            if (!deleteQueue) {
+                return;
+            }
             try {
                 const channelThatCanError = await this._connection.createChannel();
                 channelThatCanError.on('error', () => {
