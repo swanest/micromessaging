@@ -154,6 +154,7 @@ export interface ReplyAwaiter {
     sequence: number;
     streamHandler: (m: Message) => void;
     timer: Timer;
+    timerMs: number;
 }
 
 export interface MessageHeaders {
