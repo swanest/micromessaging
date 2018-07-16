@@ -1,6 +1,5 @@
---compilers ts:ts-node/register
---recursive
+--require ts-node/register
+--full-trace
 --bail
---require mocha-clean
---reporter spec
+--exit
 -gc
