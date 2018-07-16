@@ -1,11 +1,16 @@
-import { OwnEvents } from './Events';
-import { EventEmitter } from 'events';
-import * as logger from 'sw-logger';
-import { CustomError, Logger } from 'sw-logger';
 import * as amqp from 'amqplib';
 import { Channel, Connection, Message as AMessage, Options } from 'amqplib';
-import { isNull, isNullOrUndefined, isUndefined } from 'util';
+import { EventEmitter } from 'events';
 import { cloneDeep, find, omit, pull } from 'lodash';
+import * as logger from 'sw-logger';
+import { CustomError, Logger } from 'sw-logger';
+import { URL } from 'url';
+import { isNull, isNullOrUndefined, isUndefined } from 'util';
+import { getHeapStatistics } from 'v8';
+import * as when from 'when';
+import { AMQPLatency } from './AMQPLatency';
+import { Election } from './Election';
+import { OwnEvents } from './Events';
 import {
     EmitOptions,
     Leader,
@@ -17,24 +22,20 @@ import {
     ReplyAwaiter,
     RequestOptions,
     RequestReport,
-    ReturnHandler, ReturnHandlerStopOpts,
+    ReturnHandler,
+    ReturnHandlerStopOpts,
     Route,
     ServiceOptions,
     Status,
     TaskOptions,
     Uptime,
 } from './Interfaces';
-import { getHeapStatistics } from 'v8';
 import { Message } from './Message';
-import { PressureEvent, Qos } from './Qos';
-import { Election } from './Election';
 import { PeerStatus } from './PeerStatus';
-import * as when from 'when';
-import { URL } from 'url';
-import { AMQPLatency } from './AMQPLatency';
+import { PressureEvent, Qos } from './Qos';
 import uuid = require('uuid');
-import Deferred = When.Deferred;
 import Timer = NodeJS.Timer;
+import Deferred = When.Deferred;
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 
@@ -42,44 +43,52 @@ const tracer = new logger.Logger({namespace: 'micromessaging'});
 
 export class Messaging {
 
-    public static internalExchangePrefix = 'internal';
     public static instances: Messaging[] = [];
+    public static internalExchangePrefix = 'internal';
     public latencyMS: number;
-    private _queues: Map<string, Queue> = new Map();
-    private _channels: Map<string, Channel> = new Map();
+    private _amqpLatency: AMQPLatency;
+    private _assertParallelChecker: Timer;
     private _awaitingReply: Map<string, ReplyAwaiter> = new Map();
-    private _routes: Map<string, Route> = new Map();
-    private _outgoingChannel: Channel;
-    private _serviceOptions: ServiceOptions;
-    private _eventEmitter: EventEmitter;
-    private _uri: string;
+    private _bufferFull: Deferred<void>;
+    private _channels: Map<string, Channel> = new Map();
     private _connection: Connection;
-    private _qos: Qos;
-    private _serviceId: string = uuid.v4();
     // private _serviceId: string = '' + (++ID);
     private _election: Election;
-    private _peerStatus: PeerStatus;
-    private _lastMessageDate: Date;
-    private _isReady: boolean = false;
-    private _startedAt: Date = new Date();
-    private _waitParallelismAsserted: Deferred<void>;
-    private _maxParallelism: number = -1;
-    private _lastAppliedParallelism = {
-        value: -1,
-        qSubjectToQuota: 0
-    };
-    private _assertParallelChecker: Timer;
-    private _lastAssertParallel: number = 0;
-    private _ongoingQAssertion: Deferred<void>[] = [];
-    private _replyQueueAssertionPromise: Promise<any> = null;
+    private _eventEmitter: EventEmitter;
+    private _isClosed: boolean = false;
+    private _isClosing: boolean = false;
     private _isConnected: boolean = false;
     private _isConnecting: boolean = false;
-    private _isClosing: boolean = false;
-    private _isClosed: boolean = false;
+    private _isReady: boolean = false;
+    private _lastAppliedParallelism = {
+        value: -1,
+        qSubjectToQuota: 0,
+    };
+    private _lastAssertParallel: number = 0;
+    private _lastMessageDate: Date;
     private _logger: Logger;
-    private _amqpLatency: AMQPLatency;
-    private _bufferFull: Deferred<void>;
+    private _maxParallelism: number = -1;
     private _ongoingLeaderDiscovery: Promise<string>;
+    private _ongoingQAssertion: Deferred<void>[] = [];
+    private _outgoingChannel: Channel;
+    private _peerStatus: PeerStatus;
+    private _qos: Qos;
+    private _queues: Map<string, Queue> = new Map();
+    private _replyQueueAssertionPromise: Promise<any> = null;
+    private _routes: Map<string, Route> = new Map();
+    private _serviceId: string = uuid.v4();
+    private _serviceOptions: ServiceOptions;
+    private _startedAt: Date = new Date();
+    private _uri: string;
+    private _waitParallelismAsserted: Deferred<void>;
+
+    private get _internalExchangeName() {
+        return `${Messaging.internalExchangePrefix}.${this._serviceName}`;
+    }
+
+    private get _replyQueue() {
+        return `q.replyQueue.${this._serviceName}.${this._serviceId}`;
+    }
 
     /**
      * @param {string} _serviceName
@@ -91,7 +100,7 @@ export class Messaging {
         qosThreshold = 0.7,
         enableMemoryQos = true,
         memorySoftLimit = Messaging.defaultMemoryLimit().soft,
-        memoryHardLimit = Messaging.defaultMemoryLimit().hard
+        memoryHardLimit = Messaging.defaultMemoryLimit().hard,
     }: ServiceOptions = {}) {
 
         this._logger = tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}`);
@@ -120,121 +129,126 @@ export class Messaging {
         Messaging.instances.push(this);
     }
 
-    private get _replyQueue() {
-        return `q.replyQueue.${this._serviceName}.${this._serviceId}`;
-    }
-
-    private get _internalExchangeName() {
-        return `${Messaging.internalExchangePrefix}.${this._serviceName}`;
-    }
-
     static defaultMemoryLimit() {
         const {heap_size_limit} = getHeapStatistics();
         return {
             soft: ~~(heap_size_limit / Math.pow(2, 20) * 0.65),
-            hard: ~~(heap_size_limit / Math.pow(2, 20) * 0.80)
+            hard: ~~(heap_size_limit / Math.pow(2, 20) * 0.80),
         };
     }
 
-    /**
-     * Get the last Date object where a message was received. Does not account for internal messages.
-     */
-    public getLastMessageDate(): Date {
-        return this._lastMessageDate;
+    public async assertLeader(noQueue = false): Promise<string> {
+        this._assertConnected();
+        let channel = await this._assertChannel('__arbiter', true);
+        const queueName = `${this._internalExchangeName}.arbiter`;
+        try {
+            if (noQueue === true) {
+                channel = await this._assertChannel('__arbiter', true);
+                await channel.assertQueue(queueName, {exclusive: true});
+                await channel.consume(queueName, msg => {
+                    if (!msg.properties.replyTo) {
+                        return;
+                    }
+                    this._outgoingChannel.sendToQueue(
+                        msg.properties.replyTo,
+                        Buffer.from(this.getServiceId()),
+                        {
+                            contentType: 'application/json',
+                            contentEncoding: undefined,
+                            mandatory: true,
+                        },
+                    );
+                }, {noAck: true, exclusive: true});
+                return this.getServiceId();
+            } else {
+                const report = await channel.checkQueue(queueName);
+                if (report.consumerCount > 0) {
+                    return this.whoLeads();
+                } else if (!noQueue) {
+                    return this.assertLeader(true);
+                }
+            }
+        } catch (e) {
+            if (!this.isConnected()) {
+                return '';
+            }
+            if (/RESOURCE_LOCKED/.test(e.message)) {
+                return this.whoLeads();
+            }
+            return this.assertLeader(true);
+        }
     }
 
     /**
-     * Returns the name of the service (name supplied while instantiating the service).
+     * Cleanly closes the connection to Rabbit and removes all handlers. Request queue is not deleted.
+     * @param deleteAllQueues Delete queues only if empty and not used.
+     * @param force Forces deletion (no check on ifEmpty & ifUnused).
+     * @returns Promise that resolves once the connection has been fully closed.
      */
-    public getServiceName() {
-        return this._serviceName;
-    }
-
-    /**
-     * Getter: options sat while instantiating the service with the corresponding default values.
-     */
-    public getServiceOptions() {
-        this._assertNotClosed();
-        return this._serviceOptions;
-    }
-
-    /**
-     * Access to the eventEmitter.
-     */
-    public getEventEmitter() {
-        return this._eventEmitter;
-    }
-
-    /**
-     * Get the default name used for declaring internal listen queues.
-     */
-    public getInternalExchangeName() {
-        this._assertNotClosed();
-        return this._internalExchangeName;
-    }
-
-    /**
-     * Get the UUID generated for this instance.
-     */
-    public getServiceId() {
-        return this._serviceId;
-    }
-
-    public async setQosMaxParallelism(value?: number) {
-        this._assertNotClosed();
-
-        this._maxParallelism = value;
-        this._logger.debug(`Desires to set parallelism to ${value}`);
-
-        if (!this._channels || this._channels.size === 0) {
+    public async close(deleteAllQueues: boolean = false, force: boolean = false) {
+        if (this._isClosed || this._isClosing) {
+            // Close is idempotent
             return;
         }
-        this._logger.debug(`Should wait? ${!isNullOrUndefined(this._waitParallelismAsserted)}`);
-        if (isNullOrUndefined(this._waitParallelismAsserted)) {
-            await this._assertParallelBoundaries();
-        } else {
-            await this._waitParallelismAsserted;
+        this._logger.debug('Closing connection');
+
+        clearTimeout(this._assertParallelChecker);
+
+        this._isClosing = true;
+        await Promise.all<any>(this._ongoingQAssertion.map(p => p.promise)); // Wait that assertions still ongoing are finished before closing.
+
+        if (this._qos) {
+            this._qos.disable();
         }
-    }
-
-    public getMaxParallelism() {
-        return this._maxParallelism;
-    }
-
-    public setMaxParallelism(value: number) {
-        this._assertNotClosed();
-
-        if (this._serviceOptions.enableQos) {
-            throw new CustomError('QOS is in charge you cant change the parallelism settings.');
+        if (this._peerStatus) {
+            this._peerStatus.stop();
+        }
+        if (this._election) {
+            this._election.stop();
         }
 
-        if (isNullOrUndefined(value)) {
-            throw new CustomError('Please supply a value.');
+        // Stop consuming
+        const cancelConsuming: any = [];
+        this._routes.forEach(route => {
+            if (route.cancel) {
+                cancelConsuming.push(route.cancel());
+            }
+        });
+        await Promise.all(cancelConsuming); // Until we get acks for each, we can still receive messages.
+        this._routes.forEach(route => {
+            if (route._answerTimers instanceof Array) {
+                route._answerTimers.forEach(i => clearTimeout(i));
+            }
+        });
+
+        if (deleteAllQueues) {
+            const proms: Array<string> = [];
+            this._queues.forEach(q => !q.options.autoDelete && !q.options.exclusive && proms.push(q.name)); // Only delete queue that won't auto-delete.
+            const opts = {
+                ifUnused: true,
+                ifEmpty: true,
+            };
+            if (force) {
+                opts.ifEmpty = false;
+                opts.ifUnused = false;
+            }
+            await Promise.all(proms.map(name => this._outgoingChannel.deleteQueue(name, opts)));
         }
 
-        this._maxParallelism = value;
-
-        if (!this._channels || this._channels.size === 0) {
-            return;
+        if (this._isConnected) {
+            this._routes.forEach(r => r.isClosed = true);
+            try {
+                await Promise.all([...this._channels].map(c => c[1].close()));
+            } catch (e) {
+            }
+            await this._connection.close();
+            this._isConnected = false;
         }
-        if (isNullOrUndefined(this._waitParallelismAsserted)) {
-            this._assertParallelBoundaries().catch(e => this.reportError(e));
-        }
-    }
-
-    public isReady(): boolean {
-        return this._isReady;
-    }
-
-    public isConnected(): boolean {
-        return this._isConnected;
-    }
-
-    public getUptime(): Uptime {
-        return {
-            startedAt: this._startedAt,
-            elapsedMs: new Date().getTime() - this._startedAt.getTime(),
-        };
+        this._isClosed = true;
+        this._eventEmitter.emit('closed');
+        this._logger.debug('Closing fully closed');
+        this._logger = null;
+        pull(Messaging.instances, this);
     }
 
     /**
@@ -296,10 +310,262 @@ export class Messaging {
     }
 
     /**
+     * Emit an event to a target. Target can be a service or just a commonly agreed namespace.
+     * @param {string} target
+     * @param {string} route
+     * @param messageBody
+     * @param messageHeaders
+     * @param {EmitOptions} options
+     * @returns {Promise<void>}
+     */
+    public async emit<T = {}>(target: string,
+                              route: string,
+                              messageBody?: T,
+                              messageHeaders: MessageHeaders = {},
+                              {onlyIfConnected = false}: EmitOptions = {}): Promise<void> {
+
+        this._assertNotClosed();
+        if (!this._isConnected && onlyIfConnected === true) {
+            return;
+        }
+
+        if (!this._isConnected) {
+            throw new CustomError('notConnected', 'No active connection to send the request.');
+        }
+
+        if (!isNullOrUndefined(messageHeaders.__mms)) {
+            throw new CustomError('__mms header property is reserved. Please use something else.');
+        }
+
+        if (!isNullOrUndefined(this._bufferFull)) {
+            await this._bufferFull.promise;
+        }
+
+        const _headers = cloneDeep(messageHeaders);
+        (_headers as any).__mms = {};
+
+        const content = await Message.toBuffer(messageBody);
+        this._assertNotClosed();
+
+        const ret = await this._outgoingChannel.publish(
+            `x.pubSub`,
+            `${target}.${route}`,
+            content.buffer,
+            {
+                contentType: 'application/json',
+                contentEncoding: content.compression,
+                headers: _headers,
+            },
+        );
+        this._logger.debug('Sent event', `x.pubSub`,
+            `${target}.${route}`,
+            content.buffer.toString(),
+            {
+                contentType: 'application/json',
+                contentEncoding: content.compression,
+                headers: _headers,
+            });
+
+        if (ret !== true && isNullOrUndefined(this._bufferFull)) {
+            this._bufferFull = when.defer<void>();
+        }
+    }
+
+    /**
+     * Access to the eventEmitter.
+     */
+    public getEventEmitter() {
+        return this._eventEmitter;
+    }
+
+    /**
+     * Get the default name used for declaring internal listen queues.
+     */
+    public getInternalExchangeName() {
+        this._assertNotClosed();
+        return this._internalExchangeName;
+    }
+
+    /**
+     * Get the last Date object where a message was received. Does not account for internal messages.
+     */
+    public getLastMessageDate(): Date {
+        return this._lastMessageDate;
+    }
+
+    public getMaxParallelism() {
+        return this._maxParallelism;
+    }
+
+    /**
+     * Returns a report about the request queue of a target service
+     * @param serviceName name of the service to get the report about
+     * @param route name of the route for which the report needs to be generated.
+     * @returns {Promise<void>}
+     */
+    public getRequestsReport(serviceName: string, route: string) {
+        // Create a dedicated channel so that it can fail alone without annoying other channels
+        return this._getQueueReport({queueName: `q.requests.${serviceName}.${route}`});
+    }
+
+    /**
+     * Get the UUID generated for this instance.
+     */
+    public getServiceId() {
+        return this._serviceId;
+    }
+
+    /**
+     * Returns the name of the service (name supplied while instantiating the service).
+     */
+    public getServiceName() {
+        return this._serviceName;
+    }
+
+    /**
+     * Getter: options sat while instantiating the service with the corresponding default values.
+     */
+    public getServiceOptions() {
+        this._assertNotClosed();
+        return this._serviceOptions;
+    }
+
+    /**
+     * Ask for the status of a service
+     * @param targetService the service name for which a status report needs to be generated
+     */
+    public async getStatus(targetService: string = this._serviceName): Promise<Status> {
+        this._assertConnected();
+        const members = await this._peerStatus.getStatus(targetService);
+        const hasMaster = members.some(m => !isNullOrUndefined(m.leaderId));
+        const hasReadyMembers = members.some(m => !isNullOrUndefined(m.isReady));
+        return {
+            hasMaster,
+            hasReadyMembers,
+            members: members,
+        };
+    }
+
+    /**
      * Retrieve the URI to which the instance is connected. undefined when not connected yet.
      */
     public getURI() {
         return this._uri;
+    }
+
+    public getUptime(): Uptime {
+        return {
+            startedAt: this._startedAt,
+            elapsedMs: new Date().getTime() - this._startedAt.getTime(),
+        };
+    }
+
+    /**
+     *
+     * @param {string} route
+     * @param {MessageHandler} listener
+     * @param {ListenerOptions} options
+     */
+    public async handle(route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler> {
+        this._assertNotClosed();
+        const routeAlias = 'handle.' + route;
+        if (!isUndefined(this._routes.get(routeAlias))) {
+            throw new CustomError(`A handler for ${route} is already defined.`);
+        }
+        this._routes.set(routeAlias, {
+            options,
+            route,
+            isClosed: false,
+            isReady: false,
+            noAck: false,
+            isDeclaring: false,
+            type: 'rpc',
+            handler: listener,
+            _answerTimers: [],
+        });
+        await this._assertRoute(routeAlias);
+        return {
+            stop: this._stopListen(routeAlias),
+            stat: () => {
+                return this._getQueueReport({routeAlias: routeAlias});
+            },
+        };
+    }
+
+    public isConnected(): boolean {
+        return this._isConnected;
+    }
+
+    public isReady(): boolean {
+        return this._isReady;
+    }
+
+    /**
+     * PUB/SUB creates an event listener
+     * @param target The target on which you want to listen by default it's the serviceName but it can be the name of a commonly agreed exchange
+     * @param route The route on which to listen
+     * @param listener The callback function that will be called each time a message arrives on that route
+     * @return resolves when listeners are fully asserted and returns an object which has a "stop" function.
+     */
+    public async listen(target: string, route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler>;
+
+    /**
+     * PUB/SUB creates an event listener
+     * @param route The route on which to listen
+     * @param listener The callback function that will be called each time a message arrives on that route
+     * @return resolves when listeners are fully asserted and returns an object which has a "stop" function.
+     */
+    public async listen(route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler>;
+
+    /**
+     * See the docs of the two other overloaded methods. This is the implementation of them.
+     */
+    public async listen(routeOrTarget: string, routeOrListener: any, listenerOrOptions?: any, opt?: ListenerOptions): Promise<ReturnHandler> {
+        this._assertNotClosed();
+        let target = routeOrTarget,
+            route = routeOrListener,
+            options = opt,
+            listener = listenerOrOptions;
+        if (typeof routeOrListener === 'function') {
+            listener = routeOrListener;
+            target = this._serviceName;
+            route = routeOrTarget;
+            options = listenerOrOptions;
+        }
+
+        const routeAlias = `listen.${target}.${route}`;
+
+        if (!isUndefined(this._routes.get(routeAlias))) {
+            throw new CustomError(`A listener for ${isNull(target) ? '' : target + ':'}${route} is already defined.`);
+        }
+        this._routes.set(routeAlias, {
+            options: options, // Not implemented yet.
+            route,
+            target,
+            isClosed: false,
+            isReady: false,
+            isDeclaring: false,
+            noAck: target.indexOf(Messaging.internalExchangePrefix) === 0,
+            type: 'pubSub',
+            handler: listener,
+            subjectToQuota: target.indexOf(Messaging.internalExchangePrefix) !== 0,
+        });
+        this._logger.debug('Asserting route', routeAlias);
+        await this._assertRoute(routeAlias);
+        return {
+            stop: this._stopListen(routeAlias),
+            stat: () => {
+                return this._getQueueReport({routeAlias: routeAlias});
+            },
+        };
+    }
+
+    /**
+     * Like task without ack
+     */
+    public async notify(...args: any[]): Promise<void> {
+        this._assertNotClosed();
+        return this.emit.call(this, args);
     }
 
     /**
@@ -414,66 +680,15 @@ export class Messaging {
         return this;
     }
 
-    /**
-     * Emit an event to a target. Target can be a service or just a commonly agreed namespace.
-     * @param {string} target
-     * @param {string} route
-     * @param messageBody
-     * @param messageHeaders
-     * @param {EmitOptions} options
-     * @returns {Promise<void>}
-     */
-    public async emit<T = {}>(target: string,
-                              route: string,
-                              messageBody?: T,
-                              messageHeaders: MessageHeaders = {},
-                              {onlyIfConnected = false}: EmitOptions = {}): Promise<void> {
-
-        this._assertNotClosed();
-        if (!this._isConnected && onlyIfConnected === true) {
+    public reportError(e: Error | CustomError, m?: Message) {
+        if (this._isClosing || this._isClosed) {
+            // Swallow errors while closing.
             return;
         }
-
-        if (!this._isConnected) {
-            throw new CustomError('notConnected', 'No active connection to send the request.');
+        if (!this._eventEmitter) {
+            throw e;
         }
-
-        if (!isNullOrUndefined(messageHeaders.__mms)) {
-            throw new CustomError('__mms header property is reserved. Please use something else.');
-        }
-
-        if (!isNullOrUndefined(this._bufferFull)) {
-            await this._bufferFull.promise;
-        }
-
-        const _headers = cloneDeep(messageHeaders);
-        (_headers as any).__mms = {};
-
-        const content = await Message.toBuffer(messageBody);
-        this._assertNotClosed();
-
-        const ret = await this._outgoingChannel.publish(
-            `x.pubSub`,
-            `${target}.${route}`,
-            content.buffer,
-            {
-                contentType: 'application/json',
-                contentEncoding: content.compression,
-                headers: _headers
-            }
-        );
-        this._logger.debug('Sent event', `x.pubSub`,
-            `${target}.${route}`,
-            content.buffer.toString(),
-            {
-                contentType: 'application/json',
-                contentEncoding: content.compression,
-                headers: _headers
-            });
-
-        if (ret !== true && isNullOrUndefined(this._bufferFull)) {
-            this._bufferFull = when.defer<void>();
-        }
+        this._eventEmitter.emit('error', e, m);
     }
 
     /**
@@ -517,7 +732,8 @@ export class Messaging {
             deferred: def,
             streamHandler: streamHandler,
             sequence: 0,
-            timer: null
+            timer: null,
+            timerMs: timeout,
         };
 
         if (timeout > -1) {
@@ -545,7 +761,7 @@ export class Messaging {
                 iat: _now, // Issued at in MS
             },
             idRequest,
-            ...remainingHeaders
+            ...remainingHeaders,
         };
 
         let _expiration = null;
@@ -560,7 +776,7 @@ export class Messaging {
             replyTo: this._replyQueue,
             contentType: 'application/json',
             contentEncoding: content.compression,
-            headers: _headers
+            headers: _headers,
         };
 
         if (_expiration) {
@@ -570,12 +786,50 @@ export class Messaging {
         const ret = await this._outgoingChannel.sendToQueue(
             `q.requests.${targetService}.${route}`,
             content.buffer,
-            _options
+            _options,
         );
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
             this._bufferFull = when.defer<void>();
         }
         return def.promise;
+    }
+
+    public setMaxParallelism(value: number) {
+        this._assertNotClosed();
+
+        if (this._serviceOptions.enableQos) {
+            throw new CustomError('QOS is in charge you cant change the parallelism settings.');
+        }
+
+        if (isNullOrUndefined(value)) {
+            throw new CustomError('Please supply a value.');
+        }
+
+        this._maxParallelism = value;
+
+        if (!this._channels || this._channels.size === 0) {
+            return;
+        }
+        if (isNullOrUndefined(this._waitParallelismAsserted)) {
+            this._assertParallelBoundaries().catch(e => this.reportError(e));
+        }
+    }
+
+    public async setQosMaxParallelism(value?: number) {
+        this._assertNotClosed();
+
+        this._maxParallelism = value;
+        this._logger.debug(`Desires to set parallelism to ${value}`);
+
+        if (!this._channels || this._channels.size === 0) {
+            return;
+        }
+        this._logger.debug(`Should wait? ${!isNullOrUndefined(this._waitParallelismAsserted)}`);
+        if (isNullOrUndefined(this._waitParallelismAsserted)) {
+            await this._assertParallelBoundaries();
+        } else {
+            await this._waitParallelismAsserted;
+        }
     }
 
     /**
@@ -624,9 +878,9 @@ export class Messaging {
                         iat: _now, // Issued at in MS
                     },
                     idRequest,
-                    ...remainingHeaders
-                }
-            }
+                    ...remainingHeaders,
+                },
+            },
         );
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
             this._bufferFull = when.defer<void>();
@@ -634,320 +888,32 @@ export class Messaging {
         return;
     }
 
-    /**
-     * PUB/SUB creates an event listener
-     * @param target The target on which you want to listen by default it's the serviceName but it can be the name of a commonly agreed exchange
-     * @param route The route on which to listen
-     * @param listener The callback function that will be called each time a message arrives on that route
-     * @return resolves when listeners are fully asserted and returns an object which has a "stop" function.
-     */
-    public async listen(target: string, route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler>;
-
-    /**
-     * PUB/SUB creates an event listener
-     * @param route The route on which to listen
-     * @param listener The callback function that will be called each time a message arrives on that route
-     * @return resolves when listeners are fully asserted and returns an object which has a "stop" function.
-     */
-    public async listen(route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler>;
-
-    /**
-     * See the docs of the two other overloaded methods. This is the implementation of them.
-     */
-    public async listen(routeOrTarget: string, routeOrListener: any, listenerOrOptions?: any, opt?: ListenerOptions): Promise<ReturnHandler> {
-        this._assertNotClosed();
-        let target = routeOrTarget,
-            route = routeOrListener,
-            options = opt,
-            listener = listenerOrOptions;
-        if (typeof routeOrListener === 'function') {
-            listener = routeOrListener;
-            target = this._serviceName;
-            route = routeOrTarget;
-            options = listenerOrOptions;
+    private async _assertChannel(name: string, swallowErrors: boolean = false): Promise<Channel> {
+        if (this._channels.has(name)) {
+            return this._channels.get(name);
         }
-
-        const routeAlias = `listen.${target}.${route}`;
-
-        if (!isUndefined(this._routes.get(routeAlias))) {
-            throw new CustomError(`A listener for ${isNull(target) ? '' : target + ':'}${route} is already defined.`);
-        }
-        this._routes.set(routeAlias, {
-            options: options, // Not implemented yet.
-            route,
-            target,
-            isClosed: false,
-            isReady: false,
-            isDeclaring: false,
-            noAck: target.indexOf(Messaging.internalExchangePrefix) === 0,
-            type: 'pubSub',
-            handler: listener,
-            subjectToQuota: target.indexOf(Messaging.internalExchangePrefix) !== 0,
+        const newChan = await this._createChannel();
+        newChan.on('close', () => {
+            this._channels.delete(name);
         });
-        this._logger.debug('Asserting route', routeAlias);
-        await this._assertRoute(routeAlias);
-        return {
-            stop: this._stopListen(routeAlias),
-            stat: () => {
-                return this._getQueueReport({routeAlias: routeAlias});
-            }
-        };
-    }
-
-    /**
-     * Returns a report about the request queue of a target service
-     * @param serviceName name of the service to get the report about
-     * @param route name of the route for which the report needs to be generated.
-     * @returns {Promise<void>}
-     */
-    public getRequestsReport(serviceName: string, route: string) {
-        // Create a dedicated channel so that it can fail alone without annoying other channels
-        return this._getQueueReport({queueName: `q.requests.${serviceName}.${route}`});
-    }
-
-    /**
-     *
-     * @param {string} route
-     * @param {MessageHandler} listener
-     * @param {ListenerOptions} options
-     */
-    public async handle(route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler> {
-        this._assertNotClosed();
-        const routeAlias = 'handle.' + route;
-        if (!isUndefined(this._routes.get(routeAlias))) {
-            throw new CustomError(`A handler for ${route} is already defined.`);
+        if (swallowErrors) {
+            newChan.removeAllListeners('error');
+            newChan.on('error', () => {
+            });
         }
-        this._routes.set(routeAlias, {
-            options,
-            route,
-            isClosed: false,
-            isReady: false,
-            noAck: false,
-            isDeclaring: false,
-            type: 'rpc',
-            handler: listener,
-            _answerTimers: []
-        });
-        await this._assertRoute(routeAlias);
-        return {
-            stop: this._stopListen(routeAlias),
-            stat: () => {
-                return this._getQueueReport({routeAlias: routeAlias});
-            }
-        };
+        this._channels.set(name, newChan);
+        return newChan;
     }
 
-    public async assertLeader(noQueue = false): Promise<string> {
-        this._assertConnected();
-        let channel = await this._assertChannel('__arbiter', true);
-        const queueName = `${this._internalExchangeName}.arbiter`;
-        try {
-            if (noQueue === true) {
-                channel = await this._assertChannel('__arbiter', true);
-                await channel.assertQueue(queueName, {exclusive: true});
-                await channel.consume(queueName, msg => {
-                    if (!msg.properties.replyTo) {
-                        return;
-                    }
-                    this._outgoingChannel.sendToQueue(
-                        msg.properties.replyTo,
-                        Buffer.from(this.getServiceId()),
-                        {
-                            contentType: 'application/json',
-                            contentEncoding: undefined,
-                            mandatory: true,
-                        }
-                    );
-                }, {noAck: true, exclusive: true});
-                return this.getServiceId();
-            } else {
-                const report = await channel.checkQueue(queueName);
-                if (report.consumerCount > 0) {
-                    return this.whoLeads();
-                } else if (!noQueue) {
-                    return this.assertLeader(true);
-                }
-            }
-        } catch (e) {
-            if (!this.isConnected()) {
-                return '';
-            }
-            if (/RESOURCE_LOCKED/.test(e.message)) {
-                return this.whoLeads();
-            }
-            return this.assertLeader(true);
+    private _assertConnected() {
+        if (this._isConnected !== true) {
+            throw new CustomError('This action requires to be connected.');
         }
     }
 
-    /**
-     * Ask for the status of a service
-     * @param targetService the service name for which a status report needs to be generated
-     */
-    public async getStatus(targetService: string = this._serviceName): Promise<Status> {
-        this._assertConnected();
-        const members = await this._peerStatus.getStatus(targetService);
-        const hasMaster = members.some(m => !isNullOrUndefined(m.leaderId));
-        const hasReadyMembers = members.some(m => !isNullOrUndefined(m.isReady));
-        return {
-            hasMaster,
-            hasReadyMembers,
-            members: members,
-        }
-    }
-
-    /**
-     * Like task without ack
-     */
-    public async notify(...args: any[]): Promise<void> {
-        this._assertNotClosed();
-        return this.emit.call(this, args);
-    }
-
-    /**
-     * Cleanly closes the connection to Rabbit and removes all handlers. Request queue is not deleted.
-     * @param deleteAllQueues Delete queues only if empty and not used.
-     * @param force Forces deletion (no check on ifEmpty & ifUnused).
-     * @returns Promise that resolves once the connection has been fully closed.
-     */
-    public async close(deleteAllQueues: boolean = false, force: boolean = false) {
-        if (this._isClosed || this._isClosing) {
-            // Close is idempotent
-            return;
-        }
-        this._logger.debug('Closing connection');
-
-        clearTimeout(this._assertParallelChecker);
-
-        this._isClosing = true;
-        await Promise.all<any>(this._ongoingQAssertion.map(p => p.promise)); // Wait that assertions still ongoing are finished before closing.
-
-        if (this._qos) {
-            this._qos.disable();
-        }
-        if (this._peerStatus) {
-            this._peerStatus.stop();
-        }
-        if (this._election) {
-            this._election.stop();
-        }
-
-        // Stop consuming
-        const cancelConsuming: any = [];
-        this._routes.forEach(route => {
-            if (route.cancel) {
-                cancelConsuming.push(route.cancel());
-            }
-        });
-        await Promise.all(cancelConsuming); // Until we get acks for each, we can still receive messages.
-        this._routes.forEach(route => {
-            if (route._answerTimers instanceof Array) {
-                route._answerTimers.forEach(i => clearTimeout(i));
-            }
-        });
-
-        if (deleteAllQueues) {
-            const proms: Array<string> = [];
-            this._queues.forEach(q => !q.options.autoDelete && !q.options.exclusive && proms.push(q.name)); // Only delete queue that won't auto-delete.
-            const opts = {
-                ifUnused: true,
-                ifEmpty: true
-            };
-            if (force) {
-                opts.ifEmpty = false;
-                opts.ifUnused = false;
-            }
-            await Promise.all(proms.map(name => this._outgoingChannel.deleteQueue(name, opts)));
-        }
-
-        if (this._isConnected) {
-            this._routes.forEach(r => r.isClosed = true);
-            try {
-                await Promise.all([...this._channels].map(c => c[1].close()));
-            } catch (e) {
-            }
-            await this._connection.close();
-            this._isConnected = false;
-        }
-        this._isClosed = true;
-        this._eventEmitter.emit('closed');
-        this._logger.debug('Closing fully closed');
-        this._logger = null;
-        pull(Messaging.instances, this);
-    }
-
-    public reportError(e: Error | CustomError, m?: Message) {
-        if (this._isClosing || this._isClosed) {
-            // Swallow errors while closing.
-            return;
-        }
-        if (!this._eventEmitter) {
-            throw e;
-        }
-        this._eventEmitter.emit('error', e, m);
-    }
-
-    private _assertParallelCron() {
-        if (new Date().getTime() - this._lastAssertParallel < 10000) {
-            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
-            return;
-        }
-        this._assertParallelBoundaries().catch(e => this.reportError(e)).then(() => {
-            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
-        });
-    }
-
-    private async whoLeads(): Promise<string> {
-        if (!isNullOrUndefined(this._ongoingLeaderDiscovery)) {
-            return this._ongoingLeaderDiscovery;
-        }
-        return this._ongoingLeaderDiscovery = new Promise<string>(async (resolve, reject) => {
-            try {
-                const channel = await this._assertChannel('__leaderReply');
-                const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
-                await channel.consume(leaderReplyQueue, msg => {
-                    resolve(msg.content.toString());
-                    channel.close().catch(e => this.reportError(e));
-                }, {exclusive: true, noAck: true});
-
-                const queueName = `${this._internalExchangeName}.arbiter`;
-                this._outgoingChannel.sendToQueue(
-                    queueName,
-                    Buffer.from(''),
-                    {
-                        contentType: 'application/json',
-                        contentEncoding: undefined,
-                        replyTo: leaderReplyQueue,
-                        mandatory: true,
-                    }
-                );
-
-            } catch (e) {
-                reject(e);
-            }
-        });
-    }
-
-    private _benchmarkLatency() {
-        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
-    }
-
-    private async _getQueueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
-        if (isNullOrUndefined(queueName)) {
-            queueName = this._routes.get(routeAlias).queueName;
-        }
-        // Create a dedicated channel so that it can fail alone without annoying other channels
-        const channel = await this._assertChannel('__requestReport', true);
-        try {
-            const report = await channel.checkQueue(queueName);
-            return {
-                queueSize: report.messageCount,
-                queueName: report.queue,
-                consumers: report.consumerCount
-            };
-        } catch (e) {
-            if (/NOT_FOUND/.test(e.message)) {
-                throw new CustomError('notFound', `Queue named ${queueName} doesnt exist.`);
-            }
+    private _assertNotClosed() {
+        if (this._isClosed === true) {
+            throw new CustomError('This instance is not usable anymore as it has been closed. Please create a new one.');
         }
     }
 
@@ -1020,7 +986,7 @@ export class Messaging {
         this._waitParallelismAsserted = when.defer<void>();
         const cacheAppliedParams = {
             value: this._maxParallelism,
-            qSubjectToQuota: countQSubjectToQuota
+            qSubjectToQuota: countQSubjectToQuota,
         };
 
         await Promise.all(prefetchProms);
@@ -1038,127 +1004,38 @@ export class Messaging {
         }
     }
 
-    private async _createChannel(): Promise<Channel> {
-        this._assertConnected();
-        const chan = await this._connection.createChannel();
-        chan.on('error', e => {
-            const f = find(Array.from(this._routes.values()), {channel: chan});
-            if (!(e instanceof CustomError)) {
-                e = new CustomError(e);
-            }
-            if (f) {
-                this._logger.debug('Attached route to arising error', f);
-                if (!e.info) {
-                    e.info = {};
-                }
-                e.info._affectedRoute = omit(f, 'channel');
-                f.isClosed = true;
-            } else {
-                this._logger.debug('Did not find route attached to this channel');
-            }
-            this.reportError(e);
-        });
-        chan.on('drain', () => this._logger.debug('Got a drain event on a channel.'));
-        chan.on('return', msg => {
-            const e = new CustomError('unroutable', `No route to "${msg.fields.routingKey}". Originally sent message attached.`);
-            e.info = isNullOrUndefined(e.info) ? {} : e.info;
-            e.info.sentMessage = msg;
-            if (this._awaitingReply.has(msg.properties.correlationId)) {
-                this._awaitingReply.get(msg.properties.correlationId).deferred.reject(e);
-                this.unregisterResponseAwait(msg.properties.correlationId);
-            } else {
-                if (this._eventEmitter.listenerCount('unroutableMessage') > 0) {
-                    this._eventEmitter.emit('unroutableMessage', e);
-                } else {
-                    throw e;
-                }
-            }
-        });
-        // chan.on('close', () => {
-        //     // this._logger.log('Channel closed');
-        // });
-        return chan;
-    }
-
-    private _assertNotClosed() {
-        if (this._isClosed === true) {
-            throw new CustomError('This instance is not usable anymore as it has been closed. Please create a new one.');
+    private _assertParallelCron() {
+        if (new Date().getTime() - this._lastAssertParallel < 10000) {
+            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
+            return;
         }
-    }
-
-    private _assertConnected() {
-        if (this._isConnected !== true) {
-            throw new CustomError('This action requires to be connected.');
-        }
-    }
-
-    private _stopListen(routeName: string): (options?: ReturnHandlerStopOpts) => Promise<void> {
-        return async ({deleteQueue = true}: ReturnHandlerStopOpts = {}) => {
-            if (!this._routes.has(routeName)) {
-                throw new CustomError('notFound', `The route ${routeName} does not exist.`);
-            }
-            this._logger.log(`Stop handling ${routeName}`);
-            const route = this._routes.get(routeName);
-            route.isClosed = true;
-            route.isReady = false;
-            this._channels.delete(routeName);
-            this._routes.delete(routeName);
-            this._queues.delete(route.queueName);
-
-            if (route.isReady) {
-                await route.cancel();
-            }
-            if (route.type === 'pubSub') {
-                await route.channel.unbindQueue(route.queueName, 'x.pubSub', `${route.target}.${route.route}`);
-            }
-            if (!isNullOrUndefined(route.isCancelling)) {
-                await route.isCancelling;
-            }
-            await route.channel.close();
-
-            if (!this._isConnected) {
-                return;
-            }
-            // We do this separately because we could get PRECONDITION errors that we want to ignore.
-            if (!deleteQueue) {
-                return;
-            }
-            try {
-                const channelThatCanError = await this._connection.createChannel();
-                channelThatCanError.on('error', () => {
-                });
-                await channelThatCanError.deleteQueue(route.queueName, {
-                    ifEmpty: true,
-                    ifUnused: true
-                });
-                await channelThatCanError.close();
-            } catch (e) {
-                if (!this._isConnected) {
-                    return;
-                }
-                if (!/PRECONDITION/.test(e.message)) {
-                    this.reportError(new CustomError('Error while stop listening', e)); // Let's not swallow too much, just what we are sure we need to.
-                }
-                // At this stage the channel is closed so no need to close it again.
-            }
-        };
-    }
-
-    private async _assertChannel(name: string, swallowErrors: boolean = false): Promise<Channel> {
-        if (this._channels.has(name)) {
-            return this._channels.get(name);
-        }
-        const newChan = await this._createChannel();
-        newChan.on('close', () => {
-            this._channels.delete(name);
+        this._assertParallelBoundaries().catch(e => this.reportError(e)).then(() => {
+            this._assertParallelChecker = setTimeout(() => this._assertParallelCron(), 60 * 1000);
         });
-        if (swallowErrors) {
-            newChan.removeAllListeners('error');
-            newChan.on('error', () => {
+    }
+
+    /**
+     * Asserts the replyQueue into existence. Idempotent.
+     */
+    private async _assertReplyQueue() {
+        if (!this._routes.has('replyQueue')) {
+            this._routes.set('replyQueue', {
+                route: 'replyQueue',
+                type: 'rpcReply',
+                handler: null,
+                options: null,
+                isClosed: false,
+                noAck: true,
+                isReady: false,
+                isDeclaring: false,
+                subjectToQuota: false,
             });
+            await (this._replyQueueAssertionPromise = this._assertRoute('replyQueue'));
+            this._replyQueueAssertionPromise = null;
         }
-        this._channels.set(name, newChan);
-        return newChan;
+        if (!isNullOrUndefined(this._replyQueueAssertionPromise)) {
+            await this._replyQueueAssertionPromise;
+        }
     }
 
     /**
@@ -1215,7 +1092,7 @@ export class Messaging {
                     return;
                 }
                 if (!route.isReady) {
-                    throw new CustomError('Cant consume if the queue is not asserted yet.')
+                    throw new CustomError('Cant consume if the queue is not asserted yet.');
                 }
                 if (!route.queueName) {
                     throw new CustomError('inconsistency', 'No queue name to consume on.');
@@ -1224,7 +1101,7 @@ export class Messaging {
                     route.consumerTag = 'pending';
                     this._logger.debug(`Consume options on ${route.route}`, {
                         exclusive: route.type !== 'rpc',
-                        noAck: route.noAck
+                        noAck: route.noAck,
                     });
                     route.consumerWaiter = channel.consume(route.queueName, (message: AMessage) => {
                         this._messageHandler(message, route);
@@ -1252,7 +1129,7 @@ export class Messaging {
                     queueOptions.expires = 24 * 60 * 60 * 1000; // After 24h the queue gets deleted if not used.
                     await channel.assertQueue(route.queueName, {
                         expires: queueOptions.expires,
-                        exclusive: false
+                        exclusive: false,
                     });
                     this._logger.log(`Asserted queue: ${route.queueName}. Asserting prefetch now.`);
                     route.isReady = true;
@@ -1270,7 +1147,7 @@ export class Messaging {
                     this._logger.log(`Asserting ${route.queueName} into existence.`);
                     await channel.assertQueue(route.queueName, {
                         exclusive: queueOptions.exclusive,
-                        autoDelete: queueOptions.autoDelete
+                        autoDelete: queueOptions.autoDelete,
                     });
                     this._logger.log(`Trying to bind ${route.queueName} on x.pubSub with routingKey: ${route.target}.${route.route}`);
                     await channel.bindQueue(route.queueName, 'x.pubSub', `${route.target}.${route.route}`);
@@ -1294,7 +1171,7 @@ export class Messaging {
                         {
                             exclusive: queueOptions.exclusive,
                             autoDelete: queueOptions.autoDelete,
-                        }
+                        },
                     );
                     route.subjectToQuota = false;
                     route.queueName = this._replyQueue;
@@ -1315,37 +1192,79 @@ export class Messaging {
     }
 
     /**
-     * Asserts the replyQueue into existence. Idempotent.
+     * Asserts all routes into existence. Idempotent.
      */
-    private async _assertReplyQueue() {
-        if (!this._routes.has('replyQueue')) {
-            this._routes.set('replyQueue', {
-                route: 'replyQueue',
-                type: 'rpcReply',
-                handler: null,
-                options: null,
-                isClosed: false,
-                noAck: true,
-                isReady: false,
-                isDeclaring: false,
-                subjectToQuota: false,
-            });
-            await (this._replyQueueAssertionPromise = this._assertRoute('replyQueue'));
-            this._replyQueueAssertionPromise = null;
-        }
-        if (!isNullOrUndefined(this._replyQueueAssertionPromise)) {
-            await this._replyQueueAssertionPromise;
-        }
+    private async _assertRoutes() {
+        const proms: Promise<void>[] = [];
+        this._routes.forEach((value, routeAlias) => {
+            proms.push(this._assertRoute(routeAlias));
+        });
+        return await Promise.all(proms);
     }
 
-    private unregisterResponseAwait(correlationId: string) {
-        if (this._awaitingReply.has(correlationId)) {
-            const corr = this._awaitingReply.get(correlationId);
-            if (corr.timer) {
-                clearTimeout(corr.timer);
-                corr.timer = null;
+    private _benchmarkLatency() {
+        this._amqpLatency.benchmark(true).then(ms => this.latencyMS = ms).catch(e => this.reportError(e));
+    }
+
+    private async _createChannel(): Promise<Channel> {
+        this._assertConnected();
+        const chan = await this._connection.createChannel();
+        chan.on('error', e => {
+            const f = find(Array.from(this._routes.values()), {channel: chan});
+            if (!(e instanceof CustomError)) {
+                e = new CustomError(e);
             }
-            this._awaitingReply.delete(correlationId);
+            if (f) {
+                this._logger.debug('Attached route to arising error', f);
+                if (!e.info) {
+                    e.info = {};
+                }
+                e.info._affectedRoute = omit(f, 'channel');
+                f.isClosed = true;
+            } else {
+                this._logger.debug('Did not find route attached to this channel');
+            }
+            this.reportError(e);
+        });
+        chan.on('drain', () => this._logger.debug('Got a drain event on a channel.'));
+        chan.on('return', msg => {
+            const e = new CustomError('unroutable', `No route to "${msg.fields.routingKey}". Originally sent message attached.`);
+            e.info = isNullOrUndefined(e.info) ? {} : e.info;
+            e.info.sentMessage = msg;
+            if (this._awaitingReply.has(msg.properties.correlationId)) {
+                this._awaitingReply.get(msg.properties.correlationId).deferred.reject(e);
+                this.unregisterResponseAwait(msg.properties.correlationId);
+            } else {
+                if (this._eventEmitter.listenerCount('unroutableMessage') > 0) {
+                    this._eventEmitter.emit('unroutableMessage', e);
+                } else {
+                    throw e;
+                }
+            }
+        });
+        // chan.on('close', () => {
+        //     // this._logger.log('Channel closed');
+        // });
+        return chan;
+    }
+
+    private async _getQueueReport({queueName = null, routeAlias = null}: { queueName?: string, routeAlias?: string }): Promise<RequestReport> {
+        if (isNullOrUndefined(queueName)) {
+            queueName = this._routes.get(routeAlias).queueName;
+        }
+        // Create a dedicated channel so that it can fail alone without annoying other channels
+        const channel = await this._assertChannel('__requestReport', true);
+        try {
+            const report = await channel.checkQueue(queueName);
+            return {
+                queueSize: report.messageCount,
+                queueName: report.queue,
+                consumers: report.consumerCount,
+            };
+        } catch (e) {
+            if (/NOT_FOUND/.test(e.message)) {
+                throw new CustomError('notFound', `Queue named ${queueName} doesnt exist.`);
+            }
         }
     }
 
@@ -1406,23 +1325,24 @@ export class Messaging {
                         this.unregisterResponseAwait(m.correlationId());
                     }
                 } else {
+                    this.tapResponseAwaitTimer(m.correlationId()); // as there is a stream handler restart the timeout timer on the request.
+                    if (this._tryDispatchMessage(defMess, m)) {
+                        return;
+                    }
                     defMess.accumulator.push(m);
                     (defMess.accumulator as Array<Message>).sort((a, b) => {
                         return a.getSequence() - b.getSequence();
                     });
-                    defMess.accumulator.forEach((currentAccMessage) => {
-                        if (currentAccMessage.getSequence() !== defMess.sequence) {
-                            return;
+                    let handledUntil: number = -1;
+                    for (const [index, currentAccMessage] of defMess.accumulator.entries()) {
+                        if (!this._tryDispatchMessage(defMess, currentAccMessage)) {
+                            break;
                         }
-                        if (currentAccMessage.isStreamEnd()) {
-                            // This is the last message
-                            defMess.deferred.resolve(currentAccMessage);
-                            this.unregisterResponseAwait(currentAccMessage.correlationId());
-                        } else {
-                            defMess.streamHandler(currentAccMessage);
-                            defMess.sequence++;
-                        }
-                    });
+                        handledUntil = index;
+                    }
+                    if (this._awaitingReply.has(m.correlationId()) && handledUntil > -1) {
+                        defMess.accumulator.splice(0, handledUntil + 1);
+                    }
                 }
             } else {
                 defMess.deferred.resolve(m);
@@ -1444,14 +1364,125 @@ export class Messaging {
         }
     }
 
-    /**
-     * Asserts all routes into existence. Idempotent.
-     */
-    private async _assertRoutes() {
-        const proms: Promise<void>[] = [];
-        this._routes.forEach((value, routeAlias) => {
-            proms.push(this._assertRoute(routeAlias));
+    private _stopListen(routeName: string): (options?: ReturnHandlerStopOpts) => Promise<void> {
+        return async ({deleteQueue = true}: ReturnHandlerStopOpts = {}) => {
+            if (!this._routes.has(routeName)) {
+                throw new CustomError('notFound', `The route ${routeName} does not exist.`);
+            }
+            this._logger.log(`Stop handling ${routeName}`);
+            const route = this._routes.get(routeName);
+            route.isClosed = true;
+            route.isReady = false;
+            this._channels.delete(routeName);
+            this._routes.delete(routeName);
+            this._queues.delete(route.queueName);
+
+            if (route.isReady) {
+                await route.cancel();
+            }
+            if (route.type === 'pubSub') {
+                await route.channel.unbindQueue(route.queueName, 'x.pubSub', `${route.target}.${route.route}`);
+            }
+            if (!isNullOrUndefined(route.isCancelling)) {
+                await route.isCancelling;
+            }
+            await route.channel.close();
+
+            if (!this._isConnected) {
+                return;
+            }
+            // We do this separately because we could get PRECONDITION errors that we want to ignore.
+            if (!deleteQueue) {
+                return;
+            }
+            try {
+                const channelThatCanError = await this._connection.createChannel();
+                channelThatCanError.on('error', () => {
+                });
+                await channelThatCanError.deleteQueue(route.queueName, {
+                    ifEmpty: true,
+                    ifUnused: true,
+                });
+                await channelThatCanError.close();
+            } catch (e) {
+                if (!this._isConnected) {
+                    return;
+                }
+                if (!/PRECONDITION/.test(e.message)) {
+                    this.reportError(new CustomError('Error while stop listening', e)); // Let's not swallow too much, just what we are sure we need to.
+                }
+                // At this stage the channel is closed so no need to close it again.
+            }
+        };
+    }
+
+    private _tryDispatchMessage(deferredMessage: ReplyAwaiter, message: Message): boolean {
+        if (message.getSequence() !== deferredMessage.sequence) {
+            return false;
+        }
+        if (message.isStreamEnd()) {
+            // This is the last message
+            deferredMessage.deferred.resolve(message);
+            this.unregisterResponseAwait(message.correlationId());
+            return true;
+        }
+        deferredMessage.streamHandler(message);
+        deferredMessage.sequence++;
+        return true;
+    }
+
+    private unregisterResponseAwait(correlationId: string) {
+        if (this._awaitingReply.has(correlationId)) {
+            const corr = this._awaitingReply.get(correlationId);
+            if (corr.timer) {
+                clearTimeout(corr.timer);
+                corr.timer = null;
+            }
+            this._awaitingReply.delete(correlationId);
+        }
+    }
+
+    private tapResponseAwaitTimer(correlationId: string) {
+        if (this._awaitingReply.has(correlationId)) {
+            const corr = this._awaitingReply.get(correlationId);
+            if (corr.timer) {
+                clearTimeout(corr.timer);
+                corr.timer = setTimeout(() => {
+                    corr.deferred.reject(new CustomError('timeout', `Stream handler expected new message within ${corr.timerMs}ms`));
+                    this.unregisterResponseAwait(correlationId);
+                }, corr.timerMs);
+            }
+        }
+    }
+
+    private async whoLeads(): Promise<string> {
+        if (!isNullOrUndefined(this._ongoingLeaderDiscovery)) {
+            return this._ongoingLeaderDiscovery;
+        }
+        return this._ongoingLeaderDiscovery = new Promise<string>(async (resolve, reject) => {
+            try {
+                const channel = await this._assertChannel('__leaderReply');
+                const leaderReplyQueue = (await channel.assertQueue('', {exclusive: true})).queue;
+                await channel.consume(leaderReplyQueue, msg => {
+                    resolve(msg.content.toString());
+                    channel.close().catch(e => this.reportError(e));
+                }, {exclusive: true, noAck: true});
+
+                const queueName = `${this._internalExchangeName}.arbiter`;
+                this._outgoingChannel.sendToQueue(
+                    queueName,
+                    Buffer.from(''),
+                    {
+                        contentType: 'application/json',
+                        contentEncoding: undefined,
+                        replyTo: leaderReplyQueue,
+                        mandatory: true,
+                    },
+                );
+
+            } catch (e) {
+                reject(e);
+            }
         });
-        return await Promise.all(proms);
     }
 }
