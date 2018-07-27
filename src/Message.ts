@@ -1,29 +1,29 @@
 import { Message as AMessage } from 'amqplib';
-import { isNullOrUndefined, isUndefined } from 'util';
 import { cloneDeep, defaults, omit, pull } from 'lodash';
-import { CustomError } from 'sw-logger';
-import { MessageHeaders, Route } from './Interfaces';
-import { Messaging } from './Messaging';
 import * as stream from 'stream';
 import { PassThrough } from 'stream';
+import { CustomError } from 'sw-logger';
+import { isNullOrUndefined, isUndefined } from 'util';
+import { MessageHeaders, Route } from './Interfaces';
+import { Messaging } from './Messaging';
 import { Utils } from './Utils';
 import Timer = NodeJS.Timer;
 
 export class Message<T = {}> {
     public body: T;
     public headers: any;
-    private _originalMessage: AMessage;
-    private _isRequest: boolean = false;
-    private _route: Route;
+    private _expireTimer: Timer = null;
+    private _expiresAt: Date;
     private _isAcked: boolean = false;
-    private _isExpired: boolean = false;
     private _isAnswered: boolean = false;
-    private _messaging: Messaging;
-    private _sequence: number = 0;
+    private _isExpired: boolean = false;
+    private _isRequest: boolean = false;
     private _isStreaming: boolean = false;
     private _issuedAt: Date;
-    private _expiresAt: Date;
-    private _expireTimer: Timer = null;
+    private _messaging: Messaging;
+    private _originalMessage: AMessage;
+    private _route: Route;
+    private _sequence: number = 0;
 
     constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
         this._messaging = messaging;
@@ -76,15 +76,23 @@ export class Message<T = {}> {
             buf = await Utils.compress(ref);
             compression = 'gzip';
         } else {
-            const str = JSON.stringify(ref);
-            if (str.length > 1000) {
+            const data = ref instanceof Buffer ? ref : JSON.stringify(ref);
+            const type = ref instanceof Buffer ? 'buffer' : 'string';
+            if ( // compress only data above 1MB
+                (type === 'string' && Buffer.byteLength(data as string, 'utf8') > 1000 ** 2) ||
+                data.length > 1000 ** 2
+            ) {
                 compression = 'gzip';
                 let stream = new PassThrough();
-                stream.push(str);
+                stream.push(data);
                 stream.push(null);
                 buf = await Utils.compress(stream);
+            } else if (type === 'string') {
+                buf = Buffer.from(data as string, 'utf8');
+            } else if (type === 'buffer') {
+                buf = data as Buffer;
             } else {
-                buf = Buffer.from(str);
+                throw new CustomError('unsupportedDataType', `Data type unsupported`, {data});
             }
         }
         return {buffer: buf, compression};
@@ -94,45 +102,8 @@ export class Message<T = {}> {
         return {
             fields: message.fields,
             properties: message.properties,
-            content: JSON.parse(message.content.toString())
-        }
-    }
-
-    public originalMessage() {
-        return cloneDeep(this._originalMessage);
-    }
-
-    public destinationRoute() {
-        if (!this.isRequest() && !this.isTask()) {
-            return this._originalMessage.fields.routingKey;
-        }
-        return this._originalMessage.properties.headers.__mms.route;
-    }
-
-    public isChannelClosed() {
-        return this._route.isClosed;
-    }
-
-    public async reply(body?: any, headers?: MessageHeaders): Promise<void> {
-        return this._replyReject(body, headers);
-    }
-
-    public async write(body?: any, headers?: MessageHeaders): Promise<void> {
-        return this._replyReject(body, headers, {isStream: true, isEnd: false});
-    }
-
-    public async end(body?: any, headers?: MessageHeaders): Promise<void> {
-        return this._replyReject(body, headers, {isStream: true, isEnd: true});
-    }
-
-    public async reject(error: CustomError | object, headers?: MessageHeaders) {
-        return this._replyReject(error, headers, {isRejection: true});
-    }
-
-    public nativeReject() {
-        if (!this._isAcked && this._route.noAck === false) {
-            this._route.channel.nack(this._originalMessage, false, false);
-        }
+            content: JSON.parse(message.content.toString()),
+        };
     }
 
     public ack(): void {
@@ -144,41 +115,19 @@ export class Message<T = {}> {
         }
     }
 
-    public nack(): void {
-        this._assertOpen();
-        if (!this._isAcked && this._route.noAck === false) {
-            this._route.ongoingMessages--;
-            this._route.channel.nack(this._originalMessage);
-            this._isAcked = true;
-        }
-    }
-
-    public isStream() {
-        return this._originalMessage.properties.headers.__mms.isStream === true;
-    }
-
-    public isStreamEnd() {
-        return this._originalMessage.properties.headers.__mms.isEnd === true;
-    }
-
-    public isAnswer() {
-        return this._originalMessage.properties.correlationId && isUndefined(this._originalMessage.properties.replyTo);
-    }
-
-    public isError() {
-        return this._originalMessage.properties.headers.__mms.isError;
-    }
-
     public correlationId() {
         return this._originalMessage.properties.correlationId;
     }
 
-    public isRequest() {
-        return this._isRequest;
+    public destinationRoute() {
+        if (!this.isRequest() && !this.isTask()) {
+            return this._originalMessage.fields.routingKey;
+        }
+        return this._originalMessage.properties.headers.__mms.route;
     }
 
-    public isEvent() {
-        return this._originalMessage.fields.exchange !== '';
+    public async end(body?: any, headers?: MessageHeaders): Promise<void> {
+        return this._replyReject(body, headers, {isStream: true, isEnd: true});
     }
 
     /**
@@ -187,6 +136,38 @@ export class Message<T = {}> {
     public error() {
         const e = new CustomError(this.body as any);
         return e;
+    }
+
+    public getSequence() {
+        return this._originalMessage.properties.headers.__mms.sequence;
+    }
+
+    public isAnswer() {
+        return this._originalMessage.properties.correlationId && isUndefined(this._originalMessage.properties.replyTo);
+    }
+
+    public isChannelClosed() {
+        return this._route.isClosed;
+    }
+
+    public isError() {
+        return this._originalMessage.properties.headers.__mms.isError;
+    }
+
+    public isEvent() {
+        return this._originalMessage.fields.exchange !== '';
+    }
+
+    public isRequest() {
+        return this._isRequest;
+    }
+
+    public isStream() {
+        return this._originalMessage.properties.headers.__mms.isStream === true;
+    }
+
+    public isStreamEnd() {
+        return this._originalMessage.properties.headers.__mms.isEnd === true;
     }
 
     /**
@@ -198,16 +179,43 @@ export class Message<T = {}> {
         return this._originalMessage.properties.headers.__mms.isTask === true;
     }
 
+    public nack(): void {
+        this._assertOpen();
+        if (!this._isAcked && this._route.noAck === false) {
+            this._route.ongoingMessages--;
+            this._route.channel.nack(this._originalMessage);
+            this._isAcked = true;
+        }
+    }
+
+    public nativeReject() {
+        if (!this._isAcked && this._route.noAck === false) {
+            this._route.channel.nack(this._originalMessage, false, false);
+        }
+    }
+
+    public originalMessage() {
+        return cloneDeep(this._originalMessage);
+    }
+
+    public async reject(error: CustomError | object, headers?: MessageHeaders) {
+        return this._replyReject(error, headers, {isRejection: true});
+    }
+
+    public async reply(body?: any, headers?: MessageHeaders): Promise<void> {
+        return this._replyReject(body, headers);
+    }
+
     public toJSON() {
         return {
             properties: this._originalMessage.properties,
             fields: this._originalMessage.fields,
-            body: this.body
+            body: this.body,
         };
     }
 
-    public getSequence() {
-        return this._originalMessage.properties.headers.__mms.sequence;
+    public async write(body?: any, headers?: MessageHeaders): Promise<void> {
+        return this._replyReject(body, headers, {isStream: true, isEnd: false});
     }
 
     private _assertOpen() {
@@ -276,7 +284,7 @@ export class Message<T = {}> {
             isError: options.isRejection,
             isEnd: options.isEnd,
             isStream: options.isStream,
-            sequence: this._sequence++
+            sequence: this._sequence++,
         };
         if (isNullOrUndefined(_headers.idRequest) && !isNullOrUndefined(this._originalMessage.properties.headers.idRequest)) {
             _headers.idRequest = this._originalMessage.properties.headers.idRequest;
@@ -291,8 +299,8 @@ export class Message<T = {}> {
                 contentType: 'application/json',
                 contentEncoding: content.compression,
                 correlationId: this._originalMessage.properties.correlationId,
-                headers: _headers
-            }
+                headers: _headers,
+            },
         );
         if (this._expireTimer !== null) {
             clearTimeout(this._expireTimer);
@@ -314,8 +322,8 @@ export interface IncomingHeaders {
 }
 
 interface InternalReplyOptions {
-    isRejection?: boolean;
     isEnd?: boolean;
+    isRejection?: boolean;
     isStream?: boolean;
 }
 
