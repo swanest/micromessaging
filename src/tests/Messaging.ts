@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { Messaging } from '../Messaging';
 import { CustomError } from 'sw-logger';
-import { Message } from '../Message';
 import { ReturnHandler } from '../Interfaces';
+import { Message } from '../Message';
+import { Messaging } from '../Messaging';
 
 process.on('unhandledRejection', (reason) => {
     console.error('unhandledRejection', reason);
@@ -26,7 +26,7 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]);
         const response = await c.request('server', 'request1', {how: {are: 'you?'}});
         expect(response.body).to.deep.equal({hello: 'world'});
@@ -39,12 +39,12 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]);
         c.request('server', 'request1',
             {how: {are: 'you?'}},
             undefined,
-            {timeout: 100}
+            {timeout: 100},
         ).catch(() => {
         });
         await new Promise((resolve, reject) => {
@@ -68,13 +68,13 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]);
         await s.close();
         c.request('server', 'auto-discard-request',
             {how: {are: 'you?'}},
             undefined,
-            {timeout: 500}
+            {timeout: 500},
         ).catch((e) => {
             expect(e.codeString).to.equal('timeout');
             // Swallow error because it's not going to be answered on time
@@ -123,7 +123,7 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]);
         try {
             await c.request('server', 'request1', {how: {are: 'you?'}}, undefined, {timeout: 50});
@@ -189,16 +189,14 @@ describe('Messaging', () => {
 
     it('should properly compress requests', async () => {
         const s = new Messaging('server');
-        let textThatWillCompress = '';
-        for (let i = 0; i < 1e6; i++) {
-            textThatWillCompress += 'A';
-        }
+        const textThatWillCompress = Buffer.alloc(1e6 + 100, 'A', 'utf8');
+        const reply = `reply:${textThatWillCompress.toString()}`;
         const p = new Promise((resolve, reject) => {
             s.handle('request1', (message) => {
-                message.reply('reply:' + textThatWillCompress).then(() => {
+                message.reply(reply).then(() => {
                     try {
-                        expect(message.originalMessage().content.length).to.be.below(1e6);
-                        expect(message.body).to.equal(textThatWillCompress);
+                        expect(message.originalMessage().content.length).to.be.below(Buffer.byteLength(reply, 'utf8'));
+                        expect(message.body).to.equal(textThatWillCompress.toString());
                         expect(message.originalMessage().properties.contentEncoding).to.equal('gzip');
                         resolve();
                     } catch (e) {
@@ -210,12 +208,38 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]);
-        const response = await c.request('server', 'request1', textThatWillCompress);
+        const response = await c.request('server', 'request1', textThatWillCompress.toString());
         await p;
-        expect(response.body).to.deep.equal('reply:' + textThatWillCompress);
+        expect(response.body).to.deep.equal(reply);
         expect(response.originalMessage().properties.contentEncoding).to.equal('gzip');
+    });
+
+    it('should properly send/receive JSON encoded buffers', async () => {
+        const s = new Messaging('server');
+        const buffer = Buffer.from('{"test":1}');
+        const bufferToStr = buffer.toString();
+        const p = new Promise((resolve, reject) => {
+            s.handle('request1', (message) => {
+                message.reply(buffer).then(() => {
+                    try {
+                        expect(message.body).to.deep.equal(JSON.parse(bufferToStr));
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+        });
+        const c = new Messaging('client');
+        await Promise.all([
+            c.connect(),
+            s.connect(),
+        ]);
+        const response = await c.request('server', 'request1', buffer);
+        await p;
+        expect(response.body).to.deep.equal(JSON.parse(bufferToStr));
     });
 
     it('should properly get back errors', async () => {
@@ -226,7 +250,7 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]);
         try {
             await c.request('server', 'request1', {how: {are: 'you?'}});
@@ -263,14 +287,14 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]).then(() => c.task('server', 'task1', {how: {are: 'task1?'}})).catch(done);
     });
     it('should handle tasks with ack (interpreted as requests.)', async () => {
         const c = new Messaging('client');
         await Promise.all(Messaging.instances.map(i => i.connect()));
         try {
-            await c.task('server', 'task2', {how: {are: 'task2?'}}, undefined, {noAck: false})
+            await c.task('server', 'task2', {how: {are: 'task2?'}}, undefined, {noAck: false});
         } catch (e) {
             expect(1).to.equal(1);
             return;
@@ -330,7 +354,7 @@ describe('Messaging', () => {
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
-            s.connect()
+            s.connect(),
         ]).then(() => {
             c.emit('server', 'routingKey1', 'pubSub1');
             c.emit('server', 'routingKey2', 'pubSub2');
