@@ -9,7 +9,10 @@
     "declaration": true,
     "noImplicitAny": true,
     "rootDir": "src",
-    "allowJs": false
+    "allowJs": false,
+    "lib": [
+      "es7"
+    ]
   },
   "include": [
     "src/**/*"

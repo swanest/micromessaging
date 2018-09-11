@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { Messaging } from '../Messaging';
-import { random } from 'lodash';
+import { random, uniq } from 'lodash';
+import { v4 } from 'uuid';
 import { Election } from '../Election';
+import { Messaging } from '../Messaging';
 
 describe('Leader Election', () => {
 
@@ -13,7 +14,7 @@ describe('Leader Election', () => {
         // const howManyServers = 5;
         instances += howManyServers;
         for (let j = 0; j < howManyServers; j++) {
-            servers.push(new Messaging('server' + i))
+            servers.push(new Messaging('server' + i));
         }
         await Promise.all(servers.map(s => s.connect()));
         const ids = servers.map(s => s.getServiceId());
@@ -31,7 +32,7 @@ describe('Leader Election', () => {
                         reject(e);
                     }
                 });
-            })
+            });
         }));
         const winner = winners[0];
         winners.forEach(id => {
@@ -53,8 +54,8 @@ describe('Leader Election', () => {
             return {
                 low: ids[0],
                 high: ids[ids.length - 1],
-                elected: winner
-            }
+                elected: winner,
+            };
         });
     }
 
@@ -72,13 +73,78 @@ describe('Leader Election', () => {
 
     it('should find consensus on leadership (10 instances)', async function () {
         this.timeout(10000);
-        await voteLoop(1, 6)
+        await voteLoop(1, 6);
         // .then(console.log);
         // console.log('how many instances', instances);
     });
 
+    it('should find consensus on leadership and keep a consistent one after leader dies', async function () {
+        this.timeout(120000);
+        const defaultElectionTimeout = Election.DEFAULT_TIMEOUT;
+        Election.DEFAULT_TIMEOUT = 2000;
+        const iid = v4();
+        const servers = new Array(4).fill(0).map(d => new Messaging(`server-${iid}`));
+        let leader: string;
+        let allConsent: { [serviceId: string]: (leaderId: string) => void } = {};
+        servers.map((d, i) => {
+            d.on('leader', (info) => {
+                allConsent[d.getServiceId()](info.leaderId);
+            });
+        });
+        const promises: Promise<string>[] = servers.map((d, i) => {
+            return new Promise(resolve => {
+                allConsent[d.getServiceId()] = (leaderId: string) => {
+                    resolve(leaderId);
+                };
+            });
+        });
+        await Promise.all(servers.map(d => d.connect()));
+        const ids = await Promise.all(promises);
+        leader = ids[0];
+        ids.reduce((prev, cur) => {
+            expect(prev).to.equal(cur);
+            return cur;
+        }, ids[0]);
+
+        const successiveLeaders = [leader];
+
+        for (const [pos, server] of servers.entries()) {
+
+            const promises: Promise<string>[] =
+                servers
+                    .filter(d => !successiveLeaders.includes(d.getServiceId()))
+                    .map((d) => {
+                        return new Promise(resolve => {
+                            allConsent[d.getServiceId()] = (leaderId: string) => {
+                                resolve(leaderId);
+                            };
+                        });
+                    });
+
+            if (promises.length === 0) {
+                continue;
+            }
+
+            await new Promise((resolve, reject) => setTimeout(() => {
+                servers.find(d => d.getServiceId() === leader).close()
+                    .then(() => resolve(), e => reject(e));
+            }, 2000));
+
+            const ids = await Promise.all(promises);
+            leader = ids[0];
+            ids.reduce((prev, cur) => {
+                expect(prev).to.equal(cur);
+                return cur;
+            }, ids[0]);
+            successiveLeaders.push(leader);
+        }
+        expect(successiveLeaders).to.have.lengthOf(servers.length);
+        expect(uniq(successiveLeaders)).to.have.lengthOf(servers.length);
+        Election.DEFAULT_TIMEOUT = defaultElectionTimeout;
+    });
+
     it('should find consensus on leadership (2 instances)', async function () {
-        await voteLoop(1, 2)
+        await voteLoop(1, 2);
         // .then(console.log);
         // console.log('how many instances', instances);
     });
@@ -194,7 +260,7 @@ describe('Leader Election', () => {
                     }, 2000);
                 })).then(() => {
                     // console.log('going to connect s2');
-                    return s2.connect()
+                    return s2.connect();
                 });
             });
 
