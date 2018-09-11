@@ -1483,6 +1483,7 @@ export class Messaging {
             } catch (e) {
                 reject(e);
             }
+            this._ongoingLeaderDiscovery = null;
         });
     }
 }
