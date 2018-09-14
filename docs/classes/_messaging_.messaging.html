@@ -38,8 +38,6 @@
 							</div>
 							<input type="checkbox" id="tsd-filter-inherited" checked />
 							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
-							<input type="checkbox" id="tsd-filter-externals" checked />
-							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
 							<input type="checkbox" id="tsd-filter-only-exported" />
 							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
 						</div>
@@ -91,6 +89,7 @@
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_messaging_.messaging.html#latencyms" class="tsd-kind-icon">latencyMS</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_messaging_.messaging.html#defaultconnectiontimeout" class="tsd-kind-icon">default<wbr>Connection<wbr>Timeout</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_messaging_.messaging.html#instances" class="tsd-kind-icon">instances</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_messaging_.messaging.html#internalexchangeprefix" class="tsd-kind-icon">internal<wbr>Exchange<wbr>Prefix</a></li>
 							</ul>
@@ -143,7 +142,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L82">Messaging.ts:82</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L101">Messaging.ts:101</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -174,6 +173,9 @@
 										<li class="tsd-parameter">
 											<h5>ready<wbr>OnConnected<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></h5>
 										</li>
+										<li class="tsd-parameter">
+											<h5>retry<wbr>Strategy<span class="tsd-signature-symbol">: </span><a href="../interfaces/_interfaces_.retrystrategy.html" class="tsd-signature-type">RetryStrategy</a></h5>
+										</li>
 									</ul>
 								</li>
 							</ul>
@@ -190,7 +192,17 @@
 					<div class="tsd-signature tsd-kind-icon">latencyMS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L47">Messaging.ts:47</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L49">Messaging.ts:49</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+					<a name="defaultconnectiontimeout" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> default<wbr>Connection<wbr>Timeout</h3>
+					<div class="tsd-signature tsd-kind-icon">default<wbr>Connection<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;30000</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L46">Messaging.ts:46</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -200,7 +212,7 @@
 					<div class="tsd-signature tsd-kind-icon">instances<span class="tsd-signature-symbol">:</span> <a href="_messaging_.messaging.html" class="tsd-signature-type">Messaging</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L46">Messaging.ts:46</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L47">Messaging.ts:47</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -210,7 +222,7 @@
 					<div class="tsd-signature tsd-kind-icon">internal<wbr>Exchange<wbr>Prefix<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;internal&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L45">Messaging.ts:45</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L48">Messaging.ts:48</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -227,7 +239,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L740">Messaging.ts:740</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L159">Messaging.ts:159</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -250,7 +262,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L812">Messaging.ts:812</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L207">Messaging.ts:207</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -288,25 +300,16 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L245">Messaging.ts:245</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L273">Messaging.ts:273</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Connects to a rabbit instance. Idempotent.</p>
-								</div>
-							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> rabbitURI: <span class="tsd-signature-type">string</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>format: amqp://localhost?heartbeat=30 — If heartbeat is not supplied, will default to 30s</p>
-									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
-							<p>Returns once the connection is properly initialized and that all listeners and handlers have been fully declared.</p>
 						</li>
 					</ul>
 				</section>
@@ -320,7 +323,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L426">Messaging.ts:426</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L352">Messaging.ts:352</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -371,7 +374,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L164">Messaging.ts:164</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L408">Messaging.ts:408</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -393,7 +396,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L171">Messaging.ts:171</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L415">Messaging.ts:415</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -415,7 +418,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L142">Messaging.ts:142</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L423">Messaging.ts:423</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -437,7 +440,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L200">Messaging.ts:200</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L427">Messaging.ts:427</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
@@ -454,7 +457,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L703">Messaging.ts:703</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L437">Messaging.ts:437</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -491,7 +494,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L179">Messaging.ts:179</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L445">Messaging.ts:445</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -513,7 +516,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L149">Messaging.ts:149</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L452">Messaging.ts:452</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -535,7 +538,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L156">Messaging.ts:156</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L459">Messaging.ts:459</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -557,7 +560,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L786">Messaging.ts:786</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L468">Messaging.ts:468</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -588,7 +591,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L301">Messaging.ts:301</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L483">Messaging.ts:483</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -610,7 +613,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L233">Messaging.ts:233</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L487">Messaging.ts:487</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_interfaces_.uptime.html" class="tsd-signature-type">Uptime</a></h4>
@@ -627,7 +630,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L714">Messaging.ts:714</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L500">Messaging.ts:500</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -660,7 +663,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L229">Messaging.ts:229</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L526">Messaging.ts:526</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -677,7 +680,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L225">Messaging.ts:225</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L530">Messaging.ts:530</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -695,7 +698,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L644">Messaging.ts:644</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L541">Messaging.ts:541</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -733,7 +736,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L652">Messaging.ts:652</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L549">Messaging.ts:549</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -774,7 +777,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L801">Messaging.ts:801</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L597">Messaging.ts:597</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -812,7 +815,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L311">Messaging.ts:311</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L608">Messaging.ts:608</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -852,7 +855,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L319">Messaging.ts:319</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L616">Messaging.ts:616</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -892,7 +895,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L327">Messaging.ts:327</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L624">Messaging.ts:624</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -932,7 +935,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L336">Messaging.ts:336</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L633">Messaging.ts:633</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -973,7 +976,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L344">Messaging.ts:344</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L641">Messaging.ts:641</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1013,7 +1016,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L352">Messaging.ts:352</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L649">Messaging.ts:649</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1047,7 +1050,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L360">Messaging.ts:360</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L657">Messaging.ts:657</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1081,7 +1084,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L368">Messaging.ts:368</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L665">Messaging.ts:665</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1124,7 +1127,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L376">Messaging.ts:376</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L673">Messaging.ts:673</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1164,7 +1167,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L384">Messaging.ts:384</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L681">Messaging.ts:681</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1204,7 +1207,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L392">Messaging.ts:392</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L689">Messaging.ts:689</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1256,7 +1259,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L411">Messaging.ts:411</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L708">Messaging.ts:708</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1310,7 +1313,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L878">Messaging.ts:878</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L714">Messaging.ts:714</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1336,7 +1339,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L492">Messaging.ts:492</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L738">Messaging.ts:738</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1435,7 +1438,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L204">Messaging.ts:204</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L828">Messaging.ts:828</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1458,7 +1461,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L183">Messaging.ts:183</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L849">Messaging.ts:849</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1481,7 +1484,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L589">Messaging.ts:589</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L874">Messaging.ts:874</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1547,7 +1550,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/e7c2d95/src/Messaging.ts#L131">Messaging.ts:131</a></li>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Messaging.ts#L144">Messaging.ts:144</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">object</span></h4>
@@ -1575,6 +1578,9 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_config_.html">"<wbr>Config"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_deferred_.html">"<wbr>Deferred"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_election_.html">"<wbr>Election"</a>
@@ -1623,6 +1629,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_messaging_.messaging.html#latencyms" class="tsd-kind-icon">latencyMS</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="_messaging_.messaging.html#defaultconnectiontimeout" class="tsd-kind-icon">default<wbr>Connection<wbr>Timeout</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
 								<a href="_messaging_.messaging.html#instances" class="tsd-kind-icon">instances</a>

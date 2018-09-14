@@ -8,6 +8,54 @@ process.on('unhandledRejection', (reason) => {
     console.error('unhandledRejection', reason);
 });
 describe('Messaging', () => {
+
+    it('should reattempt to connect', async function () {
+        const defTimeout = Messaging.defaultConnectionTimeout;
+        Messaging.defaultConnectionTimeout = 1000;
+        const m = new Messaging('client');
+        try {
+            await m.connect('amqp://localhost:9876');
+        } catch (e) {
+            expect(e).to.include.keys('info');
+            expect(e.info).to.include.keys('retryStrategy');
+            expect(e.info.retryStrategy).to.have.keys('attempts', 'timeSpentConnecting');
+            expect(e.info.retryStrategy.attempts).to.be.above(1);
+            expect(e.info.retryStrategy.timeSpentConnecting).to.be.above(1000);
+            Messaging.defaultConnectionTimeout = defTimeout;
+            return;
+        }
+        expect(true, 'Line should not have been reached').to.equal(false);
+    });
+
+    it('should expose retryStrategy', async function () {
+        this.timeout(5000);
+        const defTimeout = Messaging.defaultConnectionTimeout;
+        Messaging.defaultConnectionTimeout = 1000;
+        let error, attempts, totalTime;
+        const m = new Messaging('client', {
+            retryStrategy: (err, att, tt) => {
+                error = err;
+                attempts = att;
+                totalTime = tt;
+                if (attempts === 10) {
+                    return;
+                }
+                return 10;
+            },
+        });
+
+        try {
+            await m.connect('amqp://localhost:9876');
+        } catch (e) {
+            expect(error).to.match(/ECONNREFUSED/);
+            expect(attempts).to.be.above(1);
+            expect(totalTime).to.be.above((attempts || 1000) * 10);
+            Messaging.defaultConnectionTimeout = defTimeout;
+            return;
+        }
+        expect(true, 'Line should not have been reached').to.equal(false);
+    });
+
     it('expect to have a getURI method returning a string', async () => {
         const c = new Messaging('client');
         await c.connect();

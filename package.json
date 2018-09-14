@@ -16,7 +16,7 @@
     "test:debug": "DEBUG=micromessaging mocha --opts ./src/tests/mocha.opts ./src/tests/*.ts",
     "watch": "nodemon -e ts,json --exec 'node --inspect=5858 node_modules/mocha/bin/mocha --compilers ts:ts-node/register \"src/tests/*.ts\"'",
     "build": "rm -rf dist && tsc && rm -rf ./dist/tests",
-    "docs": "rm -rf docs && typedoc --out docs src --mode modules --excludePrivate --exclude \"**/tests/*.ts\" --target ES6 && touch docs/.nojekyll",
+    "docs": "rm -rf docs && typedoc --out docs src --mode modules --excludePrivate --excludeExternals --exclude \"**/tests/*.ts\" --externalPattern \"**/node_modules/**\" --target ES6 && touch docs/.nojekyll",
     "coverage": "nyc -e '.ts' --r html -r lcov -r text npm run test",
     "prepublish": "yarn build",
     "benchmark": "cd benchmark/ && ts-node Benchmark.ts"
@@ -32,8 +32,8 @@
     "hoek": "^5.0.3",
     "lodash": "^4.17.4",
     "sw-logger": "^1.2.5",
-    "uuid": "^3.1.0",
-    "when": "^3.7.8"
+    "typedoc": "^0.12.0",
+    "uuid": "^3.1.0"
   },
   "devDependencies": {
     "@types/amqplib": "^0.5.4",
@@ -43,13 +43,10 @@
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.19",
     "@types/uuid": "^3.4.0",
-    "@types/when": "^2.4.29",
     "chai": "^4.1.1",
     "mocha": "^5.2.0",
-    "mocha-clean": "^1.0.0",
     "nyc": "^11.4.1",
     "ts-node": "^6.0.5",
-    "typedoc": "^0.11.1",
     "typescript": "^2.8.3"
   }
 }

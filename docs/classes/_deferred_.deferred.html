@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>QosOptions | micromessaging</title>
+	<title>Deferred | micromessaging</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,24 +54,32 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_qos_.html">&quot;Qos&quot;</a>
+					<a href="../modules/_deferred_.html">&quot;Deferred&quot;</a>
 				</li>
 				<li>
-					<a href="_qos_.qosoptions.html">QosOptions</a>
+					<a href="_deferred_.deferred.html">Deferred</a>
 				</li>
 			</ul>
-			<h1>Interface QosOptions</h1>
+			<h1>Class Deferred&lt;T&gt;</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-type-parameters">
+				<h3>Type parameters</h3>
+				<ul class="tsd-type-parameters">
+					<li>
+						<h4>T</h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">QosOptions</span>
+						<span class="target">Deferred</span>
 					</li>
 				</ul>
 			</section>
@@ -79,48 +87,116 @@
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
-						<section class="tsd-index-section tsd-is-not-exported">
+						<section class="tsd-index-section ">
+							<h3>Constructors</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_deferred_.deferred.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_qos_.qosoptions.html#eventloopthreshold" class="tsd-kind-icon">event<wbr>Loop<wbr>Threshold</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_qos_.qosoptions.html#memoryhardlimit" class="tsd-kind-icon">memory<wbr>Hard<wbr>Limit</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_qos_.qosoptions.html#memorysoftlimit" class="tsd-kind-icon">memory<wbr>Soft<wbr>Limit</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_deferred_.deferred.html#promise" class="tsd-kind-icon">promise</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_deferred_.deferred.html#reject" class="tsd-kind-icon">reject</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_deferred_.deferred.html#resolve" class="tsd-kind-icon">resolve</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Constructors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
+					<a name="constructor" class="tsd-anchor"></a>
+					<h3>constructor</h3>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Deferred<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_deferred_.deferred.html" class="tsd-signature-type">Deferred</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Deferred.ts#L4">Deferred.ts:4</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <a href="_deferred_.deferred.html" class="tsd-signature-type">Deferred</a></h4>
+						</li>
+					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="eventloopthreshold" class="tsd-anchor"></a>
-					<h3>event<wbr>Loop<wbr>Threshold</h3>
-					<div class="tsd-signature tsd-kind-icon">event<wbr>Loop<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="promise" class="tsd-anchor"></a>
+					<h3>promise</h3>
+					<div class="tsd-signature tsd-kind-icon">promise<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Qos.ts#L224">Qos.ts:224</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Deferred.ts#L2">Deferred.ts:2</a></li>
 						</ul>
 					</aside>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="memoryhardlimit" class="tsd-anchor"></a>
-					<h3>memory<wbr>Hard<wbr>Limit</h3>
-					<div class="tsd-signature tsd-kind-icon">memory<wbr>Hard<wbr>Limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="reject" class="tsd-anchor"></a>
+					<h3>reject</h3>
+					<div class="tsd-signature tsd-kind-icon">reject<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Qos.ts#L223">Qos.ts:223</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Deferred.ts#L3">Deferred.ts:3</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-siganture">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property tsd-is-not-exported">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>reason<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5><span class="tsd-flag ts-flagOptional">Optional</span> reason: <span class="tsd-signature-type">any</span></h5>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="memorysoftlimit" class="tsd-anchor"></a>
-					<h3>memory<wbr>Soft<wbr>Limit</h3>
-					<div class="tsd-signature tsd-kind-icon">memory<wbr>Soft<wbr>Limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="resolve" class="tsd-anchor"></a>
+					<h3>resolve</h3>
+					<div class="tsd-signature tsd-kind-icon">resolve<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Qos.ts#L222">Qos.ts:222</a></li>
+							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/8505aea/src/Deferred.ts#L4">Deferred.ts:4</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-siganture">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-property tsd-is-not-exported">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">PromiseLike</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5><span class="tsd-flag ts-flagOptional">Optional</span> value: <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">PromiseLike</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -136,7 +212,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_config_.html">"<wbr>Config"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_deferred_.html">"<wbr>Deferred"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -163,7 +239,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_peerstatus_.html">"<wbr>Peer<wbr>Status"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_qos_.html">"<wbr>Qos"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -176,36 +252,27 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_qos_.qos.html" class="tsd-kind-icon">Qos</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_qos_.messagehandled.html" class="tsd-kind-icon">Message<wbr>Handled</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_qos_.pressureevent.html" class="tsd-kind-icon">Pressure<wbr>Event</a>
-					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_qos_.qosoptions.html" class="tsd-kind-icon">Qos<wbr>Options</a>
+					<li class="current tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="_deferred_.deferred.html" class="tsd-kind-icon">Deferred</a>
 						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_qos_.qosoptions.html#eventloopthreshold" class="tsd-kind-icon">event<wbr>Loop<wbr>Threshold</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class">
+								<a href="_deferred_.deferred.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_qos_.qosoptions.html#memoryhardlimit" class="tsd-kind-icon">memory<wbr>Hard<wbr>Limit</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_deferred_.deferred.html#promise" class="tsd-kind-icon">promise</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_qos_.qosoptions.html#memorysoftlimit" class="tsd-kind-icon">memory<wbr>Soft<wbr>Limit</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_deferred_.deferred.html#reject" class="tsd-kind-icon">reject</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_deferred_.deferred.html#resolve" class="tsd-kind-icon">resolve</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_qos_.html#pressureeventtype" class="tsd-kind-icon">Pressure<wbr>Event<wbr>Type</a>
-					</li>
 				</ul>
 			</nav>
 		</div>

@@ -7,8 +7,8 @@ import { CustomError, Logger } from 'sw-logger';
 import { URL } from 'url';
 import { isNull, isNullOrUndefined, isUndefined } from 'util';
 import { getHeapStatistics } from 'v8';
-import * as when from 'when';
 import { AMQPLatency } from './AMQPLatency';
+import { Deferred } from './Deferred';
 import { Election } from './Election';
 import { OwnEvents } from './Events';
 import {
@@ -22,6 +22,7 @@ import {
     ReplyAwaiter,
     RequestOptions,
     RequestReport,
+    RetryStrategy,
     ReturnHandler,
     ReturnHandlerStopOpts,
     Route,
@@ -35,7 +36,6 @@ import { PeerStatus } from './PeerStatus';
 import { PressureEvent, Qos } from './Qos';
 import uuid = require('uuid');
 import Timer = NodeJS.Timer;
-import Deferred = When.Deferred;
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
 
@@ -43,15 +43,23 @@ const tracer = new logger.Logger({namespace: 'micromessaging'});
 
 export class Messaging {
 
+    public static defaultConnectionTimeout = 30000;
     public static instances: Messaging[] = [];
     public static internalExchangePrefix = 'internal';
     public latencyMS: number;
     private _amqpLatency: AMQPLatency;
     private _assertParallelChecker: Timer;
     private _awaitingReply: Map<string, ReplyAwaiter> = new Map();
-    private _bufferFull: Deferred<void>;
+    private _bufferDrained: () => void;
+    private _bufferFull: Promise<void>;
     private _channels: Map<string, Channel> = new Map();
     private _connection: Connection;
+    /**
+     * Connects to a rabbit instance. Idempotent.
+     * @param rabbitURI format: amqp://localhost?heartbeat=30 — If heartbeat is not supplied, will default to 30s
+     * @returns Returns once the connection is properly initialized and that all listeners and handlers have been fully declared.
+     */
+    private _connectionAttempts = 0;
     // private _serviceId: string = '' + (++ID);
     private _election: Election;
     private _eventEmitter: EventEmitter;
@@ -66,6 +74,7 @@ export class Messaging {
     };
     private _lastAssertParallel: number = 0;
     private _lastMessageDate: Date;
+    private _lastTimeConnected = new Date().valueOf();
     private _logger: Logger;
     private _maxParallelism: number = -1;
     private _ongoingLeaderDiscovery: Promise<string>;
@@ -75,6 +84,7 @@ export class Messaging {
     private _qos: Qos;
     private _queues: Map<string, Queue> = new Map();
     private _replyQueueAssertionPromise: Promise<any> = null;
+    private readonly _retryStrategy: RetryStrategy;
     private _routes: Map<string, Route> = new Map();
     private _serviceId: string = uuid.v4();
     private _serviceOptions: ServiceOptions;
@@ -101,8 +111,10 @@ export class Messaging {
         enableMemoryQos = true,
         memorySoftLimit = Messaging.defaultMemoryLimit().soft,
         memoryHardLimit = Messaging.defaultMemoryLimit().hard,
+        retryStrategy = Messaging.defaultRetryStrategy,
     }: ServiceOptions = {}) {
 
+        this._retryStrategy = retryStrategy;
         this._logger = tracer.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}`);
         this._qos = new Qos(this, this._routes, this._logger.context(`${this._serviceName}:${this._serviceId.substr(0, 10)}:qos`));
 
@@ -135,6 +147,13 @@ export class Messaging {
             soft: ~~(heap_size_limit / Math.pow(2, 20) * 0.65),
             hard: ~~(heap_size_limit / Math.pow(2, 20) * 0.80),
         };
+    }
+
+    private static defaultRetryStrategy(error: Error, attempts: number, totalTime: number): number {
+        if (totalTime > Messaging.defaultConnectionTimeout) {
+            return null;
+        }
+        return Messaging.defaultConnectionTimeout / 30 * attempts + 1;
     }
 
     public async assertLeader(noQueue = false): Promise<string> {
@@ -251,11 +270,6 @@ export class Messaging {
         pull(Messaging.instances, this);
     }
 
-    /**
-     * Connects to a rabbit instance. Idempotent.
-     * @param rabbitURI format: amqp://localhost?heartbeat=30 — If heartbeat is not supplied, will default to 30s
-     * @returns Returns once the connection is properly initialized and that all listeners and handlers have been fully declared.
-     */
     public async connect(rabbitURI?: string): Promise<void> {
         this._assertNotClosed();
         if (this._isConnected || this._isConnecting) {
@@ -267,21 +281,38 @@ export class Messaging {
         parsed.searchParams.set('heartbeat', parsed.searchParams.get('heartbeat') || '30');
         this._uri = parsed.toString();
         this._logger.debug(`Establishing connection to ${this._uri}`);
+        this._connectionAttempts++;
         try {
             this._connection = await amqp.connect(this._uri);
             this._isConnected = true;
+            this._connectionAttempts = 0;
+            this._lastTimeConnected = new Date().valueOf();
         } catch (e) {
-            const customError = new CustomError('unableToConnect', 'Service was unable to connect to RabbitMQ', e);
-            this._isConnected = false;
+            const customError = new CustomError(
+                'unableToConnect',
+                'Service was unable to connect to RabbitMQ',
+                e,
+                {
+                    retryStrategy: {
+                        attempts: this._connectionAttempts,
+                        timeSpentConnecting: new Date().valueOf() - this._lastTimeConnected,
+                    },
+                },
+            );
             this._isConnecting = false;
+            const waitFor = this._retryStrategy(customError, this._connectionAttempts, new Date().valueOf() - this._lastTimeConnected);
+            if (typeof waitFor === 'number') {
+                await new Promise<void>(resolve => setTimeout(resolve, waitFor));
+                return this.connect(rabbitURI);
+            }
             this._eventEmitter.emit('error', customError);
             throw customError;
         }
         this._logger.debug('Connection to RabbitMQ established.');
         this._outgoingChannel = await this._createChannel();
         this._outgoingChannel.on('drain', () => {
-            if (!isNullOrUndefined(this._bufferFull)) {
-                this._bufferFull.resolve();
+            if (!isNullOrUndefined(this._bufferDrained)) {
+                this._bufferDrained();
                 this._bufferFull = null;
             }
         });
@@ -338,7 +369,7 @@ export class Messaging {
         }
 
         if (!isNullOrUndefined(this._bufferFull)) {
-            await this._bufferFull.promise;
+            await this._bufferFull;
         }
 
         const _headers = cloneDeep(messageHeaders);
@@ -367,7 +398,7 @@ export class Messaging {
             });
 
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
-            this._bufferFull = when.defer<void>();
+            this._bufferFull = new Promise(resolve => this._bufferDrained = () => resolve());
         }
     }
 
@@ -722,12 +753,12 @@ export class Messaging {
             throw new CustomError('notConnected', 'You must specify a target route.');
         }
         if (!isNullOrUndefined(this._bufferFull)) {
-            await this._bufferFull.promise;
+            await this._bufferFull;
         }
 
         await this._assertReplyQueue();
         const correlationId = uuid.v4();
-        const def = when.defer<Message<T>>();
+        const def = new Deferred<Message<T>>();
         const awaitingReplyObj: ReplyAwaiter = {
             deferred: def,
             streamHandler: streamHandler,
@@ -789,7 +820,7 @@ export class Messaging {
             _options,
         );
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
-            this._bufferFull = when.defer<void>();
+            this._bufferFull = new Promise(resolve => this._bufferDrained = () => resolve());
         }
         return def.promise;
     }
@@ -856,7 +887,7 @@ export class Messaging {
         }
 
         if (!isNullOrUndefined(this._bufferFull)) {
-            await this._bufferFull.promise;
+            await this._bufferFull;
         }
 
         const content = await Message.toBuffer(messageBody);
@@ -883,7 +914,7 @@ export class Messaging {
             },
         );
         if (ret !== true && isNullOrUndefined(this._bufferFull)) {
-            this._bufferFull = when.defer<void>();
+            this._bufferFull = new Promise(resolve => this._bufferDrained = () => resolve());
         }
         return;
     }
@@ -983,7 +1014,7 @@ export class Messaging {
             }
             route.maxParallelism = parallelismToApply;
         });
-        this._waitParallelismAsserted = when.defer<void>();
+        this._waitParallelismAsserted = new Deferred<void>();
         const cacheAppliedParams = {
             value: this._maxParallelism,
             qSubjectToQuota: countQSubjectToQuota,
@@ -1052,7 +1083,7 @@ export class Messaging {
             }
             route.isDeclaring = true;
 
-            const currentQAssertion = when.defer<void>();
+            const currentQAssertion = new Deferred<void>();
             this._ongoingQAssertion.push(currentQAssertion);
             const cleanReturn = () => {
                 currentQAssertion.resolve();
@@ -1431,17 +1462,6 @@ export class Messaging {
         return true;
     }
 
-    private unregisterResponseAwait(correlationId: string) {
-        if (this._awaitingReply.has(correlationId)) {
-            const corr = this._awaitingReply.get(correlationId);
-            if (corr.timer) {
-                clearTimeout(corr.timer);
-                corr.timer = null;
-            }
-            this._awaitingReply.delete(correlationId);
-        }
-    }
-
     private tapResponseAwaitTimer(correlationId: string) {
         if (this._awaitingReply.has(correlationId)) {
             const corr = this._awaitingReply.get(correlationId);
@@ -1452,6 +1472,17 @@ export class Messaging {
                     this.unregisterResponseAwait(correlationId);
                 }, corr.timerMs);
             }
+        }
+    }
+
+    private unregisterResponseAwait(correlationId: string) {
+        if (this._awaitingReply.has(correlationId)) {
+            const corr = this._awaitingReply.get(correlationId);
+            if (corr.timer) {
+                clearTimeout(corr.timer);
+                corr.timer = null;
+            }
+            this._awaitingReply.delete(correlationId);
         }
     }
 

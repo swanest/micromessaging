@@ -11,7 +11,9 @@ export {
     StatusOptions,
     TaskOptions,
     MessageHeaders,
-    Leader
+    Leader,
+    ReturnHandler,
+    RetryStrategy,
 } from './Interfaces';
 export { Message } from './Message';
 export { PressureEvent } from './Qos';
