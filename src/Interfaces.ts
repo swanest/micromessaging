@@ -1,8 +1,8 @@
 import { Channel } from 'amqplib';
+import { Deferred } from './Deferred';
 import { Message } from './Message';
 import { PeerStat } from './PeerStatus';
 import Timer = NodeJS.Timer;
-import Deferred = When.Deferred;
 
 export type ExchangeType = 'topic' | 'direct' | 'fanout';
 
@@ -115,7 +115,21 @@ export interface ServiceOptions {
     memorySoftLimit?: number; // Defaults to half heap_size_limit. Expressed in MB
     qosThreshold?: number; // Default: 0.7. [0.01; 1]
     readyOnConnected?: boolean;
+    retryStrategy?: RetryStrategy;
     // parallelism?: ParallelismOptions;
+}
+
+export interface RetryStrategy {
+    /**
+     * The retry strategy to apply.
+     * Returning a number will make the library wait for that amount of milliseconds before trying again.
+     * Returning anything else than a number will make the process stop trying.
+     * By default it will wait up to 30s where each attempt is: #attempt * 1s + 1ms
+     * @param error why the connection attempt failed
+     * @param attempts number of connection attempts
+     * @param totalTime total time elapsed since last time connected or since initialization in the case it's the first connection
+     */
+    (error: Error, attempts: number, totalTime: number): number;
 }
 
 // export interface ParallelismOptions {

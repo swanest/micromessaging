@@ -38,8 +38,6 @@
 							</div>
 							<input type="checkbox" id="tsd-filter-inherited" checked />
 							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
-							<input type="checkbox" id="tsd-filter-externals" checked />
-							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
 							<input type="checkbox" id="tsd-filter-only-exported" />
 							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
 						</div>
@@ -82,7 +80,7 @@
 					<li>RabbitMQ &gt; 3.3.0</li>
 				</ul>
 				<h2 id="usage">Usage</h2>
-				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { Messaging } <span class="hljs-keyword">from</span> <span class="hljs-string">'micromessaging'</span>;
+				<pre><code class="language-typescript"><span class="hljs-keyword">import</span> { Messaging } <span class="hljs-keyword">from</span> <span class="hljs-string">'micromessaging'</span>;
 
 <span class="hljs-comment">// Server</span>
 <span class="hljs-keyword">const</span> server = <span class="hljs-keyword">new</span> Messaging(<span class="hljs-string">'server'</span>);
@@ -97,8 +95,7 @@
 <span class="hljs-keyword">const</span> client = <span class="hljs-keyword">new</span> Messaging(<span class="hljs-string">'client'</span>);
 <span class="hljs-keyword">await</span> client.connect(); <span class="hljs-comment">// Connection needs to be established before...</span>
 <span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> client.request(<span class="hljs-string">'server'</span>, <span class="hljs-string">'request-name'</span>, {how: {are: <span class="hljs-string">'you?'</span>}});
-<span class="hljs-comment">// response = {im: 'fine'}</span>
-</code></pre>
+<span class="hljs-comment">// response = {im: 'fine'}</span></code></pre>
 				<h2 id="notes">Notes</h2>
 				<p>v3.0 is a full breaking changes and CANT be used with an other modules using an earlier version.</p>
 				<p>About what it does:</p>
@@ -116,17 +113,17 @@
 				</ul>
 				<h2 id="todo">TODO</h2>
 				<ul>
-					<li>[x] Manage timeouts in requests.</li>
-					<li>[x] <code>getStatus</code> of a service (to know if the service is accepting workload)</li>
-					<li>[x] Make API names consistent</li>
-					<li>[x] Expose only Messaging so that other modules can do <code>new require(&#39;micromessaging&#39;).Messaging(...)</code> and <code>new require(&#39;micromessaging&#39;).Service(...)</code> (to ease backward compatibility but <code>Service</code> should log a warning to tell it&#39;s deprecated...)</li>
-					<li>[ ] Go to the old codebase (within the dir) and check we didn&#39;t forgot a working behaviour or features.</li>
-					<li>[ ] Quadruple check that everything works fine through some good testing!</li>
-					<li>[ ] Delete old JS codebase</li>
-					<li>[ ] Add more comments so that <code>typedoc</code> generates a cool and easy doc.</li>
-					<li>[x] Travis auto tests</li>
-					<li>[x] Publish a doc under GitHub pages =&gt; will be under swanest.github.io/micromessaging</li>
-					<li>[x] Implement <code>.stop()</code> on the return of <code>emit</code> and <code>handle</code> =&gt; see ReturnHandler.</li>
+					<li><input checked="" disabled="" type="checkbox"> Manage timeouts in requests.</li>
+					<li><input checked="" disabled="" type="checkbox"> <code>getStatus</code> of a service (to know if the service is accepting workload)</li>
+					<li><input checked="" disabled="" type="checkbox"> Make API names consistent</li>
+					<li><input checked="" disabled="" type="checkbox"> Expose only Messaging so that other modules can do <code>new require(&#39;micromessaging&#39;).Messaging(...)</code> and <code>new require(&#39;micromessaging&#39;).Service(...)</code> (to ease backward compatibility but <code>Service</code> should log a warning to tell it&#39;s deprecated...)</li>
+					<li><input disabled="" type="checkbox"> Go to the old codebase (within the dir) and check we didn&#39;t forgot a working behaviour or features.</li>
+					<li><input disabled="" type="checkbox"> Quadruple check that everything works fine through some good testing!</li>
+					<li><input disabled="" type="checkbox"> Delete old JS codebase</li>
+					<li><input disabled="" type="checkbox"> Add more comments so that <code>typedoc</code> generates a cool and easy doc.</li>
+					<li><input checked="" disabled="" type="checkbox"> Travis auto tests</li>
+					<li><input checked="" disabled="" type="checkbox"> Publish a doc under GitHub pages =&gt; will be under swanest.github.io/micromessaging</li>
+					<li><input checked="" disabled="" type="checkbox"> Implement <code>.stop()</code> on the return of <code>emit</code> and <code>handle</code> =&gt; see ReturnHandler.</li>
 				</ul>
 			</div>
 		</div>
@@ -141,6 +138,9 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_config_.html">"<wbr>Config"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_deferred_.html">"<wbr>Deferred"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_election_.html">"<wbr>Election"</a>
