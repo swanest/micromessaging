@@ -5,7 +5,7 @@ import { cloneDeep, find, omit, pull } from 'lodash';
 import * as logger from 'sw-logger';
 import { CustomError, Logger } from 'sw-logger';
 import { URL } from 'url';
-import { isNull, isNullOrUndefined, isUndefined } from 'util';
+import { v4 } from 'uuid';
 import { getHeapStatistics } from 'v8';
 import { AMQPLatency } from './AMQPLatency';
 import { Deferred } from './Deferred';
@@ -34,7 +34,7 @@ import {
 import { Message } from './Message';
 import { PeerStatus } from './PeerStatus';
 import { PressureEvent, Qos } from './Qos';
-import uuid = require('uuid');
+import { isNullOrUndefined, noop } from './Utils';
 import Timer = NodeJS.Timer;
 
 const tracer = new logger.Logger({namespace: 'micromessaging'});
@@ -86,7 +86,7 @@ export class Messaging {
     private _replyQueueAssertionPromise: Promise<any> = null;
     private readonly _retryStrategy: RetryStrategy;
     private _routes: Map<string, Route> = new Map();
-    private _serviceId: string = uuid.v4();
+    private _serviceId: string = v4();
     private _serviceOptions: ServiceOptions;
     private _startedAt: Date = new Date();
     private _uri: string;
@@ -259,6 +259,7 @@ export class Messaging {
             try {
                 await Promise.all([...this._channels].map(c => c[1].close()));
             } catch (e) {
+                // swallow
             }
             await this._connection.close();
             this._isConnected = false;
@@ -500,7 +501,7 @@ export class Messaging {
     public async handle(route: string, listener: MessageHandler, options?: ListenerOptions): Promise<ReturnHandler> {
         this._assertNotClosed();
         const routeAlias = 'handle.' + route;
-        if (!isUndefined(this._routes.get(routeAlias))) {
+        if (!isNullOrUndefined(this._routes.get(routeAlias))) {
             throw new CustomError(`A handler for ${route} is already defined.`);
         }
         this._routes.set(routeAlias, {
@@ -566,8 +567,8 @@ export class Messaging {
 
         const routeAlias = `listen.${target}.${route}`;
 
-        if (!isUndefined(this._routes.get(routeAlias))) {
-            throw new CustomError(`A listener for ${isNull(target) ? '' : target + ':'}${route} is already defined.`);
+        if (!isNullOrUndefined(this._routes.get(routeAlias))) {
+            throw new CustomError(`A listener for ${isNullOrUndefined(target) ? '' : target + ':'}${route} is already defined.`);
         }
         this._routes.set(routeAlias, {
             options: options, // Not implemented yet.
@@ -738,7 +739,7 @@ export class Messaging {
     public async request<T = {}>(targetService: string,
                                  route: string,
                                  messageBody: any = '',
-                                 {idRequest = uuid.v4(), ...remainingHeaders}: MessageHeaders = {},
+                                 {idRequest = v4(), ...remainingHeaders}: MessageHeaders = {},
                                  {timeout = 120000}: RequestOptions = {},
                                  streamHandler: (message: Message) => void = null): Promise<Message<T>> {
 
@@ -757,7 +758,7 @@ export class Messaging {
         }
 
         await this._assertReplyQueue();
-        const correlationId = uuid.v4();
+        const correlationId = v4();
         const def = new Deferred<Message<T>>();
         const awaitingReplyObj: ReplyAwaiter = {
             deferred: def,
@@ -874,7 +875,7 @@ export class Messaging {
     public async task(targetService: string,
                       route: string,
                       messageBody: any = '',
-                      {idRequest = uuid.v4(), ...remainingHeaders}: MessageHeaders = {},
+                      {idRequest = v4(), ...remainingHeaders}: MessageHeaders = {},
                       {timeout = 120000, noAck = true}: TaskOptions = {}): Promise<void | Message> {
 
         this._assertNotClosed();
@@ -929,8 +930,7 @@ export class Messaging {
         });
         if (swallowErrors) {
             newChan.removeAllListeners('error');
-            newChan.on('error', () => {
-            });
+            newChan.on('error', noop);
         }
         this._channels.set(name, newChan);
         return newChan;
@@ -1174,7 +1174,7 @@ export class Messaging {
                     await channel.assertExchange('x.pubSub', 'topic');
                     queueOptions.exclusive = true;
                     // queueOptions.autoDelete = true;
-                    route.queueName = `q.pubSub.${this._serviceName}.${uuid.v4()}`;
+                    route.queueName = `q.pubSub.${this._serviceName}.${v4()}`;
                     this._logger.log(`Asserting ${route.queueName} into existence.`);
                     await channel.assertQueue(route.queueName, {
                         exclusive: queueOptions.exclusive,
@@ -1305,8 +1305,6 @@ export class Messaging {
      * @param route The destination route key in _routes Map.
      */
     private _messageHandler(originalMessage: AMessage, route: Route) {
-        // this._logger.debug(`Received a message in _messageHandler isClosed? ${this._isClosed}, isConnected: ${this._isConnected}, isClosing: ${this._isClosing}`, Message.toJSON(originalMessage));
-        // console.log(`Received a message in _messageHandler isClosed? ${this._isClosed}, isConnected: ${this._isConnected}, isClosing: ${this._isClosing}`, Message.toJSON(originalMessage));
         if (this._isClosed || !this._isConnected || this._isClosing) {
             // We dont handle messages in those cases. They will auto-nack because the channels and connection will die soon so there is no need to nack them all first.
             return;
@@ -1320,7 +1318,8 @@ export class Messaging {
         // this._logger.log(`Message arriving on queue ${route.queueName} with ${route.ongoingMessages}/${route.maxParallelism}`);
         if (route.subjectToQuota && route.maxParallelism !== -1 && route.ongoingMessages > route.maxParallelism) {
             // We don't want this message...
-            this._logger.log(`Nacking because exceeds limit for a message arriving on queue ${route.queueName} with ${route.ongoingMessages}/${route.maxParallelism} (cTag: ${route.consumerTag})`);
+            this._logger.log(`Nacking because exceeds limit for a message arriving on queue ` +
+                `${route.queueName} with ${route.ongoingMessages}/${route.maxParallelism} (cTag: ${route.consumerTag})`);
             m.nack();
             return;
         }
@@ -1332,7 +1331,9 @@ export class Messaging {
             if (!this._awaitingReply.has(m.correlationId())) {
                 // throw new CustomError('inconsistency', `No handler found for response with correlationId: ${m.correlationId()}`, m);
                 this._logger.debug('A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.');
-                this._eventEmitter.emit('unhandledMessage', new CustomError(`A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.`), m);
+                this._eventEmitter.emit('unhandledMessage',
+                    new CustomError(`A response to a request arrived but we do not have it locally. Most probably it was rejected earlier due to a timeout.`),
+                    m);
                 return; // Means it probably timed out or there is a big issue...
             }
             const defMess = this._awaitingReply.get(m.correlationId());
@@ -1428,8 +1429,7 @@ export class Messaging {
             }
             try {
                 const channelThatCanError = await this._connection.createChannel();
-                channelThatCanError.on('error', () => {
-                });
+                channelThatCanError.on('error', noop);
                 await channelThatCanError.deleteQueue(route.queueName, {
                     ifEmpty: true,
                     ifUnused: true,

@@ -60,3 +60,11 @@ export class Utils {
         return zlib.gunzipSync(buffer);
     }
 }
+
+export function isNullOrUndefined(v: any) {
+    return v === undefined || v === null;
+}
+
+export function noop() {
+    // noop
+}
