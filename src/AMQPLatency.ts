@@ -1,18 +1,17 @@
-import { Messaging } from './Messaging';
-import { Message } from './Message';
-import { ReturnHandler } from './Interfaces';
-import uuid = require('uuid');
 import { CustomError } from 'sw-logger';
-import { isNullOrUndefined } from 'util';
-import { Utils } from './Utils';
+import { v4 } from 'uuid';
+import { ReturnHandler } from './Interfaces';
+import { Message } from './Message';
+import { Messaging } from './Messaging';
+import { isNullOrUndefined, Utils } from './Utils';
 
 export class AMQPLatency {
     public lastLatencyMS: number;
-    private _messaging: Messaging;
     private _id: string;
-    private _sampleCount: number;
     private _listener: Promise<ReturnHandler>;
+    private _messaging: Messaging;
     private _ongoingBenchmark: Promise<number>;
+    private _sampleCount: number;
 
     constructor(messaging: Messaging) {
         this._messaging = messaging;
@@ -38,7 +37,7 @@ export class AMQPLatency {
 
     private async _benchmark() {
         const latencyMS = await new Promise<number>((resolve, reject) => {
-            this._id = uuid.v4();
+            this._id = v4();
             const samples: number[] = [];
             this._sampleCount = 0;
             this._listener = this._messaging.listen(this._messaging.getInternalExchangeName(), `latency.${this._id}`, (m: Message<SampleMessage>) => {
@@ -60,16 +59,6 @@ export class AMQPLatency {
         return latencyMS;
     }
 
-    private async _sendSample() {
-        if (isNullOrUndefined(this._sampleCount) || isNullOrUndefined(this._id)) {
-            throw new CustomError('forbidden', 'sendSample cannot be called before benchmark.');
-        }
-        await this._messaging.emit<SampleMessage>(this._messaging.getInternalExchangeName(), `latency.${this._id}`, {
-            sample: this._sampleCount++,
-            sentAt: process.hrtime()
-        });
-    }
-
     private async _clean() {
         if (this._listener) {
             const handler = await this._listener;
@@ -77,6 +66,16 @@ export class AMQPLatency {
             this._listener = null;
             this._ongoingBenchmark = null;
         }
+    }
+
+    private async _sendSample() {
+        if (isNullOrUndefined(this._sampleCount) || isNullOrUndefined(this._id)) {
+            throw new CustomError('forbidden', 'sendSample cannot be called before benchmark.');
+        }
+        await this._messaging.emit<SampleMessage>(this._messaging.getInternalExchangeName(), `latency.${this._id}`, {
+            sample: this._sampleCount++,
+            sentAt: process.hrtime(),
+        });
     }
 }
 
