@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { random, uniq } from 'lodash';
-import { v4 } from 'uuid';
+import * as v4 from 'uuid/v4';
 import { Election } from '../Election';
 import { Messaging } from '../Messaging';
 

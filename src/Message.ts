@@ -12,6 +12,7 @@ import Timer = NodeJS.Timer;
 export class Message<T = {}> {
     public body: T;
     public headers: any;
+    private _byteLength: number; // in bytes
     private _expireTimer: Timer = null;
     private _expiresAt: Date;
     private _isAcked: boolean = false;
@@ -25,48 +26,18 @@ export class Message<T = {}> {
     private _route: Route;
     private _sequence: number = 0;
 
+    /**
+     * Gets the size of the message in bytes
+     */
+    public get size(): number {
+        return this._byteLength;
+    }
+
     constructor(messaging: Messaging, route: Route, originalMessage: AMessage) {
         this._messaging = messaging;
-        this._originalMessage = originalMessage;
         this._route = route;
         this._route.ongoingMessages++;
-
-        let body = originalMessage.content.toString();
-        switch (originalMessage.properties.contentEncoding) {
-            case undefined:
-                break;
-            case 'gzip':
-                body = Utils.uncompress(originalMessage.content).toString();
-                break;
-            case 'deflate':
-                throw new CustomError('notImplemented', 'contentEncoding: deflate not yet supported.');
-            default:
-                throw new CustomError('notImplemented', `contentEncoding: ${originalMessage.properties.contentEncoding} not yet supported.`);
-        }
-        switch (originalMessage.properties.contentType) {
-            case 'application/json':
-                this.body = JSON.parse(body);
-                break;
-            default:
-                throw new CustomError('notImplemented', `contentType: ${originalMessage.properties.contentType} not yet supported.`);
-        }
-        this.headers = omit(originalMessage.properties.headers, '__mms');
-        if (originalMessage.properties.headers.__mms) {
-            if (originalMessage.properties.headers.__mms.iat > 0) {
-                this._issuedAt = new Date(originalMessage.properties.headers.__mms.iat);
-            }
-            if (originalMessage.properties.headers.__mms.eat > 0 &&
-                originalMessage.properties.headers.__mms.eat > originalMessage.properties.headers.__mms.iat
-            ) {
-                this._expiresAt = new Date(originalMessage.properties.headers.__mms.eat);
-            }
-            if (this._issuedAt && this._expiresAt) {
-                this._autoExpire();
-            }
-        }
-        if (!isNullOrUndefined(this.correlationId())) {
-            this._isRequest = true;
-        }
+        this.parseMessage(originalMessage);
     }
 
     public static async toBuffer(ref: any = ''): Promise<ToBuffer> {
@@ -83,7 +54,7 @@ export class Message<T = {}> {
                 data.length > 1000 ** 2
             ) {
                 compression = 'gzip';
-                let stream = new PassThrough();
+                const stream = new PassThrough();
                 stream.push(data);
                 stream.push(null);
                 buf = await Utils.compress(stream);
@@ -112,6 +83,7 @@ export class Message<T = {}> {
             this._route.ongoingMessages--;
             this._route.channel.ack(this._originalMessage);
             this._isAcked = true;
+            this.releaseBytes();
         }
     }
 
@@ -185,6 +157,7 @@ export class Message<T = {}> {
             this._route.ongoingMessages--;
             this._route.channel.nack(this._originalMessage);
             this._isAcked = true;
+            this.releaseBytes();
         }
     }
 
@@ -309,6 +282,62 @@ export class Message<T = {}> {
         this.ack();
         if (options.isEnd) {
             this._isAnswered = true;
+        }
+    }
+
+    private parseMessage(originalMessage: AMessage) {
+        this._originalMessage = originalMessage;
+        this._byteLength = originalMessage.content.byteLength;
+        let body = originalMessage.content.toString();
+        switch (originalMessage.properties.contentEncoding) {
+            case undefined:
+                break;
+            case 'gzip':
+                const buf = Utils.uncompress(originalMessage.content);
+                body = buf.toString();
+                this._byteLength = buf.byteLength;
+                break;
+            case 'deflate':
+                throw new CustomError('notImplemented', 'contentEncoding: deflate not yet supported.');
+            default:
+                throw new CustomError('notImplemented', `contentEncoding: ${originalMessage.properties.contentEncoding} not yet supported.`);
+        }
+        switch (originalMessage.properties.contentType) {
+            case 'application/json':
+                this.body = JSON.parse(body);
+                break;
+            default:
+                throw new CustomError('notImplemented', `contentType: ${originalMessage.properties.contentType} not yet supported.`);
+        }
+        this.headers = omit(originalMessage.properties.headers, '__mms');
+        if (originalMessage.properties.headers.__mms) {
+            if (originalMessage.properties.headers.__mms.iat > 0) {
+                this._issuedAt = new Date(originalMessage.properties.headers.__mms.iat);
+            }
+            if (originalMessage.properties.headers.__mms.eat > 0 &&
+                originalMessage.properties.headers.__mms.eat > originalMessage.properties.headers.__mms.iat
+            ) {
+                this._expiresAt = new Date(originalMessage.properties.headers.__mms.eat);
+            }
+            if (this._issuedAt && this._expiresAt) {
+                this._autoExpire();
+            }
+        }
+        if (!isNullOrUndefined(this.correlationId())) {
+            this._isRequest = true;
+        }
+    }
+
+    private releaseBytes() {
+        if (this._route.ongoingBytes > 0) {
+            this._route.ongoingBytes -= this.size;
+            if (this._messaging.getMaxParallelism() === 0 && this._route.ongoingBytes > 0 && this._route.ongoingBytes < this._route.options.maxParallelBytes * 0.7) {
+                if (this._messaging.getServiceOptions().enableQos) {
+                    this._messaging.setQosMaxParallelism(-1);
+                } else {
+                    this._messaging.setMaxParallelism(-1);
+                }
+            }
         }
     }
 }

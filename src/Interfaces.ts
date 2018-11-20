@@ -53,6 +53,7 @@ export interface Route {
     isReady: boolean;
     maxParallelism?: number;
     noAck: boolean;
+    ongoingBytes: number;
     ongoingMessages?: number;
     options: ListenerOptions;
     queueName?: string;
@@ -139,6 +140,7 @@ export interface RetryStrategy {
 
 export interface ListenerOptions {
     maxParallel?: number; // Max number of parallel messages. When set, will create a
+    maxParallelBytes?: number; // Caps the amount of that received
 }
 
 export interface RequestReport {
