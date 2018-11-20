@@ -6,6 +6,7 @@ describe('Pressure Message Management', () => {
     it('should stop receiving messages when byte limit is reached', async function () {
         this.timeout(60000);
         const s = new Messaging('server');
+        const limit = 20;
         const p = new Promise(resolve => {
             let called: number = 0;
             s.handle('some-route', (m) => {
@@ -13,7 +14,7 @@ describe('Pressure Message Management', () => {
                 called++;
                 setTimeout(() => {
                     m.reply();
-                    if (called === 4) {
+                    if (called === limit) {
                         resolve();
                     }
                 }, 10);
@@ -22,10 +23,9 @@ describe('Pressure Message Management', () => {
             });
         });
         await Promise.all(Messaging.instances.map(s => s.connect()));
-        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
-        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
-        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
-        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
+        for (let i = 0; i < limit; i++) {
+            await s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
+        }
         await p;
     });
 
