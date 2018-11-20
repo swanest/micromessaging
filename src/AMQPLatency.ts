@@ -1,5 +1,5 @@
 import { CustomError } from 'sw-logger';
-import { v4 } from 'uuid';
+import * as v4 from 'uuid/v4';
 import { ReturnHandler } from './Interfaces';
 import { Message } from './Message';
 import { Messaging } from './Messaging';

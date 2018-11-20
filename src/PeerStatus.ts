@@ -1,6 +1,6 @@
 import { pull } from 'lodash';
 import { CustomError, Logger } from 'sw-logger';
-import { v4 } from 'uuid';
+import * as v4 from 'uuid/v4';
 import { AMQPLatency } from './AMQPLatency';
 import { Election } from './Election';
 import { MessageHandler, ReturnHandler, Uptime } from './Interfaces';

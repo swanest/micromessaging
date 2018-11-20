@@ -1,24 +1,27 @@
-import { Bench } from 'hoek';
-
 import Timer = NodeJS.Timer;
 import { EventEmitter } from 'events';
+import { Bench } from './tests/Bench';
 
 export type Events = 'pressure' | 'released';
 
 export class HeavyMemory extends EventEmitter {
 
     private _config: Config;
+    private _consecutive: number = -1;
     private _isStarted: boolean = false;
-    private _timer: Timer;
     private _load: Load;
     private _loadBench: Bench;
-    private _consecutive: number = -1;
+    private _timer: Timer;
 
     constructor(config: Config) {
         super();
         this._config = config;
         this._loadBench = new Bench();
         this._load = {heapUsed: 0};
+    }
+
+    public on(event: Events, listener: (status: MemoryStatus) => void) {
+        return super.on(event, listener);
     }
 
     start() {
@@ -40,7 +43,7 @@ export class HeavyMemory extends EventEmitter {
                     this._emit('pressure', {
                         consecutive: this._consecutive,
                         threshold: this._config.softLimit,
-                        heapUsed: this._load.heapUsed
+                        heapUsed: this._load.heapUsed,
                     });
                     notifiedPressure = true;
                 }
@@ -48,7 +51,7 @@ export class HeavyMemory extends EventEmitter {
                     this._emit('pressure', {
                         consecutive: this._consecutive,
                         threshold: this._config.hardLimit,
-                        heapUsed: this._load.heapUsed
+                        heapUsed: this._load.heapUsed,
                     });
                     notifiedHardPressure = true;
                 }
@@ -57,7 +60,7 @@ export class HeavyMemory extends EventEmitter {
                     this._emit('released', {
                         consecutive: this._consecutive,
                         threshold: this._config.softLimit,
-                        heapUsed: this._load.heapUsed
+                        heapUsed: this._load.heapUsed,
                     });
                     notifiedPressure = false;
                     notifiedHardPressure = false;
@@ -70,10 +73,6 @@ export class HeavyMemory extends EventEmitter {
         };
 
         loopSample();
-    }
-
-    public on(event: Events, listener: (status: MemoryStatus) => void) {
-        return super.on(event, listener);
     }
 
     stop() {
@@ -89,14 +88,14 @@ export class HeavyMemory extends EventEmitter {
 
 export interface MemoryStatus {
     consecutive: number;
-    threshold: number;
     heapUsed: number;
+    threshold: number;
 }
 
 export interface Config {
+    hardLimit: number;
     sampleInterval: number;
     softLimit: number;
-    hardLimit: number;
 }
 
 export interface Load {

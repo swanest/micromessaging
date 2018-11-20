@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Messaging } from '../Messaging';
-import uuid = require('uuid');
+import * as uuid from 'uuid/v4';
 
 describe('Requests Report', () => {
 
@@ -20,7 +20,7 @@ describe('Requests Report', () => {
     });
 
     it('should get a request report on a targetService', async function () {
-        const serviceName = 'aService' + uuid.v4();
+        const serviceName = 'aService' + uuid();
         const s = new Messaging(serviceName);
         const c = new Messaging('client');
         s.handle('whathever', (m) => {

@@ -5,7 +5,7 @@ import { cloneDeep, find, omit, pull } from 'lodash';
 import * as logger from 'sw-logger';
 import { CustomError, Logger } from 'sw-logger';
 import { URL } from 'url';
-import { v4 } from 'uuid';
+import * as v4 from 'uuid/v4';
 import { getHeapStatistics } from 'v8';
 import { AMQPLatency } from './AMQPLatency';
 import { Deferred } from './Deferred';
@@ -514,6 +514,7 @@ export class Messaging {
             type: 'rpc',
             handler: listener,
             _answerTimers: [],
+            ongoingBytes: 0,
         });
         await this._assertRoute(routeAlias);
         return {
@@ -581,6 +582,7 @@ export class Messaging {
             type: 'pubSub',
             handler: listener,
             subjectToQuota: target.indexOf(Messaging.internalExchangePrefix) !== 0,
+            ongoingBytes: 0,
         });
         this._logger.debug('Asserting route', routeAlias);
         await this._assertRoute(routeAlias);
@@ -1060,6 +1062,7 @@ export class Messaging {
                 isReady: false,
                 isDeclaring: false,
                 subjectToQuota: false,
+                ongoingBytes: 0,
             });
             await (this._replyQueueAssertionPromise = this._assertRoute('replyQueue'));
             this._replyQueueAssertionPromise = null;
@@ -1314,6 +1317,22 @@ export class Messaging {
         }
         const m = new Message(this, route, originalMessage);
         const routeAlias = `${m.isRequest() || m.isTask() ? 'handle' : 'listen'}.${m.destinationRoute()}`;
+
+        // Assert parallelism bytes size
+        if (route.options && !isNullOrUndefined(route.options.maxParallelBytes) &&
+            route.ongoingBytes + m.size > route.options.maxParallelBytes
+        ) {
+            this._logger.log(`Nacking because exceeds bytes limit for a message arriving on queue ` +
+                `${route.queueName} with ${route.ongoingBytes}B / ${route.options.maxParallelBytes}B (cTag: ${route.consumerTag})`);
+            m.nack();
+            if (this._serviceOptions.enableQos) {
+                this.setQosMaxParallelism(0);
+            } else {
+                this.setMaxParallelism(0);
+            }
+            return;
+        }
+        route.ongoingBytes += m.size;
 
         // this._logger.log(`Message arriving on queue ${route.queueName} with ${route.ongoingMessages}/${route.maxParallelism}`);
         if (route.subjectToQuota && route.maxParallelism !== -1 && route.ongoingMessages > route.maxParallelism) {

@@ -1,11 +1,33 @@
 import { expect } from 'chai';
 import { Messaging } from '../Messaging';
-import { random } from 'lodash';
-import { Election } from '../Election';
-import { isNullOrUndefined } from 'util';
-import { CustomError } from 'sw-logger';
 
 describe('Pressure Message Management', () => {
+
+    it('should stop receiving messages when byte limit is reached', async function () {
+        this.timeout(60000);
+        const s = new Messaging('server');
+        const p = new Promise(resolve => {
+            let called: number = 0;
+            s.handle('some-route', (m) => {
+                expect((s as any)._routes.get('handle.some-route').ongoingBytes).to.be.below(1000);
+                called++;
+                setTimeout(() => {
+                    m.reply();
+                    if (called === 4) {
+                        resolve();
+                    }
+                }, 10);
+            }, {
+                maxParallelBytes: 1000,
+            });
+        });
+        await Promise.all(Messaging.instances.map(s => s.connect()));
+        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
+        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
+        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
+        s.task('server', 'some-route', Buffer.from(`"${Buffer.alloc(600, 'A', 'utf8').toString()}"`));
+        await p;
+    });
 
     it('should not increase the parallelism', async function () {
         this.timeout(60000);

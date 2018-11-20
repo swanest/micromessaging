@@ -1,9 +1,14 @@
 import * as stream from 'stream';
 import * as util from 'util';
 import * as zlib from 'zlib';
-import { PassThrough } from 'stream';
 
 export class Utils {
+
+    public static async compress(stream: stream.Readable): Promise<Buffer> {
+        const output = zlib.createGzip();
+        stream.pipe(output);
+        return Utils.streamToBuffer(output);
+    }
 
     public static hrtimeToMS(time: [number, number]): number {
         return (time[0] * 1e9 + time[1]) / 1e6;
@@ -16,7 +21,9 @@ export class Utils {
         }
         return new Promise<Buffer>(function (resolve, reject) {
             // stream is already ended
-            if (!stream.readable) return resolve(Buffer.from(''));
+            if (!stream.readable) {
+                return resolve(Buffer.from(''));
+            }
 
             let arr: Array<Buffer> = [];
 
@@ -30,8 +37,11 @@ export class Utils {
             }
 
             function onEnd(err?: Error) {
-                if (err) reject(err);
-                else resolve(Buffer.concat(arr));
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(Buffer.concat(arr));
+                }
                 cleanup();
             }
 
@@ -50,13 +60,7 @@ export class Utils {
         });
     }
 
-    public static async compress(stream: stream.Readable): Promise<Buffer> {
-        const output = zlib.createGzip();
-        stream.pipe(output);
-        return Utils.streamToBuffer(output);
-    }
-
-    public static uncompress(buffer: Buffer) {
+    public static uncompress(buffer: Buffer): Buffer {
         return zlib.gunzipSync(buffer);
     }
 }
