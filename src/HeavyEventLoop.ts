@@ -1,6 +1,6 @@
 import Timer = NodeJS.Timer;
 import { EventEmitter } from 'events';
-import { Bench } from './tests/Bench';
+import { Bench } from './Bench';
 
 export type Events = 'pressure' | 'released';
 
