@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Leader | micromessaging</title>
+	<title>Bench | micromessaging</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,13 +54,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_interfaces_.html">&quot;Interfaces&quot;</a>
+					<a href="../modules/_bench_.html">&quot;Bench&quot;</a>
 				</li>
 				<li>
-					<a href="_interfaces_.leader.html">Leader</a>
+					<a href="_bench_.bench.html">Bench</a>
 				</li>
 			</ul>
-			<h1>Interface Leader</h1>
+			<h1>Class Bench</h1>
 		</div>
 	</div>
 </header>
@@ -71,7 +71,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">Leader</span>
+						<span class="target">Bench</span>
 					</li>
 				</ul>
 			</section>
@@ -80,25 +80,94 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Properties</h3>
+							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.leader.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_bench_.bench.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Methods</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_bench_.bench.html#elapsed" class="tsd-kind-icon">elapsed</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_bench_.bench.html#reset" class="tsd-kind-icon">reset</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_bench_.bench.html#now" class="tsd-kind-icon">now</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="leaderid" class="tsd-anchor"></a>
-					<h3>leader<wbr>Id</h3>
-					<div class="tsd-signature tsd-kind-icon">leader<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/45fab16/src/Interfaces.ts#L188">Interfaces.ts:188</a></li>
-						</ul>
-					</aside>
+				<h2>Constructors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
+					<a name="constructor" class="tsd-anchor"></a>
+					<h3>constructor</h3>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Bench<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_bench_.bench.html" class="tsd-signature-type">Bench</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/45fab16/src/Bench.ts#L2">Bench.ts:2</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <a href="_bench_.bench.html" class="tsd-signature-type">Bench</a></h4>
+						</li>
+					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="elapsed" class="tsd-anchor"></a>
+					<h3>elapsed</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">elapsed<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/45fab16/src/Bench.ts#L13">Bench.ts:13</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="reset" class="tsd-anchor"></a>
+					<h3>reset</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">reset<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/45fab16/src/Bench.ts#L17">Bench.ts:17</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="now" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> now</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">now<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/swanest/micromessaging/blob/45fab16/src/Bench.ts#L8">Bench.ts:8</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -111,7 +180,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_amqplatency_.html">"AMQPLatency"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_bench_.html">"<wbr>Bench"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -132,7 +201,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_heavymemory_.html">"<wbr>Heavy<wbr>Memory"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_interfaces_.html">"<wbr>Interfaces"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -157,84 +226,27 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.emitoptions.html" class="tsd-kind-icon">Emit<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.exchange.html" class="tsd-kind-icon">Exchange</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.exchangeoptions.html" class="tsd-kind-icon">Exchange<wbr>Options</a>
-					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.leader.html" class="tsd-kind-icon">Leader</a>
+					<li class="current tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_bench_.bench.html" class="tsd-kind-icon">Bench</a>
 						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.leader.html#leaderid" class="tsd-kind-icon">leader<wbr>Id</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class">
+								<a href="_bench_.bench.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_bench_.bench.html#elapsed" class="tsd-kind-icon">elapsed</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_bench_.bench.html#reset" class="tsd-kind-icon">reset</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_bench_.bench.html#now" class="tsd-kind-icon">now</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.listeneroptions.html" class="tsd-kind-icon">Listener<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.messagehandler.html" class="tsd-kind-icon">Message<wbr>Handler</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.messageheaders.html" class="tsd-kind-icon">Message<wbr>Headers</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.queue.html" class="tsd-kind-icon">Queue</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.queueoptions.html" class="tsd-kind-icon">Queue<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.replyawaiter.html" class="tsd-kind-icon">Reply<wbr>Awaiter</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.requestoptions.html" class="tsd-kind-icon">Request<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.requestreport.html" class="tsd-kind-icon">Request<wbr>Report</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.retrystrategy.html" class="tsd-kind-icon">Retry<wbr>Strategy</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.returnhandler.html" class="tsd-kind-icon">Return<wbr>Handler</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.returnhandlerstopopts.html" class="tsd-kind-icon">Return<wbr>Handler<wbr>Stop<wbr>Opts</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.route.html" class="tsd-kind-icon">Route</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.serviceoptions.html" class="tsd-kind-icon">Service<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.status.html" class="tsd-kind-icon">Status</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.statusoptions.html" class="tsd-kind-icon">Status<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.taskoptions.html" class="tsd-kind-icon">Task<wbr>Options</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_interfaces_.uptime.html" class="tsd-kind-icon">Uptime</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_interfaces_.html#exchangetype" class="tsd-kind-icon">Exchange<wbr>Type</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_interfaces_.html#routetype" class="tsd-kind-icon">Route<wbr>Type</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
