@@ -1319,20 +1319,20 @@ export class Messaging {
         const routeAlias = `${m.isRequest() || m.isTask() ? 'handle' : 'listen'}.${m.destinationRoute()}`;
 
         // Assert parallelism bytes size
-        if (route.options && !isNullOrUndefined(route.options.maxParallelBytes) &&
-            route.ongoingBytes + m.size > route.options.maxParallelBytes
-        ) {
-            this._logger.log(`Nacking because exceeds bytes limit for a message arriving on queue ` +
-                `${route.queueName} with ${route.ongoingBytes}B / ${route.options.maxParallelBytes}B (cTag: ${route.consumerTag})`);
-            m.nack();
-            if (this._serviceOptions.enableQos) {
-                this.setQosMaxParallelism(0);
-            } else {
-                this.setMaxParallelism(0);
+        if (route.options && !isNullOrUndefined(route.options.maxParallelBytes)) {
+            route.ongoingBytes += m.size;
+            if (route.ongoingBytes > route.options.maxParallelBytes) {
+                this._logger.log(`Nacking because exceeds bytes limit for a message arriving on queue ` +
+                    `${route.queueName} with ${route.ongoingBytes}B / ${route.options.maxParallelBytes}B (cTag: ${route.consumerTag})`);
+                m.nack();
+                if (this._serviceOptions.enableQos) {
+                    this.setQosMaxParallelism(0);
+                } else {
+                    this.setMaxParallelism(0);
+                }
+                return;
             }
-            return;
         }
-        route.ongoingBytes += m.size;
 
         // this._logger.log(`Message arriving on queue ${route.queueName} with ${route.ongoingMessages}/${route.maxParallelism}`);
         if (route.subjectToQuota && route.maxParallelism !== -1 && route.ongoingMessages > route.maxParallelism) {
