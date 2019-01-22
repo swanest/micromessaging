@@ -222,9 +222,6 @@ export class Messaging {
         if (this._peerStatus) {
             this._peerStatus.stop();
         }
-        if (this._election) {
-            this._election.stop();
-        }
 
         // Stop consuming
         const cancelConsuming: any = [];

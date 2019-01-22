@@ -19,9 +19,6 @@ export class Election {
         this._logger = logger;
     }
 
-    public stop() {
-    }
-
     /**
      * Get the leader ID
      */
@@ -46,12 +43,14 @@ export class Election {
         if (!this._messaging.isConnected()) {
             return;
         }
-        this._leaderId = await this._messaging.assertLeader();
-        this._notifyLeader();
+        const newLeader = await this._messaging.assertLeader();
+        const prevLeader = this._leaderId;
+        this._leaderId = newLeader;
+        this._notifyLeader(prevLeader);
     }
 
-    private _notifyLeader() {
-        if (!this._messaging.isConnected() || isNullOrUndefined(this._leaderId)) {
+    private _notifyLeader(prevLeader: string) {
+        if (!this._messaging.isConnected() || isNullOrUndefined(this._leaderId) || this._leaderId === prevLeader) {
             return;
         }
         this._messaging.getEventEmitter().emit('leader', {leaderId: this._leaderId});
