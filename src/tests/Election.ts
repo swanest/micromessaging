@@ -146,7 +146,6 @@ describe('Leader Election', () => {
     it('should find consensus on leadership (2 instances)', async function () {
         await voteLoop(1, 2);
         // .then(console.log);
-        // console.log('how many instances', instances);
     });
 
     it('should be able to vote alone', async function () {
