@@ -140,6 +140,12 @@ export class PeerStatus {
             clearTimeout(this._timer);
             this._timer = null;
         }
+        // Security mechanic in case there is no leader
+        if (isNullOrUndefined(this._election.leaderSeen()) || this._election.leaderSeen().valueOf() < Date.now() - 60000) {
+            this._election.start().catch(e => () => {
+                // Ignored
+            });
+        }
         this._publishAlive().catch(e => this._messaging.reportError(e));
         this._timer = setTimeout(() => {
             this._keepAlive().catch(e => this._messaging.reportError(e));
