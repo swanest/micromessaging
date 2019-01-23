@@ -13,6 +13,7 @@ export class Election {
     private _lastLeaderSync: Date;
     private _logger: Logger;
     private _wasLeader = false;
+    private _ongoingElection: Promise<string>;
 
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
@@ -40,10 +41,11 @@ export class Election {
      * Starts an election process.
      */
     public async start() {
-        if (!this._messaging.isConnected()) {
+        if (!this._messaging.isConnected() || this._ongoingElection) {
             return;
         }
-        const newLeader = await this._messaging.assertLeader();
+        const newLeader = await (this._ongoingElection = this._messaging.assertLeader());
+        this._ongoingElection = undefined;
         const prevLeader = this._leaderId;
         this._leaderId = newLeader;
         this._notifyLeader(prevLeader);
