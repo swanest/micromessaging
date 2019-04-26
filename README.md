@@ -3,9 +3,9 @@
 
 This module has been written for Swanest back-end. It eases the use of messaging between services.
 We use RabbitMQ as the underlying broker service.
-This library is using amqplib (0.9.1) as a core dependency but we do use some parameters that are only RabbitMQ related so it might not work with other AMQP 0.9.1 brokers.
+This library is using amqplib (0.5.3) as a core dependency but we do use some parameters that are only RabbitMQ related so it might not work with other AMQP 0.9.1 brokers.
 
-**Supported version of NodeJS 8+** 
+**Supported version of NodeJS 8+**
 
 ----------
 
@@ -48,7 +48,7 @@ const response = await client.request('server', 'request-name', {how: {are: 'you
 
 ## Notes
 
-v3.0 is a full breaking changes and CANT be used with an other modules using an earlier version.
+v3.0 includes breaking changes and **CAN'T** be used with another module using an earlier `micromessaging` version.
 
 About what it does:
 *  RPC model (`.request` / `.handle`)
@@ -62,14 +62,4 @@ About what it does:
 
 ## TODO
 
-* [x] Manage timeouts in requests.
-* [x] `getStatus` of a service (to know if the service is accepting workload)
-* [x] Make API names consistent
-* [x] Expose only Messaging so that other modules can do `new require('micromessaging').Messaging(...)` and `new require('micromessaging').Service(...)` (to ease backward compatibility but `Service` should log a warning to tell it's deprecated...)
-* [ ] Go to the old codebase (within the dir) and check we didn't forgot a working behaviour or features.
-* [ ] Quadruple check that everything works fine through some good testing!
-* [ ] Delete old JS codebase
-* [ ] Add more comments so that `typedoc` generates a cool and easy doc.
-* [x] Travis auto tests
-* [x] Publish a doc under GitHub pages => will be under swanest.github.io/micromessaging
-* [x] Implement `.stop()` on the return of `emit` and `handle` => see ReturnHandler.
+- [ ] Change the API to expose the strict minimum

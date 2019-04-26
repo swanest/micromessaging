@@ -3,7 +3,6 @@ import { cloneDeep, defaults, omit, pull } from 'lodash';
 import * as stream from 'stream';
 import { PassThrough } from 'stream';
 import { CustomError } from 'sw-logger';
-import { isNullOrUndefined, isUndefined } from 'util';
 import { MessageHeaders, Route } from './Interfaces';
 import { Messaging } from './Messaging';
 import { Utils } from './Utils';
@@ -115,7 +114,7 @@ export class Message<T = {}> {
     }
 
     public isAnswer() {
-        return this._originalMessage.properties.correlationId && isUndefined(this._originalMessage.properties.replyTo);
+        return this._originalMessage.properties.correlationId && this._originalMessage.properties.replyTo === undefined;
     }
 
     public isChannelClosed() {
@@ -206,12 +205,12 @@ export class Message<T = {}> {
             this._assertOpen();
             this.ack();
             this._isExpired = true;
-            if (!isNullOrUndefined(this._route._answerTimers)) {
+            if (this._route._answerTimers != null) {
                 pull(this._route._answerTimers, this._expireTimer);
             }
             this._messaging.getEventEmitter().emit('message.timeout', new CustomError(`Expected an answer within ${ttl}ms`), this);
         }, ttl);
-        if (!isNullOrUndefined(this._route._answerTimers)) {
+        if (this._route._answerTimers != null) {
             this._route._answerTimers.push(this._expireTimer);
         }
     }
@@ -231,7 +230,7 @@ export class Message<T = {}> {
         }
         this._assertOpen();
 
-        if (isNullOrUndefined(options)) {
+        if (options == null) {
             options = {};
         }
 
@@ -259,7 +258,8 @@ export class Message<T = {}> {
             isStream: options.isStream,
             sequence: this._sequence++,
         };
-        if (isNullOrUndefined(_headers.idRequest) && !isNullOrUndefined(this._originalMessage.properties.headers.idRequest)) {
+        if (_headers.idRequest == null &&
+            this._originalMessage.properties.headers.idRequest != null) {
             _headers.idRequest = this._originalMessage.properties.headers.idRequest;
         }
 
@@ -323,7 +323,7 @@ export class Message<T = {}> {
                 this._autoExpire();
             }
         }
-        if (!isNullOrUndefined(this.correlationId())) {
+        if (this.correlationId() != null) {
             this._isRequest = true;
         }
     }

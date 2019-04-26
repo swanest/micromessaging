@@ -6,7 +6,7 @@ describe('MemoryPressure', () => {
     it('should notify when memory is under pressure', function (done) {
         this.timeout(10000);
         const c = new Messaging('test', {
-            memorySoftLimit: 10
+            memorySoftLimit: 10,
         });
         let stop = false;
         c.once('pressure', async (event: PressureEvent) => {
@@ -19,7 +19,7 @@ describe('MemoryPressure', () => {
                 done(e);
             }
         });
-        const curDate = new Date().getTime();
+
         let memFiller: Array<Array<number>> = [];
 
         function fill() {
@@ -39,7 +39,7 @@ describe('MemoryPressure', () => {
     it('should notify when memory is not under pressure anymore', function (done) {
         this.timeout(10000);
         const c = new Messaging('test', {
-            memorySoftLimit: 150
+            memorySoftLimit: 150,
         });
         global.gc();
         let stop = false;
@@ -55,7 +55,7 @@ describe('MemoryPressure', () => {
                 done(e);
             }
         });
-        const curDate = new Date().getTime();
+
         let memFiller: Array<Array<number>> = [];
 
         function fill() {
@@ -67,7 +67,6 @@ describe('MemoryPressure', () => {
             memFiller.push(new Array(1e7));
             setTimeout(fill, 300);
         }
-
         fill();
     });
 });

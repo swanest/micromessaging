@@ -18,6 +18,7 @@ describe('Status', () => {
     });
 
     it('should get the status of the current service', async function () {
+        this.timeout(4000);
         const me = new Messaging('me');
         const me2 = new Messaging('me');
         await Promise.all(Messaging.instances.map(i => i.connect())).then(() => new Promise(resolve => {

@@ -1,16 +1,15 @@
+dist: xenial
+group: travis_latest
 language: node_js
 node_js:
   - "8"
-group: travis_latest
-sudo: required
-cache:
-  yarn: true
-  directories:
-    - node_modules
+  - "10"
+  - "11"
+  - "12"
+
 before_install:
-  - wget https://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v3_6_11/rabbitmq-server_3.6.11-1_all.deb
-  - sudo dpkg -i rabbitmq-server_3.6.11-1_all.deb
+  - docker-compose up --build -d
 install:
-  - yarn install
+  - docker-compose exec messaging yarn install
 script:
-  - yarn test
+  - docker-compose exec -e DEBUG=false messaging yarn test:ci
