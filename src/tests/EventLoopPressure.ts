@@ -10,8 +10,11 @@ describe('EventLoopPressure', () => {
             await c.close();
             done();
         });
+
+        // Put some pressure on the process
         const curDate = new Date().getTime();
         while (new Date().getTime() - curDate < 1000) {
+            ((): void => undefined)();
         }
     });
 
@@ -22,8 +25,10 @@ describe('EventLoopPressure', () => {
             await c.close();
             done();
         });
+        // Put some pressure on the process
         const curDate = new Date().getTime();
         while (new Date().getTime() - curDate < 1000) {
+            ((): void => undefined)();
         }
     });
 });

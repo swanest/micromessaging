@@ -78,7 +78,6 @@ describe('Stream', () => {
     it('should not accept writing multiple messages on a replied message', async function () {
         const s = new Messaging('aService');
         const c = new Messaging('client');
-        const limit = 100;
         const awaiter = new Promise((resolve, reject) => {
             s.handle('something', async m => {
                 try {
@@ -101,8 +100,7 @@ describe('Stream', () => {
             undefined,
             undefined,
             undefined,
-            (m: Message) => {
-            });
+            (m: Message) => undefined);
         await awaiter;
     });
 });

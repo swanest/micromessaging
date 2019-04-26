@@ -7,6 +7,7 @@ import { Messaging } from '../Messaging';
 process.on('unhandledRejection', (reason) => {
     console.error('unhandledRejection', reason);
 });
+
 describe('Messaging', () => {
 
     it('should reattempt to connect', async function () {
@@ -56,16 +57,18 @@ describe('Messaging', () => {
         expect(true, 'Line should not have been reached').to.equal(false);
     });
 
-    it('expect to have a getURI method returning a string', async () => {
+    it('expect to have a uri getter method returning a string', async () => {
         const c = new Messaging('client');
         await c.connect();
         expect(c.getURI()).to.be.a('string');
     });
+
     it('should connect to Rabbit', async () => {
         const c = new Messaging('client');
         await c.connect();
         await c.close();
     });
+
     it('should handle requests', async () => {
         const s = new Messaging('server');
         s.handle('request1', (message) => {
@@ -82,19 +85,17 @@ describe('Messaging', () => {
 
     it('should raise a message.timeout event when a message was not answered within 100ms', async () => {
         const s = new Messaging('server');
-        s.handle('request1', (message) => {
-        });
+        s.handle('request1', (message) => undefined);
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
             s.connect(),
         ]);
         c.request('server', 'request1',
-            {how: {are: 'you?'}},
-            undefined,
-            {timeout: 100},
-        ).catch(() => {
-        });
+                  {how: {are: 'you?'}},
+                  undefined,
+                  {timeout: 100},
+                 ).catch(() => undefined);
         await new Promise((resolve, reject) => {
             s.on('message.timeout', (e, m) => {
                 try {
@@ -111,8 +112,7 @@ describe('Messaging', () => {
     it('should discard messages that are in ready state for too long', async function () {
         this.timeout(20000);
         const s = new Messaging('server');
-        s.handle('auto-discard-request', (message) => {
-        });
+        s.handle('auto-discard-request', (message) => undefined);
         const c = new Messaging('client');
         await Promise.all([
             c.connect(),
@@ -309,6 +309,7 @@ describe('Messaging', () => {
         }
         expect(true, 'This line should not be reached.').to.be.false;
     });
+
     it('should be notified when a message is not routable', async () => {
         const c = new Messaging('client');
         await c.connect();
@@ -321,6 +322,7 @@ describe('Messaging', () => {
         }
         expect(true, 'This line should not be reached.').to.be.false;
     });
+
     it('should handle tasks (no-ack)', (done) => {
         const s = new Messaging('server');
         s.handle('task1', (message) => {
@@ -338,6 +340,7 @@ describe('Messaging', () => {
             s.connect(),
         ]).then(() => c.task('server', 'task1', {how: {are: 'task1?'}})).catch(done);
     });
+
     it('should handle tasks with ack (interpreted as requests.)', async () => {
         const c = new Messaging('client');
         await Promise.all(Messaging.instances.map(i => i.connect()));
@@ -349,6 +352,7 @@ describe('Messaging', () => {
         }
         expect(1).to.equal(2, 'Expected task to throw');
     });
+
     it('should emit/receive', async function () {
         const s = new Messaging('server');
         const p = new Promise((resolve, reject) => {
@@ -369,6 +373,7 @@ describe('Messaging', () => {
         await c.emit('server', 'routingKey1', {how: {are: 'pubSub1?'}});
         await p;
     });
+
     it('should multiple emit/receive', async function () {
         const s = new Messaging('server');
         const p = new Promise((resolve, reject) => {
@@ -410,6 +415,7 @@ describe('Messaging', () => {
         await p;
         await p2;
     });
+
     it('should timeout getting a reply', async () => {
         const c = new Messaging('client');
         const s = new Messaging('server');
@@ -428,6 +434,7 @@ describe('Messaging', () => {
         expect(true, 'This line should not be reached.').to.be.false;
 
     });
+
     it('should timeout getting a reply and still get an unroutable message as a process event', async () => {
         const c = new Messaging('client');
         // const s = new Messaging('server');
@@ -488,39 +495,40 @@ describe('Messaging', () => {
         await c.task('server', 'task');
         await p;
     });
+
     it('should handle multiple request and tasks', async function () {
         this.timeout(60000);
         const c = new Messaging('client');
         const s = new Messaging('server');
         const p = new Promise((resolve, reject) => {
-            let i = 0,
-                expect = 5;
+            let i = 0;
+            const expectation = 5;
 
             s.handle('bla', (m) => {
                 m.reply().catch(reject);
-                if (++i === expect) {
+                if (++i === expectation) {
                     resolve();
                 }
             }).catch(reject);
             s.handle('bla2', (m) => {
                 m.reply().catch(reject);
-                if (++i === expect) {
+                if (++i === expectation) {
                     resolve();
                 }
             }).catch(reject);
             s.handle('task', (m) => {
                 m.ack();
-                if (++i === expect) {
+                if (++i === expectation) {
                     resolve();
                 }
             }).catch(reject);
             s.listen('bla3', () => {
-                if (++i === expect) {
+                if (++i === expectation) {
                     resolve();
                 }
             }).catch(reject);
             s.listen('bla4', () => {
-                if (++i === expect) {
+                if (++i === expectation) {
                     resolve();
                 }
             }).catch(reject);
@@ -534,6 +542,7 @@ describe('Messaging', () => {
         await c.emit('server', 'bla4');
         await p;
     });
+
     it('should properly route requests to their corresponding handler', async function () {
         const c = new Messaging('client');
         const s = new Messaging('server');
@@ -575,6 +584,7 @@ describe('Messaging', () => {
         await p;
         await Promise.all(proms);
     });
+
     it('should stop listening', async () => {
         const c = new Messaging('client');
         const s = new Messaging('server');
@@ -601,6 +611,7 @@ describe('Messaging', () => {
         }
         expect(true, 'This line should not be reached.').to.be.false;
     });
+
     it('stop listening should stay individual', async () => {
         const c = new Messaging('client');
         const s = new Messaging('server');
@@ -629,17 +640,13 @@ describe('Messaging', () => {
         }
         expect(true, 'This line should not be reached.').to.be.false;
     });
+
     it('should let user re-listen after a stop', async function () {
         const c = new Messaging('client');
         const s = new Messaging('server');
         const p = new Promise((resolve, reject) => {
-            let stopped = false;
             let stopper: ReturnHandler;
             s.handle('bla', (m: Message) => {
-                // Do not answer
-                if (stopped) {
-                    reject(new Error('Should not have received a request'));
-                }
                 m.reply().then(() => {
                     return stopper.stop();
                 }).then(() => resolve());
@@ -666,6 +673,7 @@ describe('Messaging', () => {
         }
         expect(true, 'This line should not be reached.').to.be.false;
     });
+
     it('should not delete the queue if someone else listens on it', async function () {
         this.timeout(30000);
         const c = new Messaging('client');
@@ -698,10 +706,8 @@ describe('Messaging', () => {
         const s = new Messaging('s');
         let threw = false;
         try {
-            await s.listen('s', 'queue', () => {
-            });
-            await s.listen('s', 'queue', () => {
-            });
+            await s.listen('s', 'queue', () => undefined);
+            await s.listen('s', 'queue', () => undefined);
         } catch (err) {
             threw = true;
             expect(err).to.be.instanceof(Error);
@@ -724,8 +730,7 @@ describe('Messaging', () => {
     it('should work when trying to connect an already connected instance', async () => {
         const s = new Messaging('s');
         await s.connect();
-        let res = await s.connect('wrong-url'); // Question: is this the behavior we want?
+        const res = await s.connect('wrong-url'); // Question: is this the behavior we want?
         expect(res).to.be.undefined;
     });
-
 });

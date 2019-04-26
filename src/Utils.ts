@@ -65,10 +65,8 @@ export class Utils {
     }
 }
 
-export function isNullOrUndefined(v: any) {
-    return v === undefined || v === null;
-}
-
-export function noop() {
-    // noop
-}
+/**
+ * Waits for `ms` milliseconds, then resolves
+ * @param ms Number of milliseconds
+ */
+export const wait = (ms: number) => new Promise((r, j) => setTimeout(r, ms));

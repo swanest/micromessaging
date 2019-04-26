@@ -3,7 +3,7 @@ import * as v4 from 'uuid/v4';
 import { ReturnHandler } from './Interfaces';
 import { Message } from './Message';
 import { Messaging } from './Messaging';
-import { isNullOrUndefined, Utils } from './Utils';
+import { Utils } from './Utils';
 
 export class AMQPLatency {
     public lastLatencyMS: number;
@@ -69,7 +69,7 @@ export class AMQPLatency {
     }
 
     private async _sendSample() {
-        if (isNullOrUndefined(this._sampleCount) || isNullOrUndefined(this._id)) {
+        if (this._sampleCount == null || this._id == null) {
             throw new CustomError('forbidden', 'sendSample cannot be called before benchmark.');
         }
         await this._messaging.emit<SampleMessage>(this._messaging.getInternalExchangeName(), `latency.${this._id}`, {
