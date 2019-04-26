@@ -1,15 +1,19 @@
-version: '3'
+version: '3.6'
 services:
+
   messaging:
-    build: docker/messaging
+    build:
+      context: .
+      target: dev
+    environment:
+      - RABBIT_URI=amqp://rabbit
     volumes:
-      - ".:/app"
-    working_dir: /app
+      - ./:/app/
     depends_on:
       - rabbit
-    env_file:
-    - variables.env
+
   rabbit:
-    image: rabbitmq:3-management
-    expose:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 1234:15672
       - 5672

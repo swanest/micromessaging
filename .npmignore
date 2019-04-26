@@ -5,7 +5,6 @@ node_modules
 test
 typings-tests
 docker-compose.yml
-variables.env
 docker
 docs
 benchmark

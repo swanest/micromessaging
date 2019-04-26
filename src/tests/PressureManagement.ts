@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Messaging } from '../Messaging';
 
-describe('Pressure Message Management', () => {
+describe('Message Pressure Management', () => {
 
     it('should stop receiving messages when byte limit is reached', async function () {
         this.timeout(60000);
@@ -144,7 +144,7 @@ describe('Pressure Message Management', () => {
     it('should stop receiving messages when under pressure', async function () {
         this.timeout(60000 * 5);
         const s = new Messaging('server');
-        // s.maxParallelism(1);
+        // s.getMaxParallelism()(1);
         const s2 = new Messaging('server');
         const c = new Messaging('client');
         let messageCount1 = 0,
