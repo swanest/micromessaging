@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/swanest/micromessaging"
   },
-  "description": "Easy-to-use interface for Rabbit MQ",
+  "description": "Easy-to-useeee interface for Rabbit MQ",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
