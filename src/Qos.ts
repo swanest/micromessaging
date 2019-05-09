@@ -1,6 +1,5 @@
 import { Logger } from 'sw-logger';
 import { setTimeout } from 'timers';
-import { isNullOrUndefined } from 'util';
 import { EventLoopStatus, HeavyEventLoop } from './HeavyEventLoop';
 import { HeavyMemory, MemoryStatus } from './HeavyMemory';
 import { Route } from './Interfaces';
@@ -78,7 +77,7 @@ export class Qos {
     }
 
     public handledMessage(routeName: string) {
-        if (isNullOrUndefined(this._handledMessagesSinceLastMonitor[routeName])) {
+        if (this._handledMessagesSinceLastMonitor[routeName] == null) {
             this._handledMessagesSinceLastMonitor[routeName] = 0;
         }
         this._handledMessagesSinceLastMonitor[routeName]++;
@@ -172,7 +171,7 @@ export class Qos {
     }
 
     private isHandlingMessages() {
-        if (!this._lastLoop || isNullOrUndefined(this._client.getLastMessageDate())) {
+        if (!this._lastLoop || this._client.getLastMessageDate() == null) {
             return false;
         }
         return this._client.getLastMessageDate().getTime() > this._lastLoop.getTime();
@@ -185,7 +184,7 @@ export class Qos {
             handledMessagesSinceLastMonitor += this._handledMessagesSinceLastMonitor[k];
         }
         this._mRoutes.forEach(route => {
-            if (!route.subjectToQuota || (!isNullOrUndefined(route.options) && !isNullOrUndefined(route.options.maxParallel))) {
+            if (!route.subjectToQuota || (route.options != null && route.options.maxParallel)) {
                 // Route with a specified quota are subject to quota but are per say limited, hence we can't optimise the flow on them so we don't take them into account.
                 return;
             }

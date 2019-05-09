@@ -1,18 +1,17 @@
 import { Messaging } from './Messaging';
-import { isNullOrUndefined } from 'util';
 import { Logger } from 'sw-logger';
 
 export class Election {
 
-    // public TEMPO: number = Election.DEFAULT_TEMPO;
-    static DEFAULT_TIMEOUT: number = 30 * 1000;
-    public TIMEOUT: number = Election.DEFAULT_TIMEOUT;
+    // Max time without a leader. Election will be launched after this
+    // time
+    static readonly DEFAULT_TIMEOUT: number = 15 * 1000;
+    static TIMEOUT: number = Election.DEFAULT_TIMEOUT;
     private _messaging: Messaging;
-
-    private _leaderId: string;
     private _lastLeaderSync: Date;
-    private _logger: Logger;
     private _wasLeader = false;
+    private _logger: Logger;
+    public leaderId: string;
 
     constructor(messaging: Messaging, logger: Logger) {
         this._messaging = messaging;
@@ -20,14 +19,9 @@ export class Election {
     }
 
     /**
-     * Get the leader ID
-     */
-    public leaderId() {
-        return this._leaderId;
-    }
-
-    /**
-     * Sets the last date the leader was seen
+     * Sets the last date the leader was seen on the PeerStat messages
+     * and returns null. Otherwise (no param), returns the Date object
+     * or undefined
      */
     public leaderSeen(date?: Date) {
         if (!date) {
@@ -37,30 +31,41 @@ export class Election {
     }
 
     /**
-     * Starts an election process.
+     * Starts an election process. This process will try to become the
+     * leader before everyone else, when the exclusive queue (lock) is
+     * free
      */
     public async start() {
         if (!this._messaging.isConnected()) {
             return;
         }
-        const newLeader = await this._messaging.assertLeader();
-        const prevLeader = this._leaderId;
-        this._leaderId = newLeader;
-        this._notifyLeader(prevLeader);
+        await this._messaging.assertLeader();
     }
 
-    private _notifyLeader(prevLeader: string) {
-        if (!this._messaging.isConnected() || isNullOrUndefined(this._leaderId) || this._leaderId === prevLeader) {
+    /**
+     * Returns true if there is a leader change.
+     * @param prevLeader The previous leader
+     */
+    public leaderChange(prevLeader: string) {
+        return this.leaderId !== prevLeader;
+    }
+
+
+    /**
+     * Emits the leader.stepUp and leader.stepDown events if needed
+     */
+    public notifyLeader() {
+        if (!this._messaging.isConnected()) {
             return;
         }
-        this._messaging.getEventEmitter().emit('leader', {leaderId: this._leaderId});
-        if (this._leaderId === this._messaging.getServiceId() && !this._wasLeader) {
+        this._messaging.getEventEmitter().emit('leader', {leaderId: this.leaderId});
+        if (this.leaderId === this._messaging.getServiceId() && !this._wasLeader) {
             this._wasLeader = true;
-            this._messaging.getEventEmitter().emit('leader.stepUp', {leaderId: this._leaderId});
+            this._messaging.getEventEmitter().emit('leader.stepUp', {leaderId: this.leaderId});
         }
-        if (this._leaderId !== this._messaging.getServiceId() && this._wasLeader) {
+        if (this.leaderId !== this._messaging.getServiceId() && this._wasLeader) {
             this._wasLeader = false;
-            this._messaging.getEventEmitter().emit('leader.stepDown', {leaderId: this._leaderId});
+            this._messaging.getEventEmitter().emit('leader.stepDown', {leaderId: this.leaderId});
         }
     }
 }

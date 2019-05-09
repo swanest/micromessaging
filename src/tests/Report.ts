@@ -32,7 +32,7 @@ describe('Requests Report', () => {
         expect(report).to.deep.equal({
             queueSize: 0,
             queueName: 'q.requests.' + serviceName + '.whathever',
-            consumers: 1
+            consumers: 1,
         });
         await Promise.all(Messaging.instances.map(i => i.close(true)));
     });
