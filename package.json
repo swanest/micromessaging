@@ -9,7 +9,8 @@
     "url": "https://github.com/swanest/micromessaging"
   },
   "description": "Easy-to-use interface for Rabbit MQ",
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "node --expose-gc node_modules/.bin/_mocha src/tests/",
     "test:ci": "node --expose-gc node_modules/.bin/_mocha src/tests/ --forbid-only",
